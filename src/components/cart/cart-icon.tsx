@@ -1,0 +1,34 @@
+"use client";
+
+import { ShoppingBag } from "lucide-react";
+import { useCart } from "@/context/cart-context";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+
+type CartIconProps = {
+  onClick?: () => void;
+};
+
+export function CartIcon({ onClick }: CartIconProps) {
+  const { totalItems } = useCart();
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="relative"
+      onClick={onClick}
+      aria-label={`Shopping cart with ${totalItems} items`}
+    >
+      <ShoppingBag className="h-5 w-5" />
+      {totalItems > 0 && (
+        <Badge
+          variant="destructive"
+          className="absolute -top-1 -right-2 h-4 w-4 justify-center !rounded-none p-0 text-xs"
+        >
+          {totalItems}
+        </Badge>
+      )}
+    </Button>
+  );
+}

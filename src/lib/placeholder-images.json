@@ -1,0 +1,172 @@
+{
+  "placeholderImages": [
+    {
+      "id": "wireless-headphones",
+      "description": "A pair of sleek, modern wireless headphones.",
+      "imageUrl": "https://images.unsplash.com/photo-1612858249937-1cc0852093dd?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx3aXJlbGVzcyUyMGhlYWRwaG9uZXN8ZW58MHx8fHwxNzY5OTQ3NTY5fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "wireless headphones"
+    },
+    {
+      "id": "smart-watch",
+      "description": "A stylish smart watch displaying a colorful watch face.",
+      "imageUrl": "https://images.unsplash.com/photo-1637160151663-a410315e4e75?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHxzbWFydCUyMHdhdGNofGVufDB8fHx8MTc2OTk3MTE3NXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "smart watch"
+    },
+    {
+      "id": "ergonomic-keyboard",
+      "description": "An ergonomic mechanical keyboard with backlit keys.",
+      "imageUrl": "https://images.unsplash.com/photo-1637243218672-d338945efdf7?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxlcmdvbm9taWMlMjBrZXlib2FyZHxlbnwwfHx8fDE3Njk5ODQ3MzJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "ergonomic keyboard"
+    },
+    {
+      "id": "graphic-t-shirt",
+      "description": "A comfortable cotton t-shirt with a minimalist graphic design.",
+      "imageUrl": "https://images.unsplash.com/photo-1768935706759-f2be765b3aec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8Z3JhcGhpYyUyMHQtc2hpcnR8ZW58MHx8fHwxNzY5OTA1MzkxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "graphic t-shirt"
+    },
+    {
+      "id": "leather-backpack",
+      "description": "A durable and stylish leather backpack for everyday use.",
+      "imageUrl": "https://images.unsplash.com/photo-1673906510954-bfa816f5043b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxsZWF0aGVyJTIwYmFja3BhY2t8ZW58MHx8fHwxNzY5OTQ1NDExfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "leather backpack"
+    },
+    {
+      "id": "stainless-steel-bottle",
+      "description": "An insulated stainless steel water bottle.",
+      "imageUrl": "https://images.unsplash.com/photo-1616118132534-381148898bb4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx3YXRlciUyMGJvdHRsZXxlbnwwfHx8fDE3Njk5ODQ3MzJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "water bottle"
+    },
+    {
+      "id": "drone-camera",
+      "description": "A high-tech drone with a 4K camera.",
+      "imageUrl": "https://images.unsplash.com/photo-1473968512647-3e447244af8f?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxkcm9uZSUyMGNhbWVyYXxlbnwwfHx8fDE3Njk5ODQ3MzJ8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "drone camera"
+    },
+    {
+      "id": "notebook-pen",
+      "description": "A premium quality notebook and pen set.",
+      "imageUrl": "https://images.unsplash.com/photo-1685346741627-e4522822268e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw3fHxub3RlYm9vayUyMHBlbnxlbnwwfHx8fDE3Njk4OTMwMTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "notebook pen"
+    },
+    {
+      "id": "hero-ipad-pro",
+      "description": "An iPad Pro with a keyboard on a dark background.",
+      "imageUrl": "https://images.unsplash.com/photo-1544244015-0df4b3ffc6b0?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxpcGFkJTIwcHJvJTIwZGFya3xlbnwwfHx8fDE3MjEwNzI3OTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "ipad pro"
+    },
+    {
+      "id": "hero-iphone-repair",
+      "description": "A technician repairing a smartphone.",
+      "imageUrl": "https://images.unsplash.com/photo-1610499035677-de19d7a20c39?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxwaG9uZSUyMHJlcGFpcnxlbnwwfHx8fDE3MjEwNzI4NTV8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "phone repair"
+    },
+    {
+      "id": "hero-galaxy-watch",
+      "description": "A modern smartwatch on a dark background.",
+      "imageUrl": "https://images.unsplash.com/photo-1546868871-7041f2a55e12?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxfHxzbWFydHdhdGNofGVufDB8fHx8MTcyMTA3MjkxN3ww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "smartwatch"
+    },
+    {
+      "id": "category-mobile-phone",
+      "description": "Icon for Mobile Phone category.",
+      "imageUrl": "https://images.unsplash.com/photo-1598327105666-5b89351aff97?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxtb2JpbGUlMjBwaG9uZXxlbnwwfHx8fDE3Njk5NTI1NTF8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "mobile phone"
+    },
+    {
+      "id": "category-tablet",
+      "description": "Icon for Tablet category.",
+      "imageUrl": "https://images.unsplash.com/photo-1561154464-82e9adf32764?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx0YWJsZXR8ZW58MHx8fHwxNzcwMDIwNDcwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "tablet"
+    },
+    {
+      "id": "category-laptop",
+      "description": "Icon for Laptop category.",
+      "imageUrl": "https://images.unsplash.com/photo-1484788984921-03950022c9ef?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw4fHxsYXB0b3B8ZW58MHx8fHwxNzcwMDExNzk0fDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "laptop"
+    },
+    {
+      "id": "category-airpods",
+      "description": "Icon for Airpods category.",
+      "imageUrl": "https://images.unsplash.com/photo-1628773193539-ad29c647c071?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8YWlycG9kc3xlbnwwfHx8fDE3NzAwMjA0NzB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "airpods"
+    },
+    {
+      "id": "category-wireless-headphone",
+      "description": "Icon for Wireless Headphone category.",
+      "imageUrl": "https://images.unsplash.com/photo-1491927570842-0261e477d937?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw0fHx3aXJlbGVzcyUyMGhlYWRwaG9uZXxlbnwwfHx8fDE3NzAwMjA0NzB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "wireless headphone"
+    },
+    {
+      "id": "category-wired-headphone",
+      "description": "Icon for Wired Headphone category.",
+      "imageUrl": "https://images.unsplash.com/photo-1728583938892-9f45df2d4986?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHx3aXJlZCUyMGhlYWRwaG9uZXxlbnwwfHx8fDE3NzAwMjA0NzB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "wired headphone"
+    },
+    {
+      "id": "category-headphone",
+      "description": "Icon for Headphone category.",
+      "imageUrl": "https://images.unsplash.com/photo-1491927570842-0261e477d937?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw1fHxoZWFkcGhvbmV8ZW58MHx8fHwxNzcwMDIwNDcwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "headphone"
+    },
+    {
+      "id": "category-speakers",
+      "description": "Icon for Speakers category.",
+      "imageUrl": "https://images.unsplash.com/photo-1585605109191-03cc36051fcb?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxzcGVha2Vyc3xlbnwwfHx8fDE3NzAwMjA0NzB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "speakers"
+    },
+    {
+      "id": "category-starlink",
+      "description": "Icon for Starlink category.",
+      "imageUrl": "https://images.unsplash.com/photo-1640826028459-85717fee837d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw5fHxzYXRlbGxpdGUlMjBpbnRlcm5ldHxlbnwwfHx8fDE3NzAwMjA0NzB8MA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "satellite internet"
+    },
+    {
+      "id": "category-smart-pen",
+      "description": "Icon for Smart Pen category.",
+      "imageUrl": "https://images.unsplash.com/photo-1706804264099-3e0c348157b4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8c21hcnQlMjBwZW58ZW58MHx8fHwxNzcwMDIwNDcwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "smart pen"
+    },
+    {
+      "id": "category-power-adapter",
+      "description": "Icon for Power Adapter category.",
+      "imageUrl": "https://images.unsplash.com/photo-1603539495824-bf9158834f09?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHw2fHxwb3dlciUyMGFkYXB0ZXJ8ZW58MHx8fHwxNzcwMDIwNDcxfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "power adapter"
+    },
+    {
+      "id": "category-cables",
+      "description": "Icon for Cables category.",
+      "imageUrl": "https://images.unsplash.com/photo-1541093585232-b5c4f5bc431a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8Y2FibGVzfGVufDB8fHx8MTc3MDAyMDQ3MXww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "cables"
+    },
+    {
+      "id": "category-power-bank",
+      "description": "Icon for Power Bank category.",
+      "imageUrl": "https://images.unsplash.com/photo-1594843665794-446ce915d840?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHxwb3dlciUyMGJhbmt8ZW58MHx8fHwxNzcwMDIwNDcwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "power bank"
+    },
+    {
+      "id": "category-hubs-docks",
+      "description": "Icon for Hubs & Docks category.",
+      "imageUrl": "https://images.unsplash.com/photo-1760462787828-ad5b29cafb30?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8dXNiJTIwaHVifGVufDB8fHx8MTc2OTk2MzMwOHww&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "usb hub"
+    },
+    {
+      "id": "category-wireless-charger",
+      "description": "Icon for Wireless Charger category.",
+      "imageUrl": "https://images.unsplash.com/photo-1603674554159-b62f6febbce5?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwyfHx3aXJlbGVzcyUyMGNoYXJnZXJ8ZW58MHx8fHwxNzcwMDIwNDcwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "wireless charger"
+    },
+    {
+      "id": "category-home-appliances",
+      "description": "Icon for Home Appliances category.",
+      "imageUrl": "https://images.unsplash.com/photo-1620051787208-a45bc64e32ff?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3NDE5ODJ8MHwxfHNlYXJjaHwxMHx8aG9tZSUyMGFwcGxpYW5jZXN8ZW58MHx8fHwxNzcwMDIwNDcwfDA&ixlib=rb-4.1.0&q=80&w=1080",
+      "imageHint": "home appliances"
+    },
+    {
+      "id": "category-default",
+      "description": "Default icon for categories.",
+      "imageUrl": "https://picsum.photos/seed/defaultcategory/200",
+      "imageHint": "product category"
+    }
+  ]
+}
