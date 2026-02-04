@@ -3,6 +3,7 @@ import './globals.css';
 import { cn } from '@/lib/utils';
 import { Toaster } from '@/components/ui/sonner';
 import { CartProvider } from '@/context/cart-context';
+import NextTopLoader from 'nextjs-toploader';
 
 export const metadata: Metadata = {
   title: {
@@ -33,6 +34,7 @@ export default function RootLayout({
           'font-body'
         )}
       >
+        <NextTopLoader showSpinner={false} color="#000000" />
         <CartProvider>
           {children}
           <Toaster />

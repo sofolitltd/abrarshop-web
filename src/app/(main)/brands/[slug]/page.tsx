@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { getBrandBySlug, getProducts } from "@/lib/data";
+import { getBrandBySlug, getProducts, getCategories, getBrands } from "@/lib/data";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { ProductFilters } from "@/components/product/product-filters";
@@ -48,7 +48,6 @@ function ProductListSkeleton() {
 function PaginationComponent({ totalPages, currentPage, slug, sortBy }: { totalPages: number, currentPage: number, slug: string, sortBy?: string }) {
     if (totalPages <= 1) return null;
 
-    const pageNumbers = [];
     const delta = 2;
     const left = currentPage - delta;
     const right = currentPage + delta + 1;
@@ -127,7 +126,7 @@ async function ProductGrid({ brandId, currentPage, sortBy, slug }: { brandId: st
 
     return (
         <div className="space-y-8">
-            <div className="flex items-center justify-between">
+            <div className="flex items-center justify-between border border-zinc-200 p-2">
                 <p className="text-sm text-muted-foreground">
                     Showing {products.length} of {totalCount} products
                 </p>
@@ -143,6 +142,15 @@ async function ProductGrid({ brandId, currentPage, sortBy, slug }: { brandId: st
     )
 }
 
+async function FiltersSidebar() {
+    const [categories, brands] = await Promise.all([
+        getCategories(),
+        getBrands()
+    ]);
+
+    return <ProductFilters categories={categories} brands={brands} />;
+}
+
 export default async function BrandPage({ params, searchParams }: { params: Promise<{ slug: string }>, searchParams?: Promise<{ page?: string, sort?: string }> }) {
     const { slug } = await params;
     const sParams = await searchParams;
@@ -156,7 +164,7 @@ export default async function BrandPage({ params, searchParams }: { params: Prom
     }
 
     return (
-        <div className="container py-12 md:py-16">
+        <div className="container py-6">
             <div className="mb-8">
                 <Breadcrumb items={[{ name: 'Home', href: '/' }, { name: 'Products', href: '/products' }, { name: brand.name, href: `/brands/${brand.slug}` }]} />
                 <h1 className="text-3xl font-bold tracking-tight font-headline mt-4">
@@ -167,7 +175,7 @@ export default async function BrandPage({ params, searchParams }: { params: Prom
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                 <aside className="lg:col-span-1">
                     <Suspense fallback={<Skeleton className="h-[500px] w-full rounded-none" />}>
-                        <ProductFilters />
+                        <FiltersSidebar />
                     </Suspense>
                 </aside>
 

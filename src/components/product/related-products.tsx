@@ -4,11 +4,13 @@ import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 
 type RelatedProductsProps = {
-    categoryId: string;
+    categoryId: string | null;
     currentProductId: string;
 };
 
 export async function RelatedProducts({ categoryId, currentProductId }: RelatedProductsProps) {
+    if (!categoryId) return null;
+
     // Fetch 5 related products from the same category, excluding the current one
     const { products: relatedProducts } = await getProducts({ categoryId, limit: 5, excludeProductId: currentProductId });
 
@@ -16,14 +18,17 @@ export async function RelatedProducts({ categoryId, currentProductId }: RelatedP
         return null;
     }
 
+    const firstProduct = relatedProducts[0];
+    const categoryLink = firstProduct.categorySlug ? `/category/${firstProduct.categorySlug}` : '/products';
+
     return (
         <section className="py-10 border-t">
             <div className="container">
-                 <div className="flex items-center justify-between mb-8">
+                <div className="flex items-center justify-between mb-8">
                     <h2 className="text-3xl font-bold tracking-tight font-headline">
                         Related Products
                     </h2>
-                    <Link href={`/category/${relatedProducts[0].categorySlug}`} className="flex items-center gap-2 text-primary hover:underline">
+                    <Link href={categoryLink} className="flex items-center gap-2 text-primary hover:underline">
                         View All <ArrowRight className="h-4 w-4" />
                     </Link>
                 </div>

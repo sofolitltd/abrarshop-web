@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { getCategoryBySlug, getProducts } from "@/lib/data";
+import { getCategoryBySlug, getProducts, getCategories, getBrands } from "@/lib/data";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { ProductFilters } from "@/components/product/product-filters";
@@ -155,6 +155,16 @@ async function ProductGrid({ categoryId, currentPage, sortBy, slug }: { category
     )
 }
 
+async function FiltersSidebar() {
+    const [categories, brands] = await Promise.all([
+        getCategories(),
+        getBrands()
+    ]);
+
+    return <ProductFilters categories={categories} brands={brands} />;
+}
+
+
 export default async function CategoryPage({ params, searchParams }: { params: Promise<{ slug: string }>, searchParams?: Promise<{ page?: string, sort?: string }> }) {
     const { slug } = await params;
     const sParams = await searchParams;
@@ -168,7 +178,7 @@ export default async function CategoryPage({ params, searchParams }: { params: P
     }
 
     return (
-        <div className="container py-12 md:py-16">
+        <div className="container py-6">
             <div className="mb-8">
                 <Breadcrumb items={[{ name: 'Home', href: '/' }, { name: 'Products', href: '/products' }, { name: category.name, href: `/category/${category.slug}` }]} />
                 <h1 className="text-3xl font-bold tracking-tight font-headline mt-4">
@@ -179,7 +189,7 @@ export default async function CategoryPage({ params, searchParams }: { params: P
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
                 <aside className="lg:col-span-1">
                     <Suspense fallback={<Skeleton className="h-[500px] w-full" />}>
-                        <ProductFilters />
+                        <FiltersSidebar />
                     </Suspense>
                 </aside>
 

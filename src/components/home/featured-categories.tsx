@@ -4,7 +4,12 @@ import Image from "next/image";
 import Link from "next/link";
 
 export async function FeaturedCategories() {
-    const categories = await getCategories({ topLevelOnly: true });
+    let categories = await getCategories({ isFeatured: true });
+
+    // Fallback if no category is marked as featured
+    if (categories.length === 0) {
+        categories = await getCategories({ topLevelOnly: true });
+    }
 
     const featuredCategories = categories.slice(0, 16);
 
@@ -18,12 +23,17 @@ export async function FeaturedCategories() {
     }
 
     return (
-        <section className="py-12 sm:py-16">
+        <section className="pt-10 pb-20">
             <div className="container">
-                <h2 className="mb-8 text-3xl font-bold tracking-tight text-center font-headline">
-                    Featured <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-purple-600">Categories</span>
-                </h2>
-                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4">
+                <div className="flex items-center justify-between mb-8">
+                    <h2 className="text-3xl font-bold tracking-tight font-headline">
+                        Featured <span className="text-orange-500">Categories</span>
+                    </h2>
+                    <Link href="/categories" className="text-sm font-bold text-orange-500 hover:text-orange-600 transition-colors uppercase tracking-tight">
+                        See All Categories →
+                    </Link>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4 ">
                     {featuredCategories.map(category => {
                         const fallbackIcon = getFallbackIcon(category.slug);
                         const imageUrl = category.imageUrl || fallbackIcon?.imageUrl;
@@ -31,7 +41,7 @@ export async function FeaturedCategories() {
 
                         return (
                             <Link href={`/category/${category.slug}`} key={category.id} className="group">
-                                <div className="flex flex-col items-center justify-center gap-3 p-4 h-full rounded-none bg-card border transition-all duration-300 hover:shadow-lg hover:border-primary">
+                                <div className="flex flex-col items-center justify-center gap-3 p-4 h-full rounded-none border transition-all duration-300 hover:shadow-lg hover:border-primary bg-[#f5f6f7]">
                                     <div className="relative h-16 w-16">
                                         {imageUrl && (
                                             <Image

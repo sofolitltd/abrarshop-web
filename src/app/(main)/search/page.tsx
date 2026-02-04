@@ -12,8 +12,9 @@ function ProductListSkeleton() {
     )
 }
 
-export default function SearchPage({ searchParams }: { searchParams?: { q?: string } }) {
-    const query = searchParams?.q || '';
+export default async function SearchPage({ searchParams }: { searchParams: Promise<{ q?: string }> }) {
+    const sParams = await searchParams;
+    const query = sParams?.q || '';
 
     return (
         <div className="container py-12 md:py-20">

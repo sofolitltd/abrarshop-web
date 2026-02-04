@@ -66,10 +66,10 @@ export function HeroSection({ sliders, promoTop, promoBottom }: HeroSectionProps
                 onMouseLeave={plugin.current.reset}
               >
                 <CarouselContent>
-                  {sliders.map(slider => (
+                  {sliders.map((slider, index) => (
                     <CarouselItem key={slider.id}>
                       <Link href={slider.link || '#'} className="block">
-                        <Card className="overflow-hidden border-none rounded-none">
+                        <Card className="overflow-hidden border-none rounded-none p-0">
                           <CardContent className="relative p-0 aspect-[16/9]">
                             <Image
                               src={slider.imageUrl}
@@ -77,6 +77,7 @@ export function HeroSection({ sliders, promoTop, promoBottom }: HeroSectionProps
                               fill
                               className="object-cover"
                               sizes="(min-width: 1024px) 66vw, 100vw"
+                              priority={index === 0}
                             />
                           </CardContent>
                         </Card>
@@ -105,7 +106,7 @@ export function HeroSection({ sliders, promoTop, promoBottom }: HeroSectionProps
                 )}
               </Carousel>
             ) : (
-              <Card className="overflow-hidden h-full rounded-none">
+              <Card className="overflow-hidden h-full rounded-none p-0">
                 <CardContent className="relative w-full h-full p-0 bg-muted flex items-center justify-center aspect-video">
                   <p className="text-muted-foreground">No active carousel slides.</p>
                 </CardContent>
@@ -113,7 +114,7 @@ export function HeroSection({ sliders, promoTop, promoBottom }: HeroSectionProps
             )}
           </div>
           <div className="lg:col-span-1 grid grid-cols-2 lg:grid-cols-1 lg:grid-rows-2 gap-4">
-            <Card className="overflow-hidden rounded-none w-full h-full">
+            <Card className="overflow-hidden rounded-none w-full h-full p-0">
               {promoTop ? (
                 <Link href={promoTop.link || "#"} className="block h-full">
                   <CardContent className="relative w-full h-full p-0 aspect-video lg:aspect-auto">
@@ -123,6 +124,7 @@ export function HeroSection({ sliders, promoTop, promoBottom }: HeroSectionProps
                       fill
                       className="object-cover"
                       sizes="(min-width: 1024px) 33vw, 50vw"
+                      priority
                     />
                   </CardContent>
                 </Link>
@@ -132,7 +134,7 @@ export function HeroSection({ sliders, promoTop, promoBottom }: HeroSectionProps
                 </CardContent>
               )}
             </Card>
-            <Card className="overflow-hidden rounded-none w-full h-full">
+            <Card className="overflow-hidden rounded-none w-full h-full p-0">
               {promoBottom ? (
                 <Link href={promoBottom.link || "#"} className="block h-full">
                   <CardContent className="relative w-full h-full p-0 aspect-video lg:aspect-auto">
@@ -142,6 +144,7 @@ export function HeroSection({ sliders, promoTop, promoBottom }: HeroSectionProps
                       fill
                       className="object-cover"
                       sizes="(min-width: 1024px) 33vw, 50vw"
+                      priority
                     />
                   </CardContent>
                 </Link>

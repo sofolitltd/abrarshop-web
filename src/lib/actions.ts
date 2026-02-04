@@ -5,26 +5,26 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { products, brands, categories, heroSliders } from '@/lib/schema';
-import { eq, and, ne } from 'drizzle-orm';
+import { eq, and, ne, desc, inArray } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 import { getProducts, getProductById, getBrandById, getCategoryById, getHeroSliderById } from './data';
 import { generateSlug } from '@/lib/utils';
 import { v2 as cloudinary } from 'cloudinary';
 
 if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
-    cloudinary.config({
-        cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-        api_key: process.env.CLOUDINARY_API_KEY,
-        api_secret: process.env.CLOUDINARY_API_SECRET,
-    });
+  cloudinary.config({
+    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+    api_key: process.env.CLOUDINARY_API_KEY,
+    api_secret: process.env.CLOUDINARY_API_SECRET,
+  });
 }
 
 
 const productFormSchema = z.object({
   name: z.string().min(3, "Product name must be at least 3 characters long."),
   slug: z.string().min(3, "Slug must be at least 3 characters long.").regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Invalid slug format: only lowercase letters, numbers, and hyphens are allowed.'),
-  sku: z.string().optional().nullable(),
-  description: z.string().min(10, "Description must be at least 10 characters long."),
+  sku: z.coerce.number().int("SKU must be a whole number.").min(1, "SKU is required."),
+  description: z.string().optional(),
   price: z.coerce.number().min(0, "Price cannot be negative."),
   originalPrice: z.preprocess(
     (val) => (val === "" ? null : val),
@@ -35,128 +35,221 @@ const productFormSchema = z.object({
     z.coerce.number().min(0, "Buy price cannot be negative.").nullable().optional()
   ),
   stock: z.coerce.number().int("Stock must be a whole number.").min(0, "Stock cannot be negative."),
-  categoryId: z.string().min(1, "Category is required."),
-  brandId: z.string().min(1, "Brand is required."),
+  categoryId: z.string().optional(),
+  brandId: z.string().optional(),
   keywords: z.array(z.string()).optional(),
   images: z.array(z.any()).optional(),
   isTrending: z.boolean().default(false),
   isBestSelling: z.boolean().default(false),
   isFeatured: z.boolean().default(false),
+  discount: z.coerce.number().min(0).default(0),
+  status: z.enum(["draft", "published"]).default("published"),
 });
 
 export async function createProduct(data: unknown) {
-    const validatedFields = productFormSchema.safeParse(data);
+  const validatedFields = productFormSchema.safeParse(data);
 
-    if (!validatedFields.success) {
-        return {
-            success: false,
-            errors: validatedFields.error.flatten().fieldErrors,
-            message: 'Missing Fields. Failed to Create Product.',
-        };
+  if (!validatedFields.success) {
+    return {
+      success: false,
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Missing Fields. Failed to Create Product.',
+    };
+  }
+
+  const { slug, sku } = validatedFields.data;
+
+  const existingProduct = await db.query.products.findFirst({ where: eq(products.slug, slug) });
+  if (existingProduct) {
+    return { success: false, message: 'A product with this name already exists, resulting in a duplicate slug.' };
+  }
+
+  const existingProductSku = await db.query.products.findFirst({ where: eq(products.sku, sku) });
+  if (existingProductSku) {
+    return { success: false, message: `A product with this SKU (${sku}) already exists.` };
+  }
+
+  const images = validatedFields.data.images || [];
+
+  try {
+    await db.insert(products).values({
+      id: createId(),
+      ...validatedFields.data,
+      description: validatedFields.data.description || null,
+      categoryId: validatedFields.data.categoryId || null,
+      brandId: validatedFields.data.brandId || null,
+      price: String(validatedFields.data.price),
+      originalPrice: validatedFields.data.originalPrice != null ? String(validatedFields.data.originalPrice) : null,
+      buyPrice: validatedFields.data.buyPrice != null ? String(validatedFields.data.buyPrice) : null,
+      discount: String(validatedFields.data.discount),
+      images,
+      keywords: validatedFields.data.keywords || [],
+    });
+  } catch (error: any) {
+    // Enhanced error logging
+    console.error('Create Product Error:', error);
+    if (error.cause) console.error('Error Cause:', error.cause);
+    // @ts-ignore
+    if (error.body) console.error('Error Body:', error.body);
+
+    let details = error.detail || '';
+    if (!details && error.cause && (error.cause as any).detail) {
+      details = (error.cause as any).detail;
     }
-    
-    const { slug } = validatedFields.data;
-    const existingProduct = await db.query.products.findFirst({ where: eq(products.slug, slug) });
-    if (existingProduct) {
-        return { success: false, message: 'A product with this name already exists, resulting in a duplicate slug.' };
-    }
 
-    const images = validatedFields.data.images?.length ? validatedFields.data.images : ['https://placehold.co/600x400?text=No+Image'];
+    return {
+      success: false,
+      message: `Database Error: Failed to Create Product. ${error.message || ''} ${details ? '- ' + details : ''}`,
+    };
+  }
 
-    try {
-        await db.insert(products).values({
-            id: createId(),
-            ...validatedFields.data,
-            price: String(validatedFields.data.price),
-            originalPrice: validatedFields.data.originalPrice ? String(validatedFields.data.originalPrice) : null,
-            buyPrice: validatedFields.data.buyPrice ? String(validatedFields.data.buyPrice) : null,
-            images,
-            keywords: validatedFields.data.keywords || [],
-        });
-    } catch (error) {
-        console.error(error);
-        return {
-            success: false,
-            message: 'Database Error: Failed to Create Product.',
-        };
-    }
-
-    revalidatePath('/admin/products');
-    redirect('/admin/products');
+  revalidatePath('/admin/products');
+  redirect('/admin/products');
 }
 
 export async function updateProduct(id: string, data: unknown) {
-    const validatedFields = productFormSchema.safeParse(data);
+  const validatedFields = productFormSchema.safeParse(data);
 
-     if (!validatedFields.success) {
-        return {
-            success: false,
-            errors: validatedFields.error.flatten().fieldErrors,
-            message: 'Missing Fields. Failed to Update Product.',
-        };
+  if (!validatedFields.success) {
+    return {
+      success: false,
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Missing Fields. Failed to Update Product.',
+    };
+  }
+
+  const { slug, sku } = validatedFields.data;
+  const existingProduct = await db.query.products.findFirst({
+    where: and(eq(products.slug, slug), ne(products.id, id)),
+  });
+  if (existingProduct) {
+    return { success: false, message: 'A product with this name already exists, resulting in a duplicate slug.' };
+  }
+
+  const existingProductSku = await db.query.products.findFirst({
+    where: and(eq(products.sku, sku), ne(products.id, id)),
+  });
+  if (existingProductSku) {
+    return { success: false, message: `A product with this SKU (${sku}) already exists.` };
+  }
+
+  const images = validatedFields.data.images || [];
+
+  try {
+    await db.update(products).set({
+      ...validatedFields.data,
+      description: validatedFields.data.description || null,
+      categoryId: validatedFields.data.categoryId || null,
+      brandId: validatedFields.data.brandId || null,
+      price: String(validatedFields.data.price),
+      originalPrice: validatedFields.data.originalPrice != null ? String(validatedFields.data.originalPrice) : null,
+      buyPrice: validatedFields.data.buyPrice != null ? String(validatedFields.data.buyPrice) : null,
+      discount: String(validatedFields.data.discount),
+      images,
+      keywords: validatedFields.data.keywords || [],
+      updatedAt: new Date(),
+    }).where(eq(products.id, id));
+  } catch (error: any) {
+    // Enhanced error logging
+    console.error('Update Product Error:', error);
+    if (error.cause) console.error('Error Cause:', error.cause);
+    // @ts-ignore
+    if (error.body) console.error('Error Body:', error.body);
+
+    let details = error.detail || '';
+    if (!details && error.cause && (error.cause as any).detail) {
+      details = (error.cause as any).detail;
     }
-    
-    const { slug } = validatedFields.data;
-    const existingProduct = await db.query.products.findFirst({
-        where: and(eq(products.slug, slug), ne(products.id, id)),
-    });
-    if (existingProduct) {
-        return { success: false, message: 'A product with this name already exists, resulting in a duplicate slug.' };
-    }
 
-    const images = validatedFields.data.images?.length ? validatedFields.data.images : ['https://placehold.co/600x400?text=No+Image'];
+    return {
+      success: false,
+      message: `Database Error: Failed to Update Product. ${error.message || ''} ${details ? '- ' + details : ''}`,
+    };
+  }
 
-    try {
-        await db.update(products).set({
-            ...validatedFields.data,
-            price: String(validatedFields.data.price),
-            originalPrice: validatedFields.data.originalPrice ? String(validatedFields.data.originalPrice) : null,
-            buyPrice: validatedFields.data.buyPrice ? String(validatedFields.data.buyPrice) : null,
-            images,
-            keywords: validatedFields.data.keywords || [],
-        }).where(eq(products.id, id));
-    } catch (error) {
-        console.error(error);
-        return {
-            success: false,
-            message: 'Database Error: Failed to Update Product.',
-        };
-    }
-
-    revalidatePath('/admin/products');
-    revalidatePath(`/products/${slug}`);
-    revalidatePath(`/admin/products/${id}/edit`);
-    redirect('/admin/products');
+  revalidatePath('/admin/products');
+  revalidatePath(`/products/${slug}`);
+  redirect('/admin/products');
 }
 
 export async function deleteProduct(id: string) {
-    try {
-        const productToDelete = await getProductById(id);
+  try {
+    const productToDelete = await getProductById(id);
 
-        // Delete images from Cloudinary
-        if (productToDelete && productToDelete.images.length > 0) {
-            const imagesToDelete = productToDelete.images.filter(img => img && img.includes('cloudinary'));
-            if (imagesToDelete.length > 0) {
-                const publicIds = imagesToDelete.map(url => {
-                    const match = url.match(/abrar-shop\/([^.]+)/);
-                    return match ? match[0] : null;
-                }).filter((id): id is string => id !== null);
+    // Delete images from Cloudinary
+    if (productToDelete && productToDelete.images.length > 0) {
+      const imagesToDelete = productToDelete.images.filter(img => img && img.includes('cloudinary'));
+      if (imagesToDelete.length > 0) {
+        const publicIds = imagesToDelete.map(url => {
+          const match = url.match(/abrar-shop\/([^.]+)/);
+          return match ? match[0] : null;
+        }).filter((id): id is string => id !== null);
 
-                if (publicIds.length > 0) {
-                    await cloudinary.api.delete_resources(publicIds);
-                }
-            }
+        if (publicIds.length > 0) {
+          await cloudinary.api.delete_resources(publicIds);
         }
-        
-        await db.delete(products).where(eq(products.id, id));
-        revalidatePath('/admin/products');
-        return { message: 'Deleted Product.' };
-    } catch (error) {
-        console.error(error);
-        return {
-            message: 'Database Error: Failed to Delete Product.',
-        };
+      }
     }
+
+    await db.delete(products).where(eq(products.id, id));
+    revalidatePath('/admin/products');
+    return { message: 'Deleted Product.' };
+  } catch (error) {
+    console.error(error);
+    return {
+      message: 'Database Error: Failed to Delete Product.',
+    };
+  }
+}
+
+// Brand Actions
+export async function deleteMultipleProducts(ids: string[]) {
+  try {
+    // 1. Fetch products to get image URLs
+    const productsToDelete = await db.query.products.findMany({
+      where: inArray(products.id, ids),
+    });
+
+    // 2. Collect all public IDs to delete from Cloudinary
+    const publicIdsToDelete: string[] = [];
+    productsToDelete.forEach((product: any) => {
+      if (product.images && product.images.length > 0) {
+        product.images.forEach((url: string) => {
+          if (url && url.includes('cloudinary')) {
+            const match = url.match(/abrar-shop\/([^.]+)/);
+            if (match && match[0]) {
+              publicIdsToDelete.push(match[0]);
+            }
+          }
+        });
+      }
+    });
+
+    // 3. Delete images from Cloudinary
+    if (publicIdsToDelete.length > 0) {
+      const chunkSize = 100;
+      for (let i = 0; i < publicIdsToDelete.length; i += chunkSize) {
+        const chunk = publicIdsToDelete.slice(i, i + chunkSize);
+        try {
+          await cloudinary.api.delete_resources(chunk);
+        } catch (cError) {
+          console.error("Failed to delete some images from cloudinary", cError);
+        }
+      }
+    }
+
+    // 4. Delete products from DB
+    await db.delete(products).where(inArray(products.id, ids));
+
+    revalidatePath('/admin/products');
+    return { success: true, message: `Deleted ${ids.length} products.` };
+  } catch (error) {
+    console.error('Delete multiple products error:', error);
+    return {
+      success: false,
+      message: 'Database Error: Failed to Delete Products.',
+    };
+  }
 }
 
 // Brand Actions
@@ -177,7 +270,7 @@ export async function createBrand(data: unknown) {
   if (existing) {
     return { success: false, message: 'A brand with this name already exists, resulting in a duplicate slug.' };
   }
-  
+
   try {
     await db.insert(brands).values({ id: createId(), name, slug, imageUrl });
   } catch (error: any) {
@@ -201,7 +294,7 @@ export async function updateBrand(id: string, data: unknown) {
   }
 
   try {
-    await db.update(brands).set({ name, slug, imageUrl }).where(eq(brands.id, id));
+    await db.update(brands).set({ name, slug, imageUrl, updatedAt: new Date() }).where(eq(brands.id, id));
   } catch (error: any) {
     console.error(error);
     return { success: false, message: error.message || 'Database Error: Failed to update brand.' };
@@ -212,25 +305,25 @@ export async function updateBrand(id: string, data: unknown) {
 }
 
 export async function deleteBrand(id: string) {
-    try {
-        const brandToDelete = await getBrandById(id);
-        if (brandToDelete && brandToDelete.imageUrl && brandToDelete.imageUrl.includes('cloudinary')) {
-            const publicIdMatch = brandToDelete.imageUrl.match(/abrar-shop\/([^.]+)/);
-            if (publicIdMatch && publicIdMatch[0]) {
-                await cloudinary.uploader.destroy(publicIdMatch[0]);
-            }
-        }
-
-        await db.delete(brands).where(eq(brands.id, id));
-        revalidatePath('/admin/brands');
-        return { message: 'Deleted brand.' };
-    } catch (error: any) {
-        if (error && error.code === '23503') {
-            return { message: 'Failed to delete brand. It is currently being used by one or more products.' };
-        }
-        console.error('Delete brand error:', error);
-        return { message: 'Database Error: Failed to delete brand.' };
+  try {
+    const brandToDelete = await getBrandById(id);
+    if (brandToDelete && brandToDelete.imageUrl && brandToDelete.imageUrl.includes('cloudinary')) {
+      const publicIdMatch = brandToDelete.imageUrl.match(/abrar-shop\/([^.]+)/);
+      if (publicIdMatch && publicIdMatch[0]) {
+        await cloudinary.uploader.destroy(publicIdMatch[0]);
+      }
     }
+
+    await db.delete(brands).where(eq(brands.id, id));
+    revalidatePath('/admin/brands');
+    return { message: 'Deleted brand.' };
+  } catch (error: any) {
+    if (error && error.code === '23503') {
+      return { message: 'Failed to delete brand. It is currently being used by one or more products.' };
+    }
+    console.error('Delete brand error:', error);
+    return { message: 'Database Error: Failed to delete brand.' };
+  }
 }
 
 // Category Actions
@@ -239,6 +332,7 @@ const categorySchema = z.object({
   slug: z.string().min(2, 'Slug must be at least 2 characters long.'),
   parentId: z.string().optional(),
   imageUrl: z.string().optional().nullable(),
+  isFeatured: z.boolean().default(false),
 });
 
 export async function createCategory(data: unknown) {
@@ -246,7 +340,7 @@ export async function createCategory(data: unknown) {
   if (!validatedFields.success) {
     return { success: false, errors: validatedFields.error.flatten().fieldErrors, message: 'Failed to create category.' };
   }
-  const { name, slug, parentId, imageUrl } = validatedFields.data;
+  const { name, slug, parentId, imageUrl, isFeatured } = validatedFields.data;
 
   const existing = await db.query.categories.findFirst({ where: eq(categories.slug, slug) });
   if (existing) {
@@ -254,12 +348,13 @@ export async function createCategory(data: unknown) {
   }
 
   try {
-    await db.insert(categories).values({ 
-        id: createId(), 
-        name,
-        slug,
-        parentId: (parentId && parentId !== 'none') ? parentId : null,
-        imageUrl
+    await db.insert(categories).values({
+      id: createId(),
+      name,
+      slug,
+      parentId: (parentId && parentId !== 'none') ? parentId : null,
+      imageUrl,
+      isFeatured
     });
   } catch (error: any) {
     console.error(error);
@@ -274,19 +369,21 @@ export async function updateCategory(id: string, data: unknown) {
   if (!validatedFields.success) {
     return { success: false, errors: validatedFields.error.flatten().fieldErrors, message: 'Failed to update category.' };
   }
-  const { name, slug, parentId, imageUrl } = validatedFields.data;
+  const { name, slug, parentId, imageUrl, isFeatured } = validatedFields.data;
 
   const existing = await db.query.categories.findFirst({ where: and(eq(categories.slug, slug), ne(categories.id, id)) });
   if (existing) {
-     return { success: false, message: 'A category with this name already exists, resulting in a duplicate slug.' };
+    return { success: false, message: 'A category with this name already exists, resulting in a duplicate slug.' };
   }
-  
+
   try {
     await db.update(categories).set({
-        name,
-        slug,
-        parentId: (parentId && parentId !== 'none') ? parentId : null,
-        imageUrl,
+      name,
+      slug,
+      parentId: (parentId && parentId !== 'none') ? parentId : null,
+      imageUrl,
+      isFeatured: isFeatured,
+      updatedAt: new Date(),
     }).where(eq(categories.id, id));
   } catch (error: any) {
     console.error(error);
@@ -298,35 +395,48 @@ export async function updateCategory(id: string, data: unknown) {
 }
 
 export async function deleteCategory(id: string) {
-    try {
-        const children = await db.query.categories.findFirst({ where: eq(categories.parentId, id) });
-        if (children) {
-            return { message: 'Failed to delete category. It has one or more sub-categories.' };
-        }
-        
-        const categoryToDelete = await getCategoryById(id);
-        if (categoryToDelete && categoryToDelete.imageUrl && categoryToDelete.imageUrl.includes('cloudinary')) {
-            const publicIdMatch = categoryToDelete.imageUrl.match(/abrar-shop\/([^.]+)/);
-            if (publicIdMatch && publicIdMatch[0]) {
-                await cloudinary.uploader.destroy(publicIdMatch[0]);
-            }
-        }
-
-        await db.delete(categories).where(eq(categories.id, id));
-        revalidatePath('/admin/categories');
-        return { message: 'Deleted category.' };
-    } catch (error: any) {
-        if (error && error.code === '23503') {
-            return { message: 'Failed to delete category. It is currently being used by one or more products.' };
-        }
-        console.error(error);
-        return { message: 'Database Error: Failed to delete category.' };
+  try {
+    const children = await db.query.categories.findFirst({ where: eq(categories.parentId, id) });
+    if (children) {
+      return { message: 'Failed to delete category. It has one or more sub-categories.' };
     }
+
+    const categoryToDelete = await getCategoryById(id);
+    if (categoryToDelete && categoryToDelete.imageUrl && categoryToDelete.imageUrl.includes('cloudinary')) {
+      const publicIdMatch = categoryToDelete.imageUrl.match(/abrar-shop\/([^.]+)/);
+      if (publicIdMatch && publicIdMatch[0]) {
+        await cloudinary.uploader.destroy(publicIdMatch[0]);
+      }
+    }
+
+    await db.delete(categories).where(eq(categories.id, id));
+    revalidatePath('/admin/categories');
+    return { message: 'Deleted category.' };
+  } catch (error: any) {
+    if (error && error.code === '23503') {
+      return { message: 'Failed to delete category. It is currently being used by one or more products.' };
+    }
+    console.error(error);
+    return { message: 'Database Error: Failed to delete category.' };
+  }
+}
+
+export async function toggleCategoryFeatured(id: string, isFeatured: boolean) {
+  try {
+    await db.update(categories).set({ isFeatured, updatedAt: new Date() }).where(eq(categories.id, id));
+    revalidatePath('/admin/categories');
+    return { success: true, message: `Category ${isFeatured ? 'marked as featured' : 'removed from featured'}.` };
+  } catch (error) {
+    console.error(error);
+    return { success: false, message: 'Database Error: Failed to toggle featured status.' };
+  }
 }
 
 // JSON returning actions for use in client components
 const quickBrandSchema = z.object({
   name: z.string().min(2, 'Brand name must be at least 2 characters long.'),
+  slug: z.string().min(2, 'Slug must be at least 2 characters long.').optional(),
+  imageUrl: z.string().optional().nullable(),
 });
 
 export async function createBrandJson(data: unknown) {
@@ -334,18 +444,17 @@ export async function createBrandJson(data: unknown) {
   if (!validatedFields.success) {
     return { success: false, errors: validatedFields.error.flatten().fieldErrors, message: 'Failed to create brand.' };
   }
-  
-  const { name } = validatedFields.data;
-  let slug = generateSlug(name);
+
+  const { name, slug: providedSlug, imageUrl } = validatedFields.data;
+  let slug = providedSlug || generateSlug(name);
   const existing = await db.query.brands.findFirst({ where: eq(brands.slug, slug) });
   if (existing) {
     return { success: false, message: 'A brand with this name already exists.' };
   }
 
   try {
-    const [newBrand] = await db.insert(brands).values({ id: createId(), name, slug }).returning();
+    const [newBrand] = await db.insert(brands).values({ id: createId(), name, slug, imageUrl }).returning();
     revalidatePath('/admin/brands');
-    revalidatePath('/admin/products');
     return { success: true, brand: newBrand };
   } catch (error) {
     console.error(error);
@@ -355,7 +464,10 @@ export async function createBrandJson(data: unknown) {
 
 const quickCategorySchema = z.object({
   name: z.string().min(2, 'Category name must be at least 2 characters long.'),
-  parentId: z.string().optional(),
+  slug: z.string().min(2, 'Slug must be at least 2 characters long.').optional(),
+  parentId: z.string().optional().nullable(),
+  imageUrl: z.string().optional().nullable(),
+  isFeatured: z.boolean().default(false),
 });
 
 export async function createCategoryJson(data: unknown) {
@@ -363,8 +475,8 @@ export async function createCategoryJson(data: unknown) {
   if (!validatedFields.success) {
     return { success: false, errors: validatedFields.error.flatten().fieldErrors, message: 'Failed to create category.' };
   }
-  const { name, parentId } = validatedFields.data;
-  let slug = generateSlug(name);
+  const { name, slug: providedSlug, parentId, imageUrl, isFeatured } = validatedFields.data;
+  let slug = providedSlug || generateSlug(name);
 
   const existing = await db.query.categories.findFirst({ where: eq(categories.slug, slug) });
   if (existing) {
@@ -377,15 +489,16 @@ export async function createCategoryJson(data: unknown) {
       name,
       slug,
       parentId: (parentId && parentId !== 'none') ? parentId : null,
+      imageUrl,
+      isFeatured
     }).returning();
-    
+
     revalidatePath('/admin/categories');
-    revalidatePath('/admin/products');
 
     let parentName: string | null = null;
     if (newCategory.parentId) {
-        const parent = await db.query.categories.findFirst({ where: eq(categories.id, newCategory.parentId) });
-        parentName = parent?.name || null;
+      const parent = await db.query.categories.findFirst({ where: eq(categories.id, newCategory.parentId) });
+      parentName = parent?.name || null;
     }
 
     return { success: true, category: { ...newCategory, parentName } };
@@ -397,60 +510,97 @@ export async function createCategoryJson(data: unknown) {
 
 // Slug checking actions (kept for potential future client-side validation)
 export async function checkProductSlug(slug: string, id?: string) {
-    if (!slug) return { isUnique: false, message: 'Slug cannot be empty.' };
-    try {
-        const query = db.query.products.findFirst({
-            where: id
-                ? and(eq(products.slug, slug), ne(products.id, id))
-                : eq(products.slug, slug),
-        });
-        const existing = await query;
-        if (existing) {
-            return { isUnique: false, message: 'This slug is already in use.' };
-        }
-        return { isUnique: true, message: 'Slug is available.' };
-    } catch (error) {
-        console.error(error);
-        return { isUnique: false, message: 'Error checking slug.' };
+  if (!slug) return { isUnique: false, message: 'Slug cannot be empty.' };
+  try {
+    const query = db.query.products.findFirst({
+      where: id
+        ? and(eq(products.slug, slug), ne(products.id, id))
+        : eq(products.slug, slug),
+    });
+    const existing = await query;
+    if (existing) {
+      return { isUnique: false, message: 'This slug is already in use.' };
     }
+    return { isUnique: true, message: 'Slug is available.' };
+  } catch (error) {
+    console.error(error);
+    return { isUnique: false, message: 'Error checking slug.' };
+  }
+}
+
+export async function checkProductSku(val: string | number, id?: string) {
+  const sku = typeof val === 'string' ? parseInt(val, 10) : val;
+  if (isNaN(sku)) return { isUnique: false, message: 'Invalid SKU.' };
+
+  try {
+    const query = db.query.products.findFirst({
+      where: id
+        ? and(eq(products.sku, sku), ne(products.id, id))
+        : eq(products.sku, sku),
+    });
+    const existing = await query;
+    if (existing) {
+      return { isUnique: false, message: 'This SKU is already in use.' };
+    }
+    return { isUnique: true, message: 'SKU is available.' };
+  } catch (error) {
+    console.error(error);
+    return { isUnique: false, message: 'Error checking SKU.' };
+  }
+}
+
+export async function getLatestSku() {
+  try {
+    const latestProduct = await db.query.products.findFirst({
+      orderBy: desc(products.sku),
+      columns: {
+        sku: true,
+      },
+    });
+
+    return latestProduct?.sku ?? null;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
 }
 
 export async function checkBrandSlug(slug: string, id?: string) {
-    if (!slug) return { isUnique: false, message: 'Slug cannot be empty.' };
-    try {
-        const query = db.query.brands.findFirst({
-            where: id
-                ? and(eq(brands.slug, slug), ne(brands.id, id))
-                : eq(brands.slug, slug),
-        });
-        const existing = await query;
-        if (existing) {
-            return { isUnique: false, message: 'This slug is already in use.' };
-        }
-        return { isUnique: true, message: 'Slug is available.' };
-    } catch (error) {
-        console.error(error);
-        return { isUnique: false, message: 'Error checking slug.' };
+  if (!slug) return { isUnique: false, message: 'Slug cannot be empty.' };
+  try {
+    const query = db.query.brands.findFirst({
+      where: id
+        ? and(eq(brands.slug, slug), ne(brands.id, id))
+        : eq(brands.slug, slug),
+    });
+    const existing = await query;
+    if (existing) {
+      return { isUnique: false, message: 'This slug is already in use.' };
     }
+    return { isUnique: true, message: 'Slug is available.' };
+  } catch (error) {
+    console.error(error);
+    return { isUnique: false, message: 'Error checking slug.' };
+  }
 }
 
 export async function checkCategorySlug(slug: string, id?: string) {
-    if (!slug) return { isUnique: false, message: 'Slug cannot be empty.' };
-    try {
-        const query = db.query.categories.findFirst({
-            where: id
-                ? and(eq(categories.slug, slug), ne(categories.id, id))
-                : eq(categories.slug, slug),
-        });
-        const existing = await query;
-        if (existing) {
-            return { isUnique: false, message: 'This slug is already in use.' };
-        }
-        return { isUnique: true, message: 'Slug is available.' };
-    } catch (error) {
-        console.error(error);
-        return { isUnique: false, message: 'Error checking slug.' };
+  if (!slug) return { isUnique: false, message: 'Slug cannot be empty.' };
+  try {
+    const query = db.query.categories.findFirst({
+      where: id
+        ? and(eq(categories.slug, slug), ne(categories.id, id))
+        : eq(categories.slug, slug),
+    });
+    const existing = await query;
+    if (existing) {
+      return { isUnique: false, message: 'This slug is already in use.' };
     }
+    return { isUnique: true, message: 'Slug is available.' };
+  } catch (error) {
+    console.error(error);
+    return { isUnique: false, message: 'Error checking slug.' };
+  }
 }
 
 
@@ -471,17 +621,17 @@ export async function createHeroSlider(data: unknown) {
     return { success: false, errors: validatedFields.error.flatten().fieldErrors, message: 'Failed to create hero slider.' };
   }
   const { title, subtitle, imageUrl, link, displayOrder, isActive, type } = validatedFields.data;
-  
+
   try {
-    await db.insert(heroSliders).values({ 
-        id: createId(), 
-        title,
-        subtitle: subtitle || null,
-        imageUrl: imageUrl,
-        link: link || null,
-        displayOrder,
-        isActive,
-        type,
+    await db.insert(heroSliders).values({
+      id: createId(),
+      title,
+      subtitle: subtitle || null,
+      imageUrl: imageUrl,
+      link: link || null,
+      displayOrder,
+      isActive,
+      type,
     });
   } catch (error: any) {
     console.error(error);
@@ -497,16 +647,17 @@ export async function updateHeroSlider(id: string, data: unknown) {
     return { success: false, errors: validatedFields.error.flatten().fieldErrors, message: 'Failed to update hero slider.' };
   }
   const { title, subtitle, imageUrl, link, displayOrder, isActive, type } = validatedFields.data;
-  
+
   try {
     await db.update(heroSliders).set({
-        title,
-        subtitle: subtitle || null,
-        imageUrl: imageUrl,
-        link: link || null,
-        displayOrder,
-        isActive,
-        type,
+      title,
+      subtitle: subtitle || null,
+      imageUrl: imageUrl,
+      link: link || null,
+      displayOrder,
+      isActive,
+      type,
+      updatedAt: new Date(),
     }).where(eq(heroSliders.id, id));
   } catch (error: any) {
     console.error(error);
@@ -519,25 +670,25 @@ export async function updateHeroSlider(id: string, data: unknown) {
 }
 
 export async function deleteHeroSlider(id: string) {
-    try {
-        const sliderToDelete = await getHeroSliderById(id);
-        
-        if (sliderToDelete && sliderToDelete.imageUrl && sliderToDelete.imageUrl.includes('cloudinary')) {
-            // Extract public ID from URL and delete from Cloudinary
-            const publicIdMatch = sliderToDelete.imageUrl.match(/abrar-shop\/([^.]+)/);
-            if (publicIdMatch && publicIdMatch[0]) {
-                await cloudinary.uploader.destroy(publicIdMatch[0]);
-            }
-        }
+  try {
+    const sliderToDelete = await getHeroSliderById(id);
 
-        await db.delete(heroSliders).where(eq(heroSliders.id, id));
-        revalidatePath('/admin/hero-sliders');
-        revalidatePath('/');
-        return { message: 'Deleted hero slider.' };
-    } catch (error) {
-        console.error('Delete hero slider error:', error);
-        return { message: 'Database Error: Failed to delete hero slider.' };
+    if (sliderToDelete && sliderToDelete.imageUrl && sliderToDelete.imageUrl.includes('cloudinary')) {
+      // Extract public ID from URL and delete from Cloudinary
+      const publicIdMatch = sliderToDelete.imageUrl.match(/abrar-shop\/([^.]+)/);
+      if (publicIdMatch && publicIdMatch[0]) {
+        await cloudinary.uploader.destroy(publicIdMatch[0]);
+      }
     }
+
+    await db.delete(heroSliders).where(eq(heroSliders.id, id));
+    revalidatePath('/admin/hero-sliders');
+    revalidatePath('/');
+    return { message: 'Deleted hero slider.' };
+  } catch (error) {
+    console.error('Delete hero slider error:', error);
+    return { message: 'Database Error: Failed to delete hero slider.' };
+  }
 }
 
 
@@ -577,38 +728,42 @@ export async function processCheckout(data: unknown) {
 }
 
 export async function searchProducts(query: string, limit: number) {
-    if (!query) {
-        return [];
-    }
-    const { products } = await getProducts({ query, limit });
-    return products;
+  if (!query) {
+    return [];
+  }
+  const { products } = await getProducts({ query, limit });
+  return products;
 }
 
 export async function uploadImage(formData: FormData): Promise<{ success: boolean; url?: string; message?: string; }> {
-    const file = formData.get('file') as File | null;
+  const file = formData.get('file') as File | null;
 
-    if (!file) {
-        return { success: false, message: 'No file provided.' };
-    }
+  if (!file) {
+    return { success: false, message: 'No file provided.' };
+  }
 
-    if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
-         return { success: false, message: 'Cloudinary environment variables are not configured.' };
-    }
+  if (!process.env.CLOUDINARY_CLOUD_NAME || !process.env.CLOUDINARY_API_KEY || !process.env.CLOUDINARY_API_SECRET) {
+    return { success: false, message: 'Cloudinary environment variables are not configured.' };
+  }
 
-    try {
-        const fileBuffer = await file.arrayBuffer();
-        const mime = file.type;
-        const encoding = 'base64';
-        const base64Data = Buffer.from(fileBuffer).toString('base64');
-        const fileUri = `data:${mime};${encoding},${base64Data}`;
+  try {
+    const fileBuffer = await file.arrayBuffer();
+    const buffer = Buffer.from(fileBuffer);
 
-        const result = await cloudinary.uploader.upload(fileUri, {
-            folder: 'abrar-shop',
-        });
+    const result = await new Promise((resolve, reject) => {
+      const uploadStream = cloudinary.uploader.upload_stream(
+        { folder: 'abrar-shop' },
+        (error, result) => {
+          if (error) reject(error);
+          else resolve(result);
+        }
+      );
+      uploadStream.end(buffer);
+    }) as any;
 
-        return { success: true, url: result.secure_url };
-    } catch (error) {
-        console.error('Cloudinary upload error:', error);
-        return { success: false, message: 'Failed to upload image.' };
-    }
+    return { success: true, url: result.secure_url };
+  } catch (error) {
+    console.error('Cloudinary upload error:', error);
+    return { success: false, message: 'Failed to upload image.' };
+  }
 }

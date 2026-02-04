@@ -43,17 +43,19 @@ const heroSliderSchema = z.object({
     subtitle: z.string().optional(),
     imageUrl: z.any().refine(val => val, { message: "Image is required." }),
     link: z.string().optional(),
-    displayOrder: z.preprocess((val) => Number(val), z.number().int().default(0)),
-    isActive: z.boolean().default(false),
+    displayOrder: z.preprocess((val) => Number(val), z.number().int().min(1, "Display order must be at least 1").default(1)),
+    isActive: z.boolean().default(true),
     type: z.enum(['carousel', 'promo-top', 'promo-bottom']).default('carousel'),
 });
 
 type HeroSliderFormProps = {
     slider?: HeroSlider;
     onSubmit: (data: Omit<HeroSliderFormValues, 'imageUrl'> & { imageUrl: string }) => Promise<any>;
+    hideCard?: boolean;
+    onSuccess?: () => void;
 };
 
-export function HeroSliderForm({ slider, onSubmit }: HeroSliderFormProps) {
+export function HeroSliderForm({ slider, onSubmit, hideCard = false, onSuccess }: HeroSliderFormProps) {
     const form = useForm<HeroSliderFormValues>({
         resolver: zodResolver(heroSliderSchema) as any,
         defaultValues: {
@@ -61,8 +63,8 @@ export function HeroSliderForm({ slider, onSubmit }: HeroSliderFormProps) {
             subtitle: slider?.subtitle || "",
             imageUrl: slider?.imageUrl || null,
             link: slider?.link || "",
-            displayOrder: slider?.displayOrder || 0,
-            isActive: slider?.isActive || false,
+            displayOrder: slider?.displayOrder || 1,
+            isActive: slider?.isActive ?? true,
             type: slider?.type || "carousel",
         },
     });
@@ -118,8 +120,15 @@ export function HeroSliderForm({ slider, onSubmit }: HeroSliderFormProps) {
                     type: "server",
                     message: result.message,
                 });
+            } else {
+                onSuccess?.();
             }
-        } catch (error) {
+        } catch (error: any) {
+            if (error.message === 'NEXT_REDIRECT' || error.message?.includes('NEXT_REDIRECT')) {
+                setUploadProgress(null);
+                onSuccess?.();
+                throw error;
+            }
             toast({
                 variant: "destructive",
                 title: "An error occurred",
@@ -133,7 +142,7 @@ export function HeroSliderForm({ slider, onSubmit }: HeroSliderFormProps) {
     return (
         <>
             <Dialog open={uploadProgress !== null}>
-                <DialogContent onInteractOutside={(e) => e.preventDefault()}>
+                <DialogContent onInteractOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
                     <DialogHeader>
                         <DialogTitle>Saving Slider</DialogTitle>
                         <DialogDescription>
@@ -145,11 +154,10 @@ export function HeroSliderForm({ slider, onSubmit }: HeroSliderFormProps) {
             </Dialog>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleAction)}>
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div className="lg:col-span-2 space-y-8">
-                            <Card>
-                                <CardHeader><CardTitle>Slider Details</CardTitle></CardHeader>
-                                <CardContent className="space-y-4">
+                    <div className={hideCard ? "space-y-4" : "grid grid-cols-1 lg:grid-cols-3 gap-8"}>
+                        <div className={hideCard ? "space-y-4" : "lg:col-span-2 space-y-8"}>
+                            {hideCard ? (
+                                <div className="space-y-4">
                                     <FormField
                                         control={form.control}
                                         name="title"
@@ -179,18 +187,106 @@ export function HeroSliderForm({ slider, onSubmit }: HeroSliderFormProps) {
                                             <FormItem>
                                                 <FormLabel>Link URL</FormLabel>
                                                 <FormControl><Input placeholder="/products/some-product" {...field} value={field.value ?? ""} disabled={isSubmitting} /></FormControl>
-                                                <FormDescription>Where the user should go when they click the slider. e.g., /products</FormDescription>
+                                                <FormDescription>Where to go when clicked. e.g., /products</FormDescription>
                                                 <FormMessage />
                                             </FormItem>
                                         )}
                                     />
-                                </CardContent>
-                            </Card>
+                                </div>
+                            ) : (
+                                <Card>
+                                    <CardHeader><CardTitle>Slider Details</CardTitle></CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="title"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Title</FormLabel>
+                                                    <FormControl><Input placeholder="e.g. New Collection" {...field} disabled={isSubmitting} /></FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="subtitle"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Subtitle</FormLabel>
+                                                    <FormControl><Textarea placeholder="e.g. Shop the latest trends" {...field} value={field.value ?? ""} disabled={isSubmitting} /></FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
+                                            name="link"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Link URL</FormLabel>
+                                                    <FormControl><Input placeholder="/products/some-product" {...field} value={field.value ?? ""} disabled={isSubmitting} /></FormControl>
+                                                    <FormDescription>Where the user should go when they click the slider. e.g., /products</FormDescription>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </CardContent>
+                                </Card>
+                            )}
+
+                            {hideCard ? (
+                                <FormField
+                                    control={form.control}
+                                    name="imageUrl"
+                                    render={({ field }) => (
+                                        <FormItem>
+                                            <FormLabel>Slider Image</FormLabel>
+                                            <FormControl>
+                                                <ImageUploader
+                                                    value={field.value ? [field.value] : []}
+                                                    onChange={(images) => field.onChange(images.length > 0 ? images[images.length - 1] : null)}
+                                                    disabled={isSubmitting}
+                                                    aspectRatio="video"
+                                                    maxImages={1}
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                        </FormItem>
+                                    )}
+                                />
+                            ) : (
+                                <Card>
+                                    <CardHeader><CardTitle>Slider Image</CardTitle></CardHeader>
+                                    <CardContent>
+                                        <FormField
+                                            control={form.control}
+                                            name="imageUrl"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormControl>
+                                                        <ImageUploader
+                                                            value={field.value ? [field.value] : []}
+                                                            onChange={(images) => field.onChange(images.length > 0 ? images[images.length - 1] : null)}
+                                                            disabled={isSubmitting}
+                                                            aspectRatio="video"
+                                                            maxImages={1}
+                                                        />
+                                                    </FormControl>
+                                                    <FormDescription>
+                                                        Recommended aspect ratio: 16:9 for Carousel, flexible for Promo.
+                                                    </FormDescription>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </CardContent>
+                                </Card>
+                            )}
                         </div>
-                        <div className="space-y-8">
-                            <Card>
-                                <CardHeader><CardTitle>Organization</CardTitle></CardHeader>
-                                <CardContent className="space-y-4">
+                        <div className={hideCard ? "space-y-4" : "space-y-8"}>
+                            {hideCard ? (
+                                <div className="space-y-4">
                                     <FormField
                                         control={form.control}
                                         name="type"
@@ -199,7 +295,7 @@ export function HeroSliderForm({ slider, onSubmit }: HeroSliderFormProps) {
                                                 <FormLabel>Banner Type</FormLabel>
                                                 <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
                                                     <FormControl>
-                                                        <SelectTrigger>
+                                                        <SelectTrigger className="w-full">
                                                             <SelectValue placeholder="Select a banner type" />
                                                         </SelectTrigger>
                                                     </FormControl>
@@ -209,22 +305,29 @@ export function HeroSliderForm({ slider, onSubmit }: HeroSliderFormProps) {
                                                         <SelectItem value="promo-bottom">Promo Banner (Bottom Right)</SelectItem>
                                                     </SelectContent>
                                                 </Select>
-                                                <FormDescription>Select where this banner will be displayed.</FormDescription>
                                                 <FormMessage />
                                             </FormItem>
                                         )}
                                     />
+                                    {form.watch("type") === "carousel" && (
+                                        <FormField
+                                            control={form.control}
+                                            name="displayOrder"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Display Order</FormLabel>
+                                                    <FormControl><Input type="number" min="1" {...field} onChange={(e) => field.onChange(parseInt(e.target.value) || 1)} disabled={isSubmitting} /></FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                    )}
                                     <FormField
                                         control={form.control}
                                         name="isActive"
                                         render={({ field }) => (
                                             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
-                                                <div className="space-y-0.5">
-                                                    <FormLabel>Active</FormLabel>
-                                                    <FormDescription>
-                                                        Show this banner on the homepage.
-                                                    </FormDescription>
-                                                </div>
+                                                <FormLabel>Active</FormLabel>
                                                 <FormControl>
                                                     <Switch
                                                         checked={field.value}
@@ -235,56 +338,90 @@ export function HeroSliderForm({ slider, onSubmit }: HeroSliderFormProps) {
                                             </FormItem>
                                         )}
                                     />
-                                    <FormField
-                                        control={form.control}
-                                        name="displayOrder"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormLabel>Display Order</FormLabel>
-                                                <FormControl><Input type="number" {...field} disabled={isSubmitting} /></FormControl>
-                                                <FormDescription>A lower number will be shown first.</FormDescription>
-                                                <FormMessage />
-                                            </FormItem>
+                                </div>
+                            ) : (
+                                <Card>
+                                    <CardHeader><CardTitle>Organization</CardTitle></CardHeader>
+                                    <CardContent className="space-y-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="type"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Banner Type</FormLabel>
+                                                    <Select onValueChange={field.onChange} defaultValue={field.value} disabled={isSubmitting}>
+                                                        <FormControl>
+                                                            <SelectTrigger className="w-full">
+                                                                <SelectValue placeholder="Select a banner type" />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            <SelectItem value="carousel">Carousel Slide</SelectItem>
+                                                            <SelectItem value="promo-top">Promo Banner (Top Right)</SelectItem>
+                                                            <SelectItem value="promo-bottom">Promo Banner (Bottom Right)</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormDescription>Select where this banner will be displayed.</FormDescription>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        {form.watch("type") === "carousel" && (
+                                            <FormField
+                                                control={form.control}
+                                                name="displayOrder"
+                                                render={({ field }) => (
+                                                    <FormItem>
+                                                        <FormLabel>Display Order</FormLabel>
+                                                        <FormControl><Input type="number" min="1" {...field} onChange={(e) => field.onChange(parseInt(e.target.value) || 1)} disabled={isSubmitting} /></FormControl>
+                                                        <FormDescription>A lower number will be shown first.</FormDescription>
+                                                        <FormMessage />
+                                                    </FormItem>
+                                                )}
+                                            />
                                         )}
-                                    />
-                                </CardContent>
-                            </Card>
-                            <Card>
-                                <CardHeader><CardTitle>Slider Image</CardTitle></CardHeader>
-                                <CardContent>
-                                    <FormField
-                                        control={form.control}
-                                        name="imageUrl"
-                                        render={({ field }) => (
-                                            <FormItem>
-                                                <FormControl>
-                                                    <ImageUploader
-                                                        value={field.value ? [field.value] : []}
-                                                        onChange={(images) => field.onChange(images.length > 0 ? images[images.length - 1] : null)}
-                                                        disabled={isSubmitting}
-                                                    />
-                                                </FormControl>
-                                                <FormDescription>
-                                                    Recommended aspect ratio: 16:9 for Carousel, flexible for Promo.
-                                                </FormDescription>
-                                                <FormMessage />
-                                            </FormItem>
-                                        )}
-                                    />
-                                </CardContent>
-                            </Card>
+                                        <FormField
+                                            control={form.control}
+                                            name="isActive"
+                                            render={({ field }) => (
+                                                <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+                                                    <div className="space-y-0.5">
+                                                        <FormLabel>Active</FormLabel>
+                                                    </div>
+                                                    <FormControl>
+                                                        <Switch
+                                                            checked={field.value}
+                                                            onCheckedChange={field.onChange}
+                                                            disabled={isSubmitting}
+                                                        />
+                                                    </FormControl>
+                                                </FormItem>
+                                            )}
+                                        />
+                                    </CardContent>
+                                </Card>
+                            )}
                         </div>
                     </div>
-                    <CardFooter className="border-t px-0 pt-6 mt-8">
-                        <div className="flex justify-end gap-2 w-full">
-                            <Button variant="outline" asChild disabled={isSubmitting}>
-                                <Link href="/admin/hero-sliders">Cancel</Link>
-                            </Button>
+
+                    {hideCard ? (
+                        <div className="flex justify-end gap-2 pt-6 border-t mt-4">
                             <Button type="submit" disabled={isSubmitting}>
                                 {isSubmitting ? "Saving..." : "Save Slider"}
                             </Button>
                         </div>
-                    </CardFooter>
+                    ) : (
+                        <CardFooter className="border-t px-0 pt-6 mt-8">
+                            <div className="flex justify-end gap-2 w-full">
+                                <Button variant="outline" asChild disabled={isSubmitting}>
+                                    <Link href="/admin/hero-sliders">Cancel</Link>
+                                </Button>
+                                <Button type="submit" disabled={isSubmitting}>
+                                    {isSubmitting ? "Saving..." : "Save Slider"}
+                                </Button>
+                            </div>
+                        </CardFooter>
+                    )}
                 </form>
             </Form>
         </>

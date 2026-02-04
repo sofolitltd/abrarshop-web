@@ -42,7 +42,7 @@ export function ProductDetailsTabs({ product }: ProductDetailsTabsProps) {
         <div className={cn("transition-opacity duration-300", activeTab === "description" ? "block opacity-100" : "hidden opacity-0")}>
           <div className="prose prose-sm max-w-none prose-neutral">
             <p className="text-muted-foreground whitespace-pre-wrap leading-relaxed">
-              {product.description}
+              {product.description || "No description available for this product."}
             </p>
           </div>
         </div>

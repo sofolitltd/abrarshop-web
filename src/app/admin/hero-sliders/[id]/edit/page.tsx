@@ -3,8 +3,9 @@ import { getHeroSliderById } from "@/lib/data";
 import { notFound } from "next/navigation";
 import { updateHeroSlider } from "@/lib/actions";
 
-export default async function EditHeroSliderPage({ params }: { params: { id: string } }) {
-    const slider = await getHeroSliderById(params.id);
+export default async function EditHeroSliderPage({ params }: { params: Promise<{ id: string }> }) {
+    const resolvedParams = await params;
+    const slider = await getHeroSliderById(resolvedParams.id);
 
     if (!slider) {
         notFound();

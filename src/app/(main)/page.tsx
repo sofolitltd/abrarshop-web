@@ -16,10 +16,10 @@ export default async function HomePage() {
     getHeroSliders({ isActive: true, type: 'promo-top', limit: 1 }),
     getHeroSliders({ isActive: true, type: 'promo-bottom', limit: 1 })
   ]);
-  
+
   return (
     <>
-      <HeroSection 
+      <HeroSection
         sliders={activeSliders}
         promoTop={promoTop[0]}
         promoBottom={promoBottom[0]}
@@ -29,16 +29,16 @@ export default async function HomePage() {
       <BestSelling />
 
       {/*  */}
-      <section id="products" className="py-16 sm:py-24">
+      <section id="products" className="pt-16 pb-24">
         <div className="container">
           <div className="text-center mb-8">
             <h2 className="text-3xl font-bold tracking-tight font-headline">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-purple-600 ">Featured Products</span>
+              Featured <span className="text-orange-500">Products</span>
             </h2>
             <p className="text-muted-foreground">Check & Get Your Desired Product!</p>
           </div>
           <div className="grid grid-cols-2 gap-6 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
-            <ProductList isFeatured={true} limit={15} />
+            <ProductList isFeatured={true} limit={10} />
           </div>
         </div>
       </section>

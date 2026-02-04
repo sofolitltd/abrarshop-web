@@ -165,7 +165,7 @@
     {
       "id": "category-default",
       "description": "Default icon for categories.",
-      "imageUrl": "https://picsum.photos/seed/defaultcategory/200",
+      "imageUrl": "https://placehold.co/600x400?text=No+Image",
       "imageHint": "product category"
     }
   ]

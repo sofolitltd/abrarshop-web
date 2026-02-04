@@ -5,8 +5,8 @@ import { eq, desc, asc, isNull, sql, or, ilike, and, ne, count as drizzleCount }
 import { alias } from 'drizzle-orm/pg-core';
 
 // Product Functions
-export const getProducts = async (options?: { query?: string, limit?: number, page?: number, isTrending?: boolean, isBestSelling?: boolean, isFeatured?: boolean, sortBy?: string, categoryId?: string, brandId?: string, excludeProductId?: string }): Promise<{ products: Product[], totalCount: number }> => {
-  const { query, limit, page, isTrending, isBestSelling, isFeatured, sortBy, categoryId, brandId, excludeProductId } = options || {};
+export const getProducts = async (options?: { query?: string, limit?: number, page?: number, isTrending?: boolean, isBestSelling?: boolean, isFeatured?: boolean, sortBy?: string, categoryId?: string, categoryIds?: string[], brandId?: string, brandIds?: string[], excludeProductId?: string }): Promise<{ products: Product[], totalCount: number }> => {
+  const { query, limit, page, isTrending, isBestSelling, isFeatured, sortBy, categoryId, categoryIds, brandId, brandIds, excludeProductId } = options || {};
   try {
     const conditions = [];
     if (query && query.trim().length > 0) {
@@ -17,11 +17,49 @@ export const getProducts = async (options?: { query?: string, limit?: number, pa
         ilike(sql`array_to_string(${productsTable.keywords}, ' ')`, searchPattern)
       ));
     }
-    if (categoryId) {
-      conditions.push(eq(productsTable.categoryId, categoryId));
+
+    // Handle multiple categories with hierarchical expansion
+    if (categoryId || (categoryIds && categoryIds.length > 0)) {
+      const allCategories = await db.select().from(categoriesTable);
+      const selectedCategoryIds = categoryIds && categoryIds.length > 0 ? categoryIds : [categoryId!];
+      const allCategoryIds: string[] = [];
+
+      // For each selected category, get all its descendants
+      selectedCategoryIds.forEach(catId => {
+        if (catId) {
+          allCategoryIds.push(catId);
+
+          const getDescendants = (parentId: string) => {
+            const children = allCategories.filter(c => c.parentId === parentId);
+            children.forEach(child => {
+              allCategoryIds.push(child.id);
+              getDescendants(child.id);
+            });
+          };
+
+          getDescendants(catId);
+        }
+      });
+
+      // Remove duplicates
+      const uniqueCategoryIds = [...new Set(allCategoryIds)];
+
+      // Use IN clause for multiple category IDs
+      if (uniqueCategoryIds.length > 0) {
+        conditions.push(sql`${productsTable.categoryId} IN (${sql.join(uniqueCategoryIds.map(id => sql`${id}`), sql`, `)})`);
+      }
     }
-    if (brandId) {
-      conditions.push(eq(productsTable.brandId, brandId));
+
+    // Handle multiple brands
+    if (brandId || (brandIds && brandIds.length > 0)) {
+      const selectedBrandIds = brandIds && brandIds.length > 0 ? brandIds : [brandId!];
+      const validBrandIds = selectedBrandIds.filter(Boolean);
+
+      if (validBrandIds.length > 1) {
+        conditions.push(sql`${productsTable.brandId} IN (${sql.join(validBrandIds.map(id => sql`${id}`), sql`, `)})`);
+      } else if (validBrandIds.length === 1) {
+        conditions.push(eq(productsTable.brandId, validBrandIds[0]));
+      }
     }
     if (isTrending) {
       conditions.push(eq(productsTable.isTrending, true));
@@ -40,7 +78,7 @@ export const getProducts = async (options?: { query?: string, limit?: number, pa
 
     const countQuery = db.select({ value: drizzleCount() }).from(productsTable);
     const totalCountResult = await (whereClause ? countQuery.where(whereClause) : countQuery);
-    const totalCount = totalCountResult[0].value;
+    const totalCount = Number(totalCountResult[0].value);
 
     let productQuery: any = db
       .select({
@@ -60,6 +98,9 @@ export const getProducts = async (options?: { query?: string, limit?: number, pa
         isTrending: productsTable.isTrending,
         isBestSelling: productsTable.isBestSelling,
         isFeatured: productsTable.isFeatured,
+        status: productsTable.status,
+        discount: productsTable.discount,
+        createdAt: productsTable.createdAt,
         category: categoriesTable.name,
         categorySlug: categoriesTable.slug,
         brand: brandsTable.name,
@@ -87,7 +128,7 @@ export const getProducts = async (options?: { query?: string, limit?: number, pa
         break;
       case 'newest':
       default:
-        productQuery = productQuery.orderBy(desc(productsTable.id));
+        productQuery = productQuery.orderBy(desc(productsTable.createdAt));
         break;
     }
 
@@ -105,6 +146,7 @@ export const getProducts = async (options?: { query?: string, limit?: number, pa
       price: Number(p.price),
       originalPrice: p.originalPrice ? Number(p.originalPrice) : null,
       buyPrice: p.buyPrice ? Number(p.buyPrice) : null,
+      discount: Number(p.discount),
     })) as Product[];
 
     return { products: mappedProducts, totalCount };
@@ -137,6 +179,9 @@ export const getProductById = async (
         isTrending: productsTable.isTrending,
         isBestSelling: productsTable.isBestSelling,
         isFeatured: productsTable.isFeatured,
+        status: productsTable.status,
+        discount: productsTable.discount,
+        createdAt: productsTable.createdAt,
         category: categoriesTable.name,
         categorySlug: categoriesTable.slug,
         brand: brandsTable.name,
@@ -155,6 +200,7 @@ export const getProductById = async (
       price: Number(product.price),
       originalPrice: product.originalPrice ? Number(product.originalPrice) : null,
       buyPrice: product.buyPrice ? Number(product.buyPrice) : null,
+      discount: Number(product.discount),
     } as Product;
   } catch (error) {
     console.error('Failed to fetch product by ID:', error);
@@ -185,6 +231,9 @@ export const getProductBySlug = async (
         isTrending: productsTable.isTrending,
         isBestSelling: productsTable.isBestSelling,
         isFeatured: productsTable.isFeatured,
+        status: productsTable.status,
+        discount: productsTable.discount,
+        createdAt: productsTable.createdAt,
         category: categoriesTable.name,
         categorySlug: categoriesTable.slug,
         brand: brandsTable.name,
@@ -203,6 +252,7 @@ export const getProductBySlug = async (
       price: Number(product.price),
       originalPrice: product.originalPrice ? Number(product.originalPrice) : null,
       buyPrice: product.buyPrice ? Number(product.buyPrice) : null,
+      discount: Number(product.discount),
     } as Product;
   } catch (error) {
     console.error('Failed to fetch product by slug:', error);
@@ -244,9 +294,9 @@ export const getBrandBySlug = async (slug: string): Promise<Brand | undefined> =
 }
 
 // Category Functions
-export const getCategories = async (options?: { topLevelOnly?: boolean }): Promise<Category[]> => {
+export const getCategories = async (options?: { topLevelOnly?: boolean, isFeatured?: boolean }): Promise<Category[]> => {
   try {
-    const { topLevelOnly } = options || {};
+    const { topLevelOnly, isFeatured } = options || {};
     const parentCategories = alias(categoriesTable, 'parent');
 
     const baseQuery = db
@@ -257,12 +307,23 @@ export const getCategories = async (options?: { topLevelOnly?: boolean }): Promi
         parentId: categoriesTable.parentId,
         parentName: parentCategories.name,
         imageUrl: categoriesTable.imageUrl,
+        isFeatured: categoriesTable.isFeatured,
+        createdAt: categoriesTable.createdAt,
+        updatedAt: categoriesTable.updatedAt,
       })
       .from(categoriesTable)
       .leftJoin(parentCategories, eq(categoriesTable.parentId, parentCategories.id));
 
-    const queryWithFilter = topLevelOnly
-      ? baseQuery.where(isNull(categoriesTable.parentId))
+    const conditions = [];
+    if (topLevelOnly) {
+      conditions.push(isNull(categoriesTable.parentId));
+    }
+    if (isFeatured !== undefined) {
+      conditions.push(eq(categoriesTable.isFeatured, isFeatured));
+    }
+
+    const queryWithFilter = conditions.length > 0
+      ? baseQuery.where(and(...conditions))
       : baseQuery;
 
     const result = await queryWithFilter.orderBy(categoriesTable.name);

@@ -49,6 +49,7 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
                         alt={item.name}
                         fill
                         className="object-cover"
+                        sizes="80px"
                       />
                     </div>
                     <div className="flex-1">

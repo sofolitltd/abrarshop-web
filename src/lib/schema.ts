@@ -5,6 +5,7 @@ import {
   numeric,
   integer,
   boolean,
+  timestamp,
 } from 'drizzle-orm/pg-core';
 import { createId } from '@paralleldrive/cuid2';
 
@@ -15,37 +16,46 @@ export const brands = pgTable('brands', {
   name: varchar('name', { length: 256 }).notNull(),
   slug: varchar('slug', { length: 256 }).notNull().unique(),
   imageUrl: text('image_url'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
 export const categories = pgTable('categories', {
-    id: text('id')
-      .primaryKey()
-      .$defaultFn(() => createId()),
-    name: varchar('name', { length: 256 }).notNull(),
-    slug: varchar('slug', { length: 256 }).notNull().unique(),
-    parentId: text('parent_id').references((): any => categories.id, { onDelete: 'set null' }),
-    imageUrl: text('image_url'),
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  name: varchar('name', { length: 256 }).notNull(),
+  slug: varchar('slug', { length: 256 }).notNull().unique(),
+  parentId: text('parent_id').references((): any => categories.id, { onDelete: 'set null' }),
+  imageUrl: text('image_url'),
+  isFeatured: boolean('is_featured').notNull().default(false),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
 export const products = pgTable('products', {
   id: text('id')
     .primaryKey()
     .$defaultFn(() => createId()),
-  sku: varchar('sku', { length: 100 }),
+  sku: integer('sku'),
   name: varchar('name', { length: 256 }).notNull(),
   slug: varchar('slug', { length: 256 }).notNull().unique(),
-  description: text('description').notNull(),
+  description: text('description'),
   price: numeric('price', { precision: 10, scale: 2 }).notNull(),
   originalPrice: numeric('original_price', { precision: 10, scale: 2 }),
   buyPrice: numeric('buy_price', { precision: 10, scale: 2 }),
   images: text('images').array().notNull(),
   stock: integer('stock').notNull(),
   keywords: text('keywords').array().notNull(),
-  categoryId: text('category_id').notNull().references(() => categories.id),
-  brandId: text('brand_id').notNull().references(() => brands.id),
+  categoryId: text('category_id').references(() => categories.id),
+  brandId: text('brand_id').references(() => brands.id),
   isTrending: boolean('is_trending').notNull().default(false),
   isBestSelling: boolean('is_best_selling').notNull().default(false),
   isFeatured: boolean('is_featured').notNull().default(false),
+  discount: numeric('discount', { precision: 5, scale: 2 }).notNull().default('0'),
+  status: varchar('status', { length: 20 }).notNull().default('published'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
 
 export const heroSliders = pgTable('hero_sliders', {
@@ -59,4 +69,6 @@ export const heroSliders = pgTable('hero_sliders', {
   displayOrder: integer('display_order').notNull().default(0),
   isActive: boolean('is_active').notNull().default(false),
   type: varchar('type', { length: 50 }).notNull().default('carousel'), // 'carousel', 'promo-top', 'promo-bottom'
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

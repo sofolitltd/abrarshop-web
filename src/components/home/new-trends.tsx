@@ -1,10 +1,10 @@
 import { getProducts } from "@/lib/data";
 import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
+    Carousel,
+    CarouselContent,
+    CarouselItem,
+    CarouselNext,
+    CarouselPrevious,
 } from "@/components/ui/carousel";
 import { ProductCard } from "../product/product-card";
 
@@ -16,8 +16,8 @@ export async function NewTrends() {
     }
 
     return (
-        <section className="py-16 sm:py-24">
-            <div className="container">
+        <section className="pt-12 pb-16 bg-[#f5f6f7]">
+            <div className="container ">
                 <Carousel
                     opts={{
                         align: "start",
@@ -26,7 +26,7 @@ export async function NewTrends() {
                 >
                     <div className="flex items-center justify-between mb-8">
                         <h2 className="text-3xl font-bold tracking-tight font-headline">
-                            New <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-purple-600">Trends</span>
+                            New <span className="text-orange-500">Trends</span>
                         </h2>
                         <div className="hidden md:flex gap-2">
                             <CarouselPrevious className="relative top-auto left-auto -translate-y-0" />

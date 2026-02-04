@@ -3,9 +3,10 @@ import { getProductById, getBrands, getCategories } from "@/lib/data";
 import { notFound } from "next/navigation";
 import { updateProduct } from "@/lib/actions";
 
-export default async function EditProductPage({ params }: { params: { id: string } }) {
+export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
+    const resolvedParams = await params;
     const [product, brands, categories] = await Promise.all([
-        getProductById(params.id),
+        getProductById(resolvedParams.id),
         getBrands(),
         getCategories()
     ]);
@@ -19,8 +20,8 @@ export default async function EditProductPage({ params }: { params: { id: string
     return (
         <div className="flex flex-col gap-6">
             <h1 className="text-3xl font-bold tracking-tight">Edit Product</h1>
-            <ProductForm 
-                product={product} 
+            <ProductForm
+                product={product}
                 onSubmit={updateProductWithId}
                 brands={brands}
                 categories={categories}

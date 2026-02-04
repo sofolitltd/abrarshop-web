@@ -3,6 +3,8 @@ export type Brand = {
   name: string;
   slug: string;
   imageUrl?: string | null;
+  createdAt?: Date;
+  updatedAt?: Date;
 };
 
 export type Category = {
@@ -12,12 +14,15 @@ export type Category = {
   parentId: string | null;
   parentName?: string | null;
   imageUrl?: string | null;
+  isFeatured: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
 };
 
 
 export type Product = {
   id: string;
-  sku?: string | null;
+  sku?: number | null;
   name: string;
   slug: string;
   description: string;
@@ -36,6 +41,10 @@ export type Product = {
   isTrending: boolean;
   isBestSelling: boolean;
   isFeatured: boolean;
+  status?: 'draft' | 'published';
+  discount: number;
+  createdAt?: Date;
+  updatedAt?: Date;
 };
 
 export type CartItem = {
@@ -65,4 +74,6 @@ export type HeroSlider = {
   displayOrder: number;
   isActive: boolean;
   type: 'carousel' | 'promo-top' | 'promo-bottom';
+  createdAt?: Date;
+  updatedAt?: Date;
 };

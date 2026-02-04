@@ -11,7 +11,7 @@ export function OrderSummary() {
 
   if (items.length === 0) {
     return (
-        <p className="text-muted-foreground text-center">Your cart is empty.</p>
+      <p className="text-muted-foreground text-center">Your cart is empty.</p>
     )
   }
 
@@ -26,6 +26,7 @@ export function OrderSummary() {
                 alt={item.name}
                 fill
                 className="object-cover"
+                sizes="64px"
               />
               <div className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
                 {item.quantity}
@@ -44,7 +45,7 @@ export function OrderSummary() {
         ))}
       </div>
       <Separator />
-       <div className="flex gap-2">
+      <div className="flex gap-2">
         <Input placeholder="Coupon code" />
         <Button variant="outline" className="flex-shrink-0">Apply</Button>
       </div>

@@ -22,24 +22,25 @@ export function Header() {
   const [isMobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-14 items-center">
+    <header className="sticky top-0 z-50 w-full border-b border-zinc-800 bg-black text-white">
+      <div className="container flex h-16 items-center">
 
         {/* Mobile Header */}
-        <div className="flex w-full items-center md:hidden">
-          <div className="flex-1">
-            <Link href="/" className="flex items-center space-x-2">
-              {/* <Image src="/icon.svg" alt="Abrar Shop Logo" width={32} height={32} /> */}
-              <span className="font-bold sm:inline-block">ABRAR SHOP</span>
+        <div className="flex w-full items-center md:hidden h-full">
+          <div className="flex-1 h-full flex items-center">
+            <Link href="/" className="inline-block">
+              <span className="text-xl font-bold font-headline tracking-tighter text-white">
+                ABRAR<span className="text-orange-500">{" "}SHOP</span>
+              </span>
             </Link>
           </div>
-          <div className="flex items-center space-x-2">
-            <Button variant="ghost" size="icon" className="rounded-none" onClick={() => setMobileSearchOpen(p => !p)}>
-              <Search className={cn("h-5 w-5", isMobileSearchOpen && "text-primary")} />
+          <div className="flex items-center space-x-1">
+            <Button variant="ghost" size="icon" className="rounded-none hover:bg-zinc-900 text-white" onClick={() => setMobileSearchOpen(p => !p)}>
+              <Search className={cn("h-5 w-5", isMobileSearchOpen && "text-orange-500")} />
               <span className="sr-only">Toggle Search</span>
             </Button>
-            <CartIcon onClick={() => setCartOpen(true)} />
-            <Button variant="ghost" size="icon" className="rounded-none" asChild>
+            <CartIcon onClick={() => setCartOpen(true)} className="text-white hover:bg-zinc-900" />
+            <Button variant="ghost" size="icon" className="rounded-none hover:bg-zinc-900 text-white" asChild>
               <Link href="/login" aria-label="Login or view account">
                 <User className="h-5 w-5" />
               </Link>
@@ -48,18 +49,19 @@ export function Header() {
         </div>
 
         {/* Desktop Header */}
-        <div className="hidden w-full items-center justify-between md:flex">
-          <div className="flex items-center gap-6">
-            <Link href="/" className="flex items-center space-x-2">
-              {/* <Image src="/icon.svg" alt="Abrar Shop Logo" width={32} height={32} /> */}
-              <span className="font-bold">ABRAR SHOP</span>
+        <div className="hidden w-full items-center justify-between md:flex h-full">
+          <div className="flex items-center gap-8 h-full">
+            <Link href="/" className="inline-block hover:opacity-90 transition-opacity">
+              <span className="text-2xl font-bold font-headline tracking-tighter text-white">
+                ABRAR<span className="text-orange-500">{" "}SHOP</span>
+              </span>
             </Link>
-            <nav className="flex items-center gap-6 text-sm">
+            <nav className="flex items-center gap-6 text-sm h-full">
               {navLinks.map(({ href, label }) => (
                 <Link
                   key={label}
                   href={href}
-                  className="transition-colors hover:text-foreground/80 text-foreground/60"
+                  className="transition-colors hover:text-orange-500 text-zinc-400 font-medium"
                 >
                   {label}
                 </Link>
@@ -72,8 +74,8 @@ export function Header() {
                 <SearchInput />
               </Suspense>
             </div>
-            <CartIcon onClick={() => setCartOpen(true)} />
-            <Button variant="ghost" size="icon" className="rounded-none" asChild>
+            <CartIcon onClick={() => setCartOpen(true)} className="text-white hover:bg-zinc-900" />
+            <Button variant="ghost" size="icon" className="rounded-none hover:bg-zinc-900 text-white" asChild>
               <Link href="/login" aria-label="Login or view account">
                 <User className="h-5 w-5" />
               </Link>
@@ -84,7 +86,7 @@ export function Header() {
       </div>
 
       {isMobileSearchOpen && (
-        <div className="md:hidden border-t bg-background">
+        <div className="md:hidden border-t border-zinc-800 bg-black">
           <div className="container py-3">
             <Suspense fallback={<SearchBarFallback />}>
               <SearchInput />

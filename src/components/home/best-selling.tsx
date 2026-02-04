@@ -1,10 +1,10 @@
 import { getProducts } from "@/lib/data";
 import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselNext,
-  CarouselPrevious,
+    Carousel,
+    CarouselContent,
+    CarouselItem,
+    CarouselNext,
+    CarouselPrevious,
 } from "@/components/ui/carousel";
 import { ProductCard } from "../product/product-card";
 
@@ -16,7 +16,7 @@ export async function BestSelling() {
     }
 
     return (
-        <section className="py-16 sm:py-24 bg-secondary/50">
+        <section className="pt-12 pb-20 bg-secondary/50">
             <div className="container">
                 <Carousel
                     opts={{
@@ -26,7 +26,7 @@ export async function BestSelling() {
                 >
                     <div className="flex items-center justify-between mb-8">
                         <h2 className="text-3xl font-bold tracking-tight font-headline">
-                        Best <span className="text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-purple-600">Selling</span>
+                            Best <span className="text-orange-500">Selling</span>
                         </h2>
                         <div className="hidden md:flex gap-2">
                             <CarouselPrevious className="relative top-auto left-auto -translate-y-0" />

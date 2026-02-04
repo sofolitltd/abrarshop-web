@@ -4,19 +4,21 @@ import { ShoppingBag } from "lucide-react";
 import { useCart } from "@/context/cart-context";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 type CartIconProps = {
   onClick?: () => void;
+  className?: string;
 };
 
-export function CartIcon({ onClick }: CartIconProps) {
+export function CartIcon({ onClick, className }: CartIconProps) {
   const { totalItems } = useCart();
 
   return (
     <Button
       variant="ghost"
       size="icon"
-      className="relative"
+      className={cn("relative", className)}
       onClick={onClick}
       aria-label={`Shopping cart with ${totalItems} items`}
     >

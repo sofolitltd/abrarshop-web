@@ -33,6 +33,9 @@ import { useToast } from "@/hooks/use-toast";
 import { deleteHeroSlider } from "@/lib/actions";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Search, SlidersHorizontal } from "lucide-react";
 
 type HeroSlidersTableProps = {
   sliders: HeroSlider[];
@@ -42,6 +45,16 @@ export function HeroSlidersTable({ sliders }: HeroSlidersTableProps) {
   const [deleteId, setDeleteId] = React.useState<string | null>(null);
   const { toast } = useToast();
   const [isPending, startTransition] = React.useTransition();
+  const [searchQuery, setSearchQuery] = React.useState("");
+  const [typeFilter, setTypeFilter] = React.useState<string>("all");
+
+  const filteredSliders = React.useMemo(() => {
+    return sliders.filter((slider) => {
+      const matchSearch = slider.title.toLowerCase().includes(searchQuery.toLowerCase());
+      const matchType = typeFilter === "all" || slider.type === typeFilter;
+      return matchSearch && matchType;
+    });
+  }, [sliders, searchQuery, typeFilter]);
 
   const handleDelete = () => {
     if (deleteId) {
@@ -65,37 +78,65 @@ export function HeroSlidersTable({ sliders }: HeroSlidersTableProps) {
   };
 
   return (
-    <>
-      <div className="rounded-md border">
-        <Table>
+    <div className="space-y-4">
+      <div className="flex flex-col sm:flex-row gap-4 justify-between">
+        <div className="relative flex-1 max-w-sm">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search sliders..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="pl-9"
+          />
+        </div>
+        <div className="flex items-center gap-2">
+          <SlidersHorizontal className="h-4 w-4 text-muted-foreground" />
+          <Select value={typeFilter} onValueChange={setTypeFilter}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="All Types" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Types</SelectItem>
+              <SelectItem value="carousel">Carousel</SelectItem>
+              <SelectItem value="promo-top">Promo Top</SelectItem>
+              <SelectItem value="promo-bottom">Promo Bottom</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="rounded-md border overflow-hidden">
+        <Table className="border-collapse [&_td]:border [&_th]:border">
           <TableHeader>
             <TableRow>
-              <TableHead className="w-[120px]">Image</TableHead>
+              <TableHead className="w-[120px] text-center">Image</TableHead>
               <TableHead>Title</TableHead>
               <TableHead>Type</TableHead>
-              <TableHead>Order</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="w-[50px]"></TableHead>
+              <TableHead className="text-center">Order</TableHead>
+              <TableHead className="text-center">Status</TableHead>
+              <TableHead className="w-[100px] text-center">Actions</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sliders.length === 0 && (
+            {filteredSliders.length === 0 && (
               <TableRow>
                 <TableCell colSpan={6} className="h-24 text-center">
                   No hero sliders found.
                 </TableCell>
               </TableRow>
             )}
-            {sliders.map((slider) => (
+            {filteredSliders.map((slider) => (
               <TableRow key={slider.id}>
-                <TableCell>
-                  <Image
+                <TableCell className="p-2">
+                  <div className="flex justify-center">
+                    <Image
                       src={slider.imageUrl}
                       alt={slider.title}
-                      width={100}
-                      height={50}
-                      className="rounded-md object-cover aspect-video"
-                  />
+                      width={80}
+                      height={45}
+                      className="rounded border object-cover aspect-video"
+                    />
+                  </div>
                 </TableCell>
                 <TableCell className="font-medium">{slider.title}</TableCell>
                 <TableCell>
@@ -103,33 +144,32 @@ export function HeroSlidersTable({ sliders }: HeroSlidersTableProps) {
                     {slider.type.replace('-', ' ')}
                   </Badge>
                 </TableCell>
-                <TableCell>{slider.displayOrder}</TableCell>
-                <TableCell>
-                    {slider.isActive ? (
-                        <Badge><CheckCircle className="mr-1 h-3 w-3" /> Active</Badge>
-                    ) : (
-                        <Badge variant="secondary"><XCircle className="mr-1 h-3 w-3" /> Inactive</Badge>
-                    )}
+                <TableCell className="text-center">{slider.displayOrder}</TableCell>
+                <TableCell className="text-center">
+                  {slider.isActive ? (
+                    <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-green-200">Active</Badge>
+                  ) : (
+                    <Badge variant="secondary" className="bg-gray-100 text-gray-700 hover:bg-gray-100 border-gray-200">Inactive</Badge>
+                  )}
                 </TableCell>
-                <TableCell>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuItem asChild>
-                        <Link href={`/admin/hero-sliders/${slider.id}/edit`} className="flex items-center gap-2">
-                           <Pencil className="h-4 w-4" /> Edit
-                        </Link>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => setDeleteId(slider.id)} className="flex items-center gap-2 text-destructive focus:text-destructive">
-                        <Trash2 className="h-4 w-4" /> Delete
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+                <TableCell className="text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <Button variant="ghost" size="icon" asChild className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50">
+                      <Link href={`/admin/hero-sliders/${slider.id}/edit`}>
+                        <Pencil className="h-4 w-4" />
+                        <span className="sr-only">Edit</span>
+                      </Link>
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setDeleteId(slider.id)}
+                      className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      <span className="sr-only">Delete</span>
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
             ))}
@@ -147,11 +187,11 @@ export function HeroSlidersTable({ sliders }: HeroSlidersTableProps) {
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} disabled={isPending} className="bg-destructive hover:bg-destructive/90">
-                {isPending ? "Deleting..." : "Delete"}
+              {isPending ? "Deleting..." : "Delete"}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
+    </div>
   );
 }
