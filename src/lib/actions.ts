@@ -10,6 +10,7 @@ import { createId } from '@paralleldrive/cuid2';
 import { getProducts, getProductById, getBrandById, getCategoryById, getHeroSliderById } from './data';
 import { generateSlug } from '@/lib/utils';
 import { v2 as cloudinary } from 'cloudinary';
+import { createBkashPayment } from './bkash';
 
 if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
   cloudinary.config({
@@ -705,26 +706,45 @@ const checkoutSchema = z.object({
 });
 
 
-export async function processCheckout(data: unknown) {
+export async function processCheckout(data: unknown, totalAmount: number) {
   const validatedFields = checkoutSchema.safeParse(data);
 
   if (!validatedFields.success) {
-    // In a real app, you'd want to return these errors to the form.
-    // For now, we'll throw an error.
     console.log(validatedFields.error.flatten())
-    throw new Error('Invalid checkout data.');
+    return { success: false, message: 'Invalid checkout data.' };
   }
 
-  // In a real application, this is where you would:
-  // 1. Process the payment with a service like Stripe.
-  // 2. Save the order details to your database.
-  // 3. Send a confirmation email.
+  const { paymentMethod, email, mobile } = validatedFields.data;
 
-  // For this demo, we'll just log the data.
-  console.log('Order processed for:', validatedFields.data.email || validatedFields.data.mobile);
+  try {
+    // Handle bKash Payment
+    if (paymentMethod === 'bkash') {
+      const invoice = `INV-${Date.now()}`;
 
-  // After successful processing, redirect to a thank you page.
-  redirect('/checkout/thank-you');
+      // Only attempt to call bKash if credentials exist
+      if (process.env.BKASH_APP_KEY && process.env.BKASH_APP_SECRET) {
+        const payment = await createBkashPayment(totalAmount, invoice);
+
+        if (payment && payment.bkashURL) {
+          return { success: true, url: payment.bkashURL };
+        } else {
+          console.error("bKash payment creation failed:", payment);
+          return { success: false, message: "Could not create bKash payment session." };
+        }
+      } else {
+        console.warn("bKash credentials missing. Mocking success for development.");
+        return { success: true, url: '/checkout/thank-you' };
+      }
+    }
+
+    // Handle Cash on Delivery or fallback
+    console.log('Order processed for:', email || mobile, 'Total:', totalAmount);
+    return { success: true, url: '/checkout/thank-you' };
+  } catch (error: any) {
+    if (error?.message === 'NEXT_REDIRECT') throw error;
+    console.error('Checkout Processing Error:', error);
+    return { success: false, message: error.message || 'Failed to process checkout.' };
+  }
 }
 
 export async function searchProducts(query: string, limit: number) {

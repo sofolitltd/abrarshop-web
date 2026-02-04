@@ -35,12 +35,12 @@ export function Header() {
             </Link>
           </div>
           <div className="flex items-center space-x-1">
-            <Button variant="ghost" size="icon" className="rounded-none hover:bg-zinc-900 text-white" onClick={() => setMobileSearchOpen(p => !p)}>
+            <Button variant="ghost" size="icon" className="rounded-none hover:bg-zinc-900 text-white hover:text-white" onClick={() => setMobileSearchOpen(p => !p)}>
               <Search className={cn("h-5 w-5", isMobileSearchOpen && "text-orange-500")} />
               <span className="sr-only">Toggle Search</span>
             </Button>
-            <CartIcon onClick={() => setCartOpen(true)} className="text-white hover:bg-zinc-900" />
-            <Button variant="ghost" size="icon" className="rounded-none hover:bg-zinc-900 text-white" asChild>
+            <CartIcon onClick={() => setCartOpen(true)} className="text-white hover:bg-zinc-900 hover:text-white" />
+            <Button variant="ghost" size="icon" className="rounded-none hover:bg-zinc-900 text-white hover:text-white" asChild>
               <Link href="/login" aria-label="Login or view account">
                 <User className="h-5 w-5" />
               </Link>
@@ -74,8 +74,8 @@ export function Header() {
                 <SearchInput />
               </Suspense>
             </div>
-            <CartIcon onClick={() => setCartOpen(true)} className="text-white hover:bg-zinc-900" />
-            <Button variant="ghost" size="icon" className="rounded-none hover:bg-zinc-900 text-white" asChild>
+            <CartIcon onClick={() => setCartOpen(true)} className="text-white hover:bg-zinc-900 hover:text-white" />
+            <Button variant="ghost" size="icon" className="rounded-none hover:bg-zinc-900 text-white hover:text-white" asChild>
               <Link href="/login" aria-label="Login or view account">
                 <User className="h-5 w-5" />
               </Link>

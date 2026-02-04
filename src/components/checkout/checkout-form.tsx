@@ -1,6 +1,6 @@
 "use client";
 
-import { useTransition } from "react";
+import { useTransition, useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -34,8 +34,12 @@ const checkoutSchema = z.object({
 
 type CheckoutFormValues = z.infer<typeof checkoutSchema>;
 
-export function CheckoutForm() {
-  const { clearCart, items } = useCart();
+interface CheckoutFormProps {
+  onDeliveryChange: (fee: number) => void;
+}
+
+export function CheckoutForm({ onDeliveryChange }: CheckoutFormProps) {
+  const { clearCart, items, totalPrice } = useCart();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
 
@@ -53,6 +57,14 @@ export function CheckoutForm() {
     },
   });
 
+  // Watch for delivery method changes
+  const deliveryMethod = form.watch("deliveryMethod");
+
+  useEffect(() => {
+    const fee = deliveryMethod === 'gaibandha' ? 50 : 100;
+    onDeliveryChange(fee);
+  }, [deliveryMethod, onDeliveryChange]);
+
   const onSubmit = (data: CheckoutFormValues) => {
     if (items.length === 0) {
       toast({
@@ -63,15 +75,37 @@ export function CheckoutForm() {
       return;
     }
 
+    const currentDeliveryFee = deliveryMethod === 'gaibandha' ? 50 : 100;
+    const finalTotal = totalPrice + currentDeliveryFee;
+
     startTransition(async () => {
       try {
-        await processCheckout(data);
-        toast({
-          title: "Order Placed!",
-          description: "Your order has been successfully placed.",
-        });
-        clearCart();
-        // The server action handles the redirect
+        const result = await processCheckout(data, finalTotal);
+
+        if (result.success && result.url) {
+          if (result.url.startsWith('/')) {
+            // Internal redirect (COD or Mock)
+            clearCart();
+            window.location.href = result.url;
+          } else {
+            // External redirect (bKash)
+            toast({
+              title: "Order Initialized",
+              description: "Redirecting to bKash Secure Gateway...",
+            });
+            // Small delay to let toast show
+            setTimeout(() => {
+              clearCart();
+              window.location.href = result.url!;
+            }, 1500);
+          }
+        } else {
+          toast({
+            title: "Checkout failed",
+            description: result.message || "An unexpected error occurred. Please try again.",
+            variant: "destructive",
+          });
+        }
       } catch (error) {
         toast({
           title: "Checkout failed",
@@ -85,73 +119,77 @@ export function CheckoutForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
-        <Card>
-          <CardHeader>
-            <CardTitle>Contact & Shipping</CardTitle>
+        <Card className="border-zinc-200 rounded-none shadow-sm">
+          <CardHeader className="border-b border-zinc-100 py-4">
+            <CardTitle className="text-xl font-bold font-headline uppercase tracking-tight">Contact</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-4 pt-6">
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="firstName" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>First Name</FormLabel>
-                  <FormControl><Input placeholder="John" {...field} /></FormControl>
+                  <FormLabel className="text-xs font-bold uppercase text-zinc-500">First Name</FormLabel>
+                  <FormControl><Input placeholder="John" className="rounded-none border-zinc-200 focus-visible:ring-orange-500" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
               <FormField control={form.control} name="lastName" render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Last Name</FormLabel>
-                  <FormControl><Input placeholder="Doe" {...field} /></FormControl>
+                  <FormLabel className="text-xs font-bold uppercase text-zinc-500">Last Name</FormLabel>
+                  <FormControl><Input placeholder="Doe" className="rounded-none border-zinc-200 focus-visible:ring-orange-500" {...field} /></FormControl>
                   <FormMessage />
                 </FormItem>
               )} />
             </div>
-            <FormField control={form.control} name="mobile" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Mobile Number</FormLabel>
-                <FormControl><Input placeholder="017********" {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
-            <FormField control={form.control} name="email" render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email (Optional)</FormLabel>
-                <FormControl><Input placeholder="m@example.com" {...field} /></FormControl>
-                <FormMessage />
-              </FormItem>
-            )} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField control={form.control} name="mobile" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs font-bold uppercase text-zinc-500">Mobile Number</FormLabel>
+                  <FormControl><Input placeholder="017********" className="rounded-none border-zinc-200 focus-visible:ring-orange-500" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+              <FormField control={form.control} name="email" render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-xs font-bold uppercase text-zinc-500">Email (Optional)</FormLabel>
+                  <FormControl><Input placeholder="m@example.com" className="rounded-none border-zinc-200 focus-visible:ring-orange-500" {...field} /></FormControl>
+                  <FormMessage />
+                </FormItem>
+              )} />
+            </div>
             <FormField control={form.control} name="address" render={({ field }) => (
               <FormItem>
-                <FormLabel>Address</FormLabel>
-                <FormControl><Input placeholder="Full Address" {...field} /></FormControl>
+                <FormLabel className="text-xs font-bold uppercase text-zinc-500">Full Address</FormLabel>
+                <FormControl><Input placeholder="House #, Road #, Area..." className="rounded-none border-zinc-200 focus-visible:ring-orange-500" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />
             <FormField control={form.control} name="district" render={({ field }) => (
               <FormItem>
-                <FormLabel>District</FormLabel>
-                <FormControl><Input placeholder="e.g. Dhaka" {...field} /></FormControl>
+                <FormLabel className="text-xs font-bold uppercase text-zinc-500">District</FormLabel>
+                <FormControl><Input placeholder="e.g. Gaibandha" className="rounded-none border-zinc-200 focus-visible:ring-orange-500" {...field} /></FormControl>
                 <FormMessage />
               </FormItem>
             )} />
           </CardContent>
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <Card>
-            <CardHeader><CardTitle>Delivery Method</CardTitle></CardHeader>
-            <CardContent>
-              <FormField control={form.control} name="deliveryMethod" render={({ field }) => (
-                <FormItem className="space-y-3">
+        <div className="space-y-6">
+          <Card className="border-zinc-200 rounded-none shadow-sm">
+            <CardHeader className="border-b border-zinc-100 py-3">
+              <CardTitle className="text-base font-bold font-headline uppercase tracking-tight">Payment Method</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <FormField control={form.control} name="paymentMethod" render={({ field }) => (
+                <FormItem className="space-y-0">
                   <FormControl>
-                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-2">
-                      <FormItem className="flex items-center space-x-3 space-y-0">
-                        <FormControl><RadioGroupItem value="gaibandha" /></FormControl>
-                        <FormLabel className="font-normal">Inside Gaibandha</FormLabel>
+                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-row flex-wrap gap-4">
+                      <FormItem className="flex items-center space-x-3 space-y-0 p-3 border border-zinc-100 hover:bg-zinc-50 transition-colors flex-1 min-w-[200px] cursor-pointer">
+                        <FormControl><RadioGroupItem value="cod" className="text-orange-500 border-zinc-300" /></FormControl>
+                        <FormLabel className="font-medium cursor-pointer flex-1">Cash on Delivery</FormLabel>
                       </FormItem>
-                      <FormItem className="flex items-center space-x-3 space-y-0">
-                        <FormControl><RadioGroupItem value="full_country" /></FormControl>
-                        <FormLabel className="font-normal">Full Country</FormLabel>
+                      <FormItem className="flex items-center space-x-3 space-y-0 p-3 border border-zinc-100 hover:bg-zinc-50 transition-colors flex-1 min-w-[200px] cursor-pointer">
+                        <FormControl><RadioGroupItem value="bkash" className="text-orange-500 border-zinc-300" /></FormControl>
+                        <FormLabel className="font-medium cursor-pointer flex-1 text-pink-600 font-bold">bKash (Gateway)</FormLabel>
                       </FormItem>
                     </RadioGroup>
                   </FormControl>
@@ -160,20 +198,29 @@ export function CheckoutForm() {
               )} />
             </CardContent>
           </Card>
-          <Card>
-            <CardHeader><CardTitle>Payment Method</CardTitle></CardHeader>
-            <CardContent>
-              <FormField control={form.control} name="paymentMethod" render={({ field }) => (
-                <FormItem className="space-y-3">
+
+          <Card className="border-zinc-200 rounded-none shadow-sm">
+            <CardHeader className="border-b border-zinc-100 py-3">
+              <CardTitle className="text-base font-bold font-headline uppercase tracking-tight">Delivery Method</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <FormField control={form.control} name="deliveryMethod" render={({ field }) => (
+                <FormItem className="space-y-0">
                   <FormControl>
-                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-col space-y-2">
-                      <FormItem className="flex items-center space-x-3 space-y-0">
-                        <FormControl><RadioGroupItem value="cod" /></FormControl>
-                        <FormLabel className="font-normal">Cash on Delivery</FormLabel>
+                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-row flex-wrap gap-4">
+                      <FormItem className="flex items-center space-x-3 space-y-0 p-3 border border-zinc-100 hover:bg-zinc-50 transition-colors flex-1 min-w-[200px] cursor-pointer">
+                        <FormControl><RadioGroupItem value="gaibandha" className="text-orange-500 border-zinc-300" /></FormControl>
+                        <FormLabel className="font-medium cursor-pointer flex-1">
+                          Gaibandha
+                          <span className="ml-2 font-bold text-orange-500">50৳</span>
+                        </FormLabel>
                       </FormItem>
-                      <FormItem className="flex items-center space-x-3 space-y-0">
-                        <FormControl><RadioGroupItem value="bkash" /></FormControl>
-                        <FormLabel className="font-normal">Bkash</FormLabel>
+                      <FormItem className="flex items-center space-x-3 space-y-0 p-3 border border-zinc-100 hover:bg-zinc-50 transition-colors flex-1 min-w-[200px] cursor-pointer">
+                        <FormControl><RadioGroupItem value="full_country" className="text-orange-500 border-zinc-300" /></FormControl>
+                        <FormLabel className="font-medium cursor-pointer flex-1">
+                          Full Country
+                          <span className="ml-2 font-bold text-orange-500">100৳</span>
+                        </FormLabel>
                       </FormItem>
                     </RadioGroup>
                   </FormControl>
@@ -184,10 +231,10 @@ export function CheckoutForm() {
           </Card>
         </div>
 
-        <div className="flex justify-end">
-          <Button type="submit" disabled={isPending} size="lg">
+        <div className="flex justify-end pt-4">
+          <Button type="submit" disabled={isPending} size="lg" className="px-12 py-6 bg-black hover:bg-zinc-900 rounded-none font-bold uppercase tracking-widest text-white">
             {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Place Order
+            Confirm Order
           </Button>
         </div>
       </form>

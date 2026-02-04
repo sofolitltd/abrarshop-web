@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function ContactPage() {
     return (
-        <div className="container py-12 md:py-16">
+        <div className="container pt-6 pb-6">
             <div className="mb-12">
                 <Breadcrumb
                     items={[
@@ -82,7 +82,7 @@ export default function ContactPage() {
                             Our Location
                         </h3>
                         <p className="text-zinc-600 text-sm leading-relaxed">
-                            Dhaka, Bangladesh<br />
+                            Gaibandha, Bangladesh<br />
                             (Online storefront operating nationwide)
                         </p>
                     </div>

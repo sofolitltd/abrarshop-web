@@ -6,21 +6,27 @@ import { Separator } from "@/components/ui/separator";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-export function OrderSummary() {
-  const { items, totalPrice } = useCart();
+interface OrderSummaryProps {
+  deliveryFee: number;
+}
+
+export function OrderSummary({ deliveryFee }: OrderSummaryProps) {
+  const { items, totalPrice: subtotal } = useCart();
 
   if (items.length === 0) {
     return (
-      <p className="text-muted-foreground text-center">Your cart is empty.</p>
+      <p className="text-muted-foreground text-center py-8">Your cart is empty.</p>
     )
   }
 
+  const total = subtotal + deliveryFee;
+
   return (
     <div className="space-y-6">
-      <div className="space-y-4">
+      <div className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
         {items.map((item) => (
           <div key={item.id} className="flex items-start gap-4">
-            <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-md border">
+            <div className="relative h-16 w-16 flex-shrink-0 overflow-hidden rounded-none border border-zinc-100 bg-zinc-50">
               <Image
                 src={item.image}
                 alt={item.name}
@@ -28,46 +34,53 @@ export function OrderSummary() {
                 className="object-cover"
                 sizes="64px"
               />
-              <div className="absolute -top-2 -right-2 flex h-5 w-5 items-center justify-center rounded-full bg-primary text-xs text-primary-foreground">
+              <div className="absolute -top-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-black text-[10px] font-bold text-white shadow-sm">
                 {item.quantity}
               </div>
             </div>
             <div className="flex-1">
-              <h3 className="font-semibold text-sm leading-tight">{item.name}</h3>
-              <p className="text-sm text-muted-foreground">
-                Qty: {item.quantity}
+              <h3 className="font-bold text-sm leading-tight text-zinc-800">{item.name}</h3>
+              <p className="text-xs font-medium text-zinc-500 mt-1">
+                Quantity: {item.quantity}
               </p>
             </div>
-            <p className="font-semibold text-sm">
+            <p className="font-bold text-sm text-zinc-900">
               {(item.price * item.quantity).toFixed(0)}৳
             </p>
           </div>
         ))}
       </div>
-      <Separator />
+
+      <Separator className="bg-zinc-100" />
+
       <div className="flex gap-2">
-        <Input placeholder="Coupon code" />
-        <Button variant="outline" className="flex-shrink-0">Apply</Button>
+        <Input placeholder="Coupon code" className="rounded-none border-zinc-200 focus-visible:ring-orange-500" />
+        <Button variant="outline" className="flex-shrink-0 rounded-none border-black hover:bg-black hover:text-white transition-colors">Apply</Button>
       </div>
-      <Separator />
-      <div className="space-y-2 text-sm">
+
+      <Separator className="bg-zinc-100" />
+
+      <div className="space-y-3 text-sm">
         <div className="flex justify-between">
-          <p className="text-muted-foreground">Subtotal</p>
-          <p className="font-medium">{totalPrice.toFixed(0)}৳</p>
+          <p className="text-zinc-500">Subtotal</p>
+          <p className="font-bold text-zinc-900">{subtotal.toFixed(0)}৳</p>
         </div>
         <div className="flex justify-between">
-          <p className="text-muted-foreground">Shipping</p>
-          <p className="font-medium">Free</p>
-        </div>
-        <div className="flex justify-between">
-          <p className="text-muted-foreground">Taxes</p>
-          <p className="font-medium">0.00৳</p>
+          <p className="text-zinc-500">Delivery Fee</p>
+          <p className="font-bold text-orange-600">{deliveryFee.toFixed(0)}৳</p>
         </div>
       </div>
-      <Separator />
-      <div className="flex justify-between text-base font-bold">
-        <p>Total</p>
-        <p>{totalPrice.toFixed(0)}৳</p>
+
+      <Separator className="bg-zinc-200" />
+
+      <div className="flex justify-between items-center text-lg font-bold">
+        <p className="uppercase tracking-tight">Total</p>
+        <div className="text-right">
+          <p className="text-2xl text-black">
+            {total.toFixed(0)}<span className="text-sm ml-1">৳</span>
+          </p>
+          <p className="text-[10px] font-medium text-zinc-400 uppercase tracking-widest mt-0.5">All taxes included</p>
+        </div>
       </div>
     </div>
   );

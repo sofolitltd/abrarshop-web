@@ -26,7 +26,7 @@ export function CartIcon({ onClick, className }: CartIconProps) {
       {totalItems > 0 && (
         <Badge
           variant="destructive"
-          className="absolute -top-1 -right-2 h-4 w-4 justify-center !rounded-none p-0 text-xs"
+          className="absolute -top-1 -right-2 h-4 w-4 justify-center rounded-full p-0 text-xs flex items-center"
         >
           {totalItems}
         </Badge>
