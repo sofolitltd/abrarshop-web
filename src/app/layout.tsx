@@ -56,6 +56,8 @@ export const metadata: Metadata = {
   },
 };
 
+import { AuthProvider } from '@/context/auth-context';
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -78,10 +80,12 @@ export default function RootLayout({
         )}
       >
         <NextTopLoader showSpinner={false} color="#FF6B35" />
-        <CartProvider>
-          {children}
-          <Toaster />
-        </CartProvider>
+        <AuthProvider>
+          <CartProvider>
+            {children}
+            <Toaster />
+          </CartProvider>
+        </AuthProvider>
       </body>
     </html>
   );

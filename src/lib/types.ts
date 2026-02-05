@@ -79,3 +79,34 @@ export type HeroSlider = {
   createdAt?: Date;
   updatedAt?: Date;
 };
+
+export type Item = {
+  id: string;
+  orderId: string;
+  productId: string;
+  quantity: number;
+  price: string;
+};
+
+export type Order = {
+  id: string;
+  orderNumber: string;
+  userId: string | null;
+  firstName: string;
+  lastName: string;
+  mobile: string;
+  email: string | null;
+  address: string;
+  district: string;
+  deliveryMethod: string;
+  deliveryFee: string;
+  totalAmount: string;
+  paymentMethod: string;
+  paymentStatus: string;
+  orderStatus: string;
+  paymentId: string | null;
+  trxId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  items?: Item[];
+};

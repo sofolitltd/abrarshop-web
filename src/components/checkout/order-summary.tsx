@@ -79,7 +79,6 @@ export function OrderSummary({ deliveryFee }: OrderSummaryProps) {
           <p className="text-xl font-black text-black leading-none">
             {total.toLocaleString()}<span className="text-xs ml-0.5">৳</span>
           </p>
-          <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest mt-1">VAT Included</p>
         </div>
       </div>
     </div>

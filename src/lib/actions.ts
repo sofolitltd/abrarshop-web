@@ -4,8 +4,8 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { db } from '@/lib/db';
-import { products, brands, categories, heroSliders } from '@/lib/schema';
-import { eq, and, ne, desc, inArray } from 'drizzle-orm';
+import { products, brands, categories, heroSliders, users, orders, orderItems } from '@/lib/schema';
+import { eq, and, ne, desc, inArray, or } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 import { getProducts, getProductById, getBrandById, getCategoryById, getHeroSliderById } from './data';
 import { generateSlug } from '@/lib/utils';
@@ -702,10 +702,11 @@ const checkoutSchema = z.object({
   district: z.string().min(1, "District is required."),
   deliveryMethod: z.enum(['gaibandha', 'full_country']),
   paymentMethod: z.enum(['bkash', 'cod']),
+  userId: z.string().optional(),
 });
 
 
-export async function processCheckout(data: unknown, totalAmount: number) {
+export async function processCheckout(data: unknown, totalAmount: number, items: any[]) {
   const validatedFields = checkoutSchema.safeParse(data);
 
   if (!validatedFields.success) {
@@ -718,8 +719,6 @@ export async function processCheckout(data: unknown, totalAmount: number) {
   try {
     // Handle bKash Payment
     if (paymentMethod === 'bkash') {
-      const invoice = `INV-${Date.now()}`;
-
       // Only attempt to call bKash if credentials exist
       // if (process.env.BKASH_APP_KEY && process.env.BKASH_APP_SECRET) {
       //   const payment = await createBkashPayment(totalAmount, invoice);
@@ -738,7 +737,45 @@ export async function processCheckout(data: unknown, totalAmount: number) {
 
     // Handle Cash on Delivery or fallback
     console.log('Order processed for:', email || mobile, 'Total:', totalAmount);
-    return { success: true, url: '/checkout/thank-you' };
+
+    // Create Order in DB
+    const orderId = createId();
+    const orderNumber = `${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 100)}`;
+
+    const deliveryFee = validatedFields.data.deliveryMethod === 'gaibandha' ? '50.00' : '100.00';
+
+    await db.insert(orders).values({
+      id: orderId,
+      orderNumber,
+      userId: validatedFields.data.userId || null,
+      firstName: validatedFields.data.firstName,
+      lastName: validatedFields.data.lastName,
+      mobile: validatedFields.data.mobile,
+      email: validatedFields.data.email || null,
+      address: validatedFields.data.address,
+      district: validatedFields.data.district,
+      deliveryMethod: validatedFields.data.deliveryMethod,
+      deliveryFee,
+      totalAmount: String(totalAmount),
+      paymentMethod: validatedFields.data.paymentMethod,
+      paymentStatus: 'pending',
+      orderStatus: 'pending',
+    });
+
+    // Create Order Items
+    const orderItemsValues = items.map((item) => ({
+      id: createId(),
+      orderId: orderId,
+      productId: item.id,
+      quantity: item.quantity,
+      price: String(item.price), // Assuming price is number
+    }));
+
+    if (orderItemsValues.length > 0) {
+      await db.insert(orderItems).values(orderItemsValues);
+    }
+
+    return { success: true, url: `/order-confirmed/${orderNumber}` };
   } catch (error: any) {
     if (error?.message === 'NEXT_REDIRECT') throw error;
     console.error('Checkout Processing Error:', error);
@@ -784,5 +821,117 @@ export async function uploadImage(formData: FormData): Promise<{ success: boolea
   } catch (error) {
     console.error('Cloudinary upload error:', error);
     return { success: false, message: 'Failed to upload image.' };
+  }
+}
+
+export async function syncUserWithNeon(profile: {
+  uid: string;
+  email: string | null;
+  firstName: string | null;
+  lastName: string | null;
+  phoneNumber?: string | null;
+}) {
+  try {
+    const existingUser = await db.query.users.findFirst({
+      where: eq(users.id, profile.uid),
+    });
+
+    if (existingUser) {
+      // Update existing user
+      await db.update(users).set({
+        email: profile.email || '',
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        updatedAt: new Date(),
+      }).where(eq(users.id, profile.uid));
+      return { success: true, user: existingUser };
+    } else {
+      // Create new user
+      const [newUser] = await db.insert(users).values({
+        id: profile.uid,
+        email: profile.email || '',
+        firstName: profile.firstName,
+        lastName: profile.lastName,
+        phoneNumber: profile.phoneNumber,
+      }).returning();
+      return { success: true, user: newUser };
+    }
+  } catch (error) {
+    console.error('Sync User Error:', error);
+    return { success: false, message: 'Failed to sync user with database.' };
+  }
+}
+
+export async function getUserProfile(uid: string) {
+  try {
+    const profile = await db.query.users.findFirst({
+      where: eq(users.id, uid),
+    });
+    return profile || null;
+  } catch (error) {
+    console.error('Get User Profile Error:', error);
+    return null;
+  }
+}
+
+export async function updateUserProfile(uid: string, data: {
+  firstName?: string;
+  lastName?: string;
+  phoneNumber?: string;
+  address?: string;
+  district?: string;
+}) {
+  try {
+    await db.update(users).set({
+      ...data,
+      updatedAt: new Date(),
+    }).where(eq(users.id, uid));
+    revalidatePath('/account/profile');
+    return { success: true, message: 'Profile updated successfully.' };
+  } catch (error) {
+    console.error('Update User Profile Error:', error);
+    return { success: false, message: 'Failed to update profile.' };
+  }
+}
+
+export async function getUserOrders(uid: string) {
+  try {
+    // Also try to match by email if possible to catch guest orders or migrated users
+    const user = await db.query.users.findFirst({
+      where: eq(users.id, uid),
+      columns: { email: true }
+    });
+
+    const conditions = [eq(orders.userId, uid)];
+    if (user?.email) {
+      conditions.push(eq(orders.email, user.email));
+    }
+
+    const userOrders = await db.query.orders.findMany({
+      where: or(...conditions),
+      orderBy: desc(orders.createdAt),
+      with: {
+        items: true,
+      },
+    });
+    return userOrders;
+  } catch (error) {
+    console.error('Get User Orders Error:', error);
+    return [];
+  }
+}
+
+export async function getOrderByNumber(orderNumber: string) {
+  try {
+    const order = await db.query.orders.findFirst({
+      where: eq(orders.orderNumber, orderNumber),
+      with: {
+        items: true,
+      },
+    });
+    return order || null;
+  } catch (error) {
+    console.error('Get Order By Number Error:', error);
+    return null;
   }
 }

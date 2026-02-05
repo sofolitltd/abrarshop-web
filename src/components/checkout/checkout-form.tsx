@@ -5,6 +5,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 import {
   Form,
   FormControl,
@@ -14,12 +15,12 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { processCheckout } from "@/lib/actions";
 import { useCart } from "@/context/cart-context";
 import { useToast } from "@/hooks/use-toast";
 import { Loader2 } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useAuth } from "@/context/auth-context";
 
 const checkoutSchema = z.object({
   firstName: z.string().min(1, "First name is required."),
@@ -30,6 +31,7 @@ const checkoutSchema = z.object({
   district: z.string().min(1, "District is required."),
   deliveryMethod: z.enum(['gaibandha', 'full_country']),
   paymentMethod: z.enum(['bkash', 'cod']),
+  userId: z.string().optional(),
 });
 
 type CheckoutFormValues = z.infer<typeof checkoutSchema>;
@@ -42,6 +44,9 @@ export function CheckoutForm({ onDeliveryChange }: CheckoutFormProps) {
   const { clearCart, items, totalPrice } = useCart();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
+  const router = useRouter();
+
+  const { user, profile } = useAuth();
 
   const form = useForm<CheckoutFormValues>({
     resolver: zodResolver(checkoutSchema),
@@ -56,6 +61,21 @@ export function CheckoutForm({ onDeliveryChange }: CheckoutFormProps) {
       paymentMethod: "cod",
     },
   });
+
+  useEffect(() => {
+    if (profile) {
+      form.reset({
+        firstName: profile.firstName || "",
+        lastName: profile.lastName || "",
+        email: profile.email || "",
+        mobile: profile.phoneNumber || "",
+        address: profile.address || "",
+        district: profile.district || "",
+        deliveryMethod: "full_country",
+        paymentMethod: "cod",
+      });
+    }
+  }, [profile, form]);
 
   // Watch for delivery method changes
   const deliveryMethod = form.watch("deliveryMethod");
@@ -80,13 +100,17 @@ export function CheckoutForm({ onDeliveryChange }: CheckoutFormProps) {
 
     startTransition(async () => {
       try {
-        const result = await processCheckout(data, finalTotal);
+        const orderData = {
+          ...data,
+          userId: user?.uid,
+        };
+        const result = await processCheckout(orderData, finalTotal, items);
 
         if (result.success && result.url) {
           if (result.url.startsWith('/')) {
             // Internal redirect (COD or Mock)
             clearCart();
-            window.location.href = result.url;
+            router.push(result.url);
           } else {
             // External redirect (bKash)
             toast({
@@ -119,11 +143,11 @@ export function CheckoutForm({ onDeliveryChange }: CheckoutFormProps) {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        <Card className="border-zinc-200 rounded-none shadow-sm">
-          <CardHeader className="border-b border-zinc-100 py-3">
-            <CardTitle className="text-base font-bold font-headline uppercase tracking-tight">Shipping Contact</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3 pt-4">
+        <div className="border border-zinc-200 bg-white rounded-none shadow-sm">
+          <div className="border-b border-zinc-100 py-3 px-6">
+            <h2 className="text-base font-bold font-headline uppercase tracking-tight">Shipping Contact</h2>
+          </div>
+          <div className="space-y-3 p-6 pt-4">
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="firstName" render={({ field }) => (
                 <FormItem>
@@ -170,15 +194,15 @@ export function CheckoutForm({ onDeliveryChange }: CheckoutFormProps) {
                 <FormMessage />
               </FormItem>
             )} />
-          </CardContent>
-        </Card>
+          </div>
+        </div>
 
         <div className="space-y-4">
-          <Card className="border-zinc-200 rounded-none shadow-sm">
-            <CardHeader className="border-b border-zinc-100 py-2.5">
-              <CardTitle className="text-sm font-bold font-headline uppercase tracking-tight">Payment Method</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-3">
+          <div className="border border-zinc-200 bg-white rounded-none shadow-sm">
+            <div className="border-b border-zinc-100 py-2.5 px-6">
+              <h2 className="text-sm font-bold font-headline uppercase tracking-tight">Payment Method</h2>
+            </div>
+            <div className="p-6 pt-3">
               <FormField control={form.control} name="paymentMethod" render={({ field }) => (
                 <FormItem className="space-y-0">
                   <FormControl>
@@ -196,14 +220,14 @@ export function CheckoutForm({ onDeliveryChange }: CheckoutFormProps) {
                   <FormMessage />
                 </FormItem>
               )} />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
-          <Card className="border-zinc-200 rounded-none shadow-sm">
-            <CardHeader className="border-b border-zinc-100 py-2.5">
-              <CardTitle className="text-sm font-bold font-headline uppercase tracking-tight">Delivery Method</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-3">
+          <div className="border border-zinc-200 bg-white rounded-none shadow-sm">
+            <div className="border-b border-zinc-100 py-2.5 px-6">
+              <h2 className="text-sm font-bold font-headline uppercase tracking-tight">Delivery Method</h2>
+            </div>
+            <div className="p-6 pt-3">
               <FormField control={form.control} name="deliveryMethod" render={({ field }) => (
                 <FormItem className="space-y-0">
                   <FormControl>
@@ -227,8 +251,8 @@ export function CheckoutForm({ onDeliveryChange }: CheckoutFormProps) {
                   <FormMessage />
                 </FormItem>
               )} />
-            </CardContent>
-          </Card>
+            </div>
+          </div>
         </div>
 
         <div className="flex justify-end pt-4">

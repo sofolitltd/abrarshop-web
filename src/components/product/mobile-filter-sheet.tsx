@@ -45,7 +45,7 @@ export function MobileFilterSheet({ categories, brands, hideCategories = false, 
                     Filters
                 </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-[300px] sm:w-[400px] p-0 flex flex-col gap-0 h-full">
+            <SheetContent side="right" className="w-[300px] sm:w-[400px] p-0 flex flex-col gap-0 h-full">
                 {/* Fixed Top Section */}
                 <div className="flex flex-col shrink-0">
                     <SheetHeader className="px-6 py-2 text-left">
