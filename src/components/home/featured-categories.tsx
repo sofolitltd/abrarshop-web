@@ -28,7 +28,7 @@ export async function FeaturedCategories() {
                                 <div className="h-px w-8 bg-orange-600"></div>
                                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-600">Top Categories</span>
                             </div>
-                            <h2 className="text-4xl md:text-6xl font-black font-headline tracking-tighter uppercase leading-[0.9]">
+                            <h2 className="text-4xl md:text-5xl font-black font-headline tracking-tight uppercase leading-[0.9] flex gap-4">
                                 Popular <br />
                                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-800 to-zinc-500">Categories</span>
                             </h2>

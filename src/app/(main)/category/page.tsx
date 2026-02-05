@@ -63,7 +63,7 @@ export default async function CategoriesPage() {
                                             src={category.imageUrl}
                                             alt={category.name}
                                             fill
-                                            className="object-cover transition-transform duration-500 group-hover:scale-110"
+                                            className="object-contain transition-transform duration-500 scale-80 group-hover:scale-90"
                                             sizes="(min-width: 1280px) 300px, 250px"
                                         />
                                     ) : (

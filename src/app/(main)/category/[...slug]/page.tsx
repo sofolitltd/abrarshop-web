@@ -263,17 +263,17 @@ export default async function CategoryPage({ params, searchParams }: { params: P
     return (
         <div className="bg-[#fcfcfc] min-h-screen">
             {/* --- PREMIUM CATEGORY HEADER --- */}
-            <div className="bg-black text-white pt-12 pb-16 relative overflow-hidden">
+            <div className="bg-black text-white pt-6 pb-8 relative overflow-hidden">
                 <div className="container relative z-10">
                     <Breadcrumb items={breadcrumbItems} className="text-zinc-400 hover:text-white" />
-                    <div className="mt-8 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                    <div className="mt-4 flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div className="space-y-4">
-                            <h1 className="text-4xl md:text-6xl font-black font-headline tracking-tighter uppercase leading-none">
+                            <h1 className="text-3xl md:text-4xl font-black font-headline tracking-tighter uppercase leading-none">
                                 {category.name}
                             </h1>
                             <div className="h-1.5 w-24 bg-orange-500"></div>
-                            <p className="text-zinc-400 max-w-xl text-sm md:text-base font-medium">
-                                Shop the latest {category.name} collection. We offer the best prices in Bangladesh for premium electronics and lifestyle products.
+                            <p className="text-zinc-400  text-sm md:text-base font-medium">
+                                Latest {category.name} collection. We offer the best {category.name} prices in Bangladesh. Check below and order yours now!
                             </p>
                         </div>
                     </div>
@@ -291,14 +291,14 @@ export default async function CategoryPage({ params, searchParams }: { params: P
                             <h2 className="text-lg font-black uppercase tracking-widest leading-none">Explore Collections</h2>
                             <div className="flex-1 h-px bg-zinc-200"></div>
                         </div>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                        <div className="grid grid-cols-5 md:grid-cols-8 lg:grid-cols-12 gap-6">
                             {subcategories.map(subcat => (
                                 <Link
                                     key={subcat.id}
                                     href={`/category/${fullSlug}/${subcat.slug}`}
                                     className="group block"
                                 >
-                                    <div className="space-y-4 text-center">
+                                    <div className="space-y-2 text-center">
                                         <div className="aspect-square relative overflow-hidden bg-white border group-hover:border-orange-500 transition-all duration-500 shadow-sm">
                                             {subcat.imageUrl ? (
                                                 <Image
@@ -314,7 +314,7 @@ export default async function CategoryPage({ params, searchParams }: { params: P
                                             )}
                                             <div className="absolute inset-x-0 bottom-0 h-1 bg-orange-500 scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-500"></div>
                                         </div>
-                                        <p className="font-bold text-xs uppercase tracking-widest group-hover:text-orange-600 transition-colors">
+                                        <p className="font-medium md:font-semibold text-[10px] md:text-xs  uppercase tracking-normal group-hover:text-orange-600 transition-colors">
                                             {subcat.name}
                                         </p>
                                     </div>
@@ -325,36 +325,7 @@ export default async function CategoryPage({ params, searchParams }: { params: P
                 )}
 
                 <div className="grid grid-cols-1 min-[1400px]:grid-cols-4 gap-12">
-                    {/* --- SIDEBAR FILTERS --- */}
-                    <aside className="hidden min-[1400px]:block min-[1400px]:col-span-1">
-                        <div className="sticky top-24 space-y-8">
-                            <div>
-                                <div className="flex items-center justify-between mb-6 pb-2 border-b-2 border-black">
-                                    <h2 className="text-lg font-black uppercase tracking-tight font-headline">Filters</h2>
-                                    {brandsFilter ? (
-                                        <Button variant="link" asChild className="p-0 h-auto font-bold text-[10px] uppercase tracking-widest hover:text-orange-600">
-                                            <Link href={`/category/${fullSlug}`}>
-                                                Reset All
-                                            </Link>
-                                        </Button>
-                                    ) : null}
-                                </div>
-                                <Suspense fallback={<Skeleton className="h-[400px] w-full" />}>
-                                    <BrandFilters brands={brandsData} />
-                                </Suspense>
-                            </div>
-
-                            {/* Promotional Banner in Sidebar */}
-                            <div className="bg-orange-500 p-8 text-white space-y-4">
-                                <p className="text-xs font-bold uppercase tracking-[0.2em] opacity-80">Flash Deal</p>
-                                <h3 className="text-2xl font-black uppercase tracking-tighter leading-tight">Get 10% Off on Accessories</h3>
-                                <Button className="bg-white text-black hover:bg-black hover:text-white rounded-none w-full font-bold text-xs uppercase tracking-widest mt-4">
-                                    Shop Now
-                                </Button>
-                            </div>
-                        </div>
-                    </aside>
-
+                   
                     {/* --- PRODUCT MAIN GRID --- */}
                     <main className="col-span-1 min-[1400px]:col-span-3">
                         <Suspense key={category.id + currentPage + sortBy + brandsFilter} fallback={<ProductListSkeleton />}>
@@ -368,6 +339,29 @@ export default async function CategoryPage({ params, searchParams }: { params: P
                             />
                         </Suspense>
                     </main>
+
+                     {/* --- SIDEBAR FILTERS --- */}
+                    <aside className="hidden min-[1400px]:block min-[1400px]:col-span-1 bg-card border border-zinc-200">
+                        <div className="sticky top-24 space-y-8 p-4">
+                            <div>
+                                <div className="flex items-center justify-between mb-6 pb-2 border-b-2 border-black">
+                                    <h2 className="text-lg font-black uppercase tracking-tight font-headline">Filters</h2>
+                                    {brandsFilter ? (
+                                        <Button variant="link" asChild className="p-0 h-auto font-bold text-[10px] uppercase tracking-widest hover:text-orange-600">
+                                            <Link href={`/category/${fullSlug}`}>
+                                                Reset All
+                                            </Link>
+                                        </Button>
+                                    ) : null}
+                                </div>
+                                <Suspense fallback={<Skeleton className=" w-full" />}>
+                                    <BrandFilters brands={brandsData} />
+                                </Suspense>
+                            </div>
+
+                    
+                        </div>
+                    </aside>
                 </div>
             </div>
         </div>

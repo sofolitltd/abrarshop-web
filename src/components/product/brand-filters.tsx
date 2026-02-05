@@ -46,7 +46,7 @@ export function BrandFilters({ brands = [] }: BrandFiltersProps) {
         <div className="space-y-6">
             <div className="space-y-4">
                 <h3 className="text-xs font-bold uppercase tracking-widest text-zinc-500">Select Brands</h3>
-                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-200">
+                <div className="space-y-3  overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-zinc-200">
                     {brands.map(brand => {
                         const isChecked = selectedBrands.includes(brand.id);
 

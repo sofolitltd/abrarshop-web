@@ -69,14 +69,17 @@ export function ProductCard({ product, isFeatured = false, priority = false }: P
           </div>
         </div>
 
-        <div className="p-4 space-y-3">
+        <div className="p-3 space-y-3">
           <div className="space-y-1">
-            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">
-              {product.brand || 'Premium'}
+            <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest leading-none">
+              {product.category || '-'}
             </p>
-            <h3 className="font-bold leading-tight text-sm sm:text-base line-clamp-2 group-hover:text-orange-600 transition-colors h-10 sm:h-12 uppercase tracking-tighter">
+
+            <h3 className="font-semibold leading-tight text-sm sm:text-base line-clamp-2 group-hover:text-orange-600 transition-colors h-10 sm:h-12 uppercase tracking-tight">
               {product.name}
             </h3>
+
+
           </div>
 
           <div className="flex items-center gap-3 pt-1">

@@ -51,18 +51,18 @@ export default async function HomePage() {
                   <div className="h-px w-8 bg-orange-600"></div>
                   <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-600">Top Choices</span>
                 </div>
-                <h2 className="text-4xl md:text-5xl font-black font-headline tracking-tighter uppercase leading-none">
+                <h2 className=" flex gap-4 text-4xl md:text-5xl font-black font-headline tracking-tight uppercase leading-none">
                   Featured <br />
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-800 to-zinc-500">Products</span>
                 </h2>
-                <p className="text-zinc-500 text-sm font-medium uppercase tracking-[0.1em] pt-2">Check & Get Your Desired Product!</p>
+                <p className="text-zinc-500 text-sm font-medium uppercase tracking-[0.1em] pt-1">Check & Get Your Desired Product!</p>
               </div>
               <div className="h-1.5 w-24 bg-black hidden md:block"></div>
             </div>
           </FadeUp>
 
           <FadeUp delay={0.1}>
-            <div className="grid grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-10">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-10">
               <ProductList isFeatured={true} limit={10} />
             </div>
           </FadeUp>
