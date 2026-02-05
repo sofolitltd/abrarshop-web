@@ -14,12 +14,12 @@ export default async function BrandsPage() {
     const brands = await getBrands();
 
     return (
-        <div className="container py-12 md:py-16">
+        <div className="container py-6">
             <div className="mb-8">
                 <Breadcrumb
                     items={[
                         { name: 'Home', href: '/' },
-                        { name: 'Brands', href: '/brands' }
+                        { name: 'Brand', href: '/brand' }
                     ]}
                 />
                 <h1 className="text-3xl font-bold tracking-tight font-headline mt-4">
@@ -36,7 +36,7 @@ export default async function BrandsPage() {
             ) : (
                 <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-8 gap-4">
                     {brands.map(brand => (
-                        <Link href={`/brands/${brand.slug}`} key={brand.id} className="group">
+                        <Link href={`/brand/${brand.slug}`} key={brand.id} className="group">
                             <div className="flex flex-col items-center justify-center gap-3 p-4 h-full border transition-all duration-300 hover:shadow-lg hover:border-primary bg-[#f5f6f7]">
                                 <div className="relative h-20 w-20 flex items-center justify-center">
                                     {brand.imageUrl ? (

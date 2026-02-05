@@ -7,6 +7,7 @@ export default function robots(): MetadataRoute.Robots {
             allow: '/',
             disallow: ['/admin/', '/checkout/success/', '/cart/'],
         },
-        sitemap: 'https://abrarshop.online/sitemap.xml',
+        sitemap: 'https://abrarshop.vercel.app/sitemap.xml',
+        // sitemap: 'http://localhost:3000/sitemap.xml',
     }
 }

@@ -118,12 +118,12 @@ export function CheckoutForm({ onDeliveryChange }: CheckoutFormProps) {
 
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
         <Card className="border-zinc-200 rounded-none shadow-sm">
-          <CardHeader className="border-b border-zinc-100 py-4">
-            <CardTitle className="text-xl font-bold font-headline uppercase tracking-tight">Contact</CardTitle>
+          <CardHeader className="border-b border-zinc-100 py-3">
+            <CardTitle className="text-base font-bold font-headline uppercase tracking-tight">Shipping Contact</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4 pt-6">
+          <CardContent className="space-y-3 pt-4">
             <div className="grid grid-cols-2 gap-4">
               <FormField control={form.control} name="firstName" render={({ field }) => (
                 <FormItem>
@@ -173,23 +173,23 @@ export function CheckoutForm({ onDeliveryChange }: CheckoutFormProps) {
           </CardContent>
         </Card>
 
-        <div className="space-y-6">
+        <div className="space-y-4">
           <Card className="border-zinc-200 rounded-none shadow-sm">
-            <CardHeader className="border-b border-zinc-100 py-3">
-              <CardTitle className="text-base font-bold font-headline uppercase tracking-tight">Payment Method</CardTitle>
+            <CardHeader className="border-b border-zinc-100 py-2.5">
+              <CardTitle className="text-sm font-bold font-headline uppercase tracking-tight">Payment Method</CardTitle>
             </CardHeader>
-            <CardContent className="pt-4">
+            <CardContent className="pt-3">
               <FormField control={form.control} name="paymentMethod" render={({ field }) => (
                 <FormItem className="space-y-0">
                   <FormControl>
-                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-row flex-wrap gap-4">
-                      <FormItem className="flex items-center space-x-3 space-y-0 p-3 border border-zinc-100 hover:bg-zinc-50 transition-colors flex-1 min-w-[200px] cursor-pointer">
-                        <FormControl><RadioGroupItem value="cod" className="text-orange-500 border-zinc-300" /></FormControl>
-                        <FormLabel className="font-medium cursor-pointer flex-1">Cash on Delivery</FormLabel>
+                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-row flex-wrap gap-3">
+                      <FormItem className="flex items-center space-x-3 space-y-0 p-2.5 border border-zinc-100 hover:bg-zinc-50 transition-colors flex-1 min-w-[180px] cursor-pointer">
+                        <FormControl><RadioGroupItem value="cod" className="text-orange-500 border-zinc-300 h-4 w-4" /></FormControl>
+                        <FormLabel className="text-sm font-medium cursor-pointer flex-1">Cash on Delivery</FormLabel>
                       </FormItem>
-                      <FormItem className="flex items-center space-x-3 space-y-0 p-3 border border-zinc-100 hover:bg-zinc-50 transition-colors flex-1 min-w-[200px] cursor-pointer">
-                        <FormControl><RadioGroupItem value="bkash" className="text-orange-500 border-zinc-300" /></FormControl>
-                        <FormLabel className="font-medium cursor-pointer flex-1 text-pink-600 font-bold">bKash (Gateway)</FormLabel>
+                      <FormItem className="flex items-center space-x-3 space-y-0 p-2.5 border border-zinc-100 hover:bg-zinc-50 transition-colors flex-1 min-w-[180px] cursor-pointer">
+                        <FormControl><RadioGroupItem value="bkash" className="text-orange-500 border-zinc-300 h-4 w-4" /></FormControl>
+                        <FormLabel className="text-sm font-medium cursor-pointer flex-1 text-pink-600 font-bold">bKash Gateway</FormLabel>
                       </FormItem>
                     </RadioGroup>
                   </FormControl>
@@ -200,25 +200,25 @@ export function CheckoutForm({ onDeliveryChange }: CheckoutFormProps) {
           </Card>
 
           <Card className="border-zinc-200 rounded-none shadow-sm">
-            <CardHeader className="border-b border-zinc-100 py-3">
-              <CardTitle className="text-base font-bold font-headline uppercase tracking-tight">Delivery Method</CardTitle>
+            <CardHeader className="border-b border-zinc-100 py-2.5">
+              <CardTitle className="text-sm font-bold font-headline uppercase tracking-tight">Delivery Method</CardTitle>
             </CardHeader>
-            <CardContent className="pt-4">
+            <CardContent className="pt-3">
               <FormField control={form.control} name="deliveryMethod" render={({ field }) => (
                 <FormItem className="space-y-0">
                   <FormControl>
-                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-row flex-wrap gap-4">
-                      <FormItem className="flex items-center space-x-3 space-y-0 p-3 border border-zinc-100 hover:bg-zinc-50 transition-colors flex-1 min-w-[200px] cursor-pointer">
-                        <FormControl><RadioGroupItem value="gaibandha" className="text-orange-500 border-zinc-300" /></FormControl>
-                        <FormLabel className="font-medium cursor-pointer flex-1">
+                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-row flex-wrap gap-3">
+                      <FormItem className="flex items-center space-x-3 space-y-0 p-2.5 border border-zinc-100 hover:bg-zinc-50 transition-colors flex-1 min-w-[180px] cursor-pointer">
+                        <FormControl><RadioGroupItem value="gaibandha" className="text-orange-500 border-zinc-300 h-4 w-4" /></FormControl>
+                        <FormLabel className="text-sm font-medium cursor-pointer flex-1">
                           Gaibandha
                           <span className="ml-2 font-bold text-orange-500">50৳</span>
                         </FormLabel>
                       </FormItem>
-                      <FormItem className="flex items-center space-x-3 space-y-0 p-3 border border-zinc-100 hover:bg-zinc-50 transition-colors flex-1 min-w-[200px] cursor-pointer">
-                        <FormControl><RadioGroupItem value="full_country" className="text-orange-500 border-zinc-300" /></FormControl>
-                        <FormLabel className="font-medium cursor-pointer flex-1">
-                          Full Country
+                      <FormItem className="flex items-center space-x-3 space-y-0 p-2.5 border border-zinc-100 hover:bg-zinc-50 transition-colors flex-1 min-w-[180px] cursor-pointer">
+                        <FormControl><RadioGroupItem value="full_country" className="text-orange-500 border-zinc-300 h-4 w-4" /></FormControl>
+                        <FormLabel className="text-sm font-medium cursor-pointer flex-1">
+                          Countrywide
                           <span className="ml-2 font-bold text-orange-500">100৳</span>
                         </FormLabel>
                       </FormItem>

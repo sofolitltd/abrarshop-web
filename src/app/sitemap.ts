@@ -2,14 +2,15 @@ import { MetadataRoute } from 'next';
 import { getProducts, getCategories, getBrands } from '@/lib/data';
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-    const baseUrl = 'https://abrarshop.online';
+    const baseUrl = 'https://abrarshop.vercel.app';
+    // const baseUrl = 'http://localhost:3000';
 
     // Base routes
     const routes = [
         '',
-        '/products',
-        '/categories',
-        '/brands',
+        '/product',
+        '/category',
+        '/brand',
         '/contact',
         '/privacy',
         '/terms',
@@ -30,7 +31,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
         // Product routes
         const productRoutes = products.map((product) => ({
-            url: `${baseUrl}/products/${product.slug}`,
+            url: `${baseUrl}/product/${product.slug}`,
             lastModified: product.updatedAt ? new Date(product.updatedAt) : new Date(),
             changeFrequency: 'weekly' as const,
             priority: 0.7,
@@ -46,7 +47,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
 
         // Brand routes
         const brandRoutes = brands.map((brand) => ({
-            url: `${baseUrl}/brands/${brand.slug}`,
+            url: `${baseUrl}/brand/${brand.slug}`,
             lastModified: brand.updatedAt ? new Date(brand.updatedAt) : new Date(),
             changeFrequency: 'weekly' as const,
             priority: 0.6,

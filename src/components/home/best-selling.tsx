@@ -16,7 +16,7 @@ export async function BestSelling() {
     }
 
     return (
-        <section className="pt-12 pb-20 bg-secondary/50">
+        <section className="py-24 bg-white">
             <div className="container">
                 <Carousel
                     opts={{
@@ -24,18 +24,24 @@ export async function BestSelling() {
                     }}
                     className="w-full"
                 >
-                    <div className="flex items-center justify-between mb-8">
-                        <h2 className="text-3xl font-bold tracking-tight font-headline">
-                            Best <span className="text-orange-500">Selling</span>
-                        </h2>
-                        <div className="hidden md:flex gap-2">
-                            <CarouselPrevious className="relative top-auto left-auto -translate-y-0" />
-                            <CarouselNext className="relative top-auto right-auto -translate-y-0" />
+                    <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2">
+                                <div className="h-px w-8 bg-orange-600"></div>
+                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-600">Top Rated</span>
+                            </div>
+                            <h2 className="text-4xl md:text-5xl font-black font-headline tracking-tighter uppercase leading-none">
+                                Best <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-800 to-zinc-500">Selling</span>
+                            </h2>
+                        </div>
+                        <div className="flex gap-3">
+                            <CarouselPrevious className="static translate-y-0 h-12 w-12 rounded-none border-zinc-200 hover:bg-black hover:text-white transition-all" />
+                            <CarouselNext className="static translate-y-0 h-12 w-12 rounded-none border-zinc-200 hover:bg-black hover:text-white transition-all" />
                         </div>
                     </div>
-                    <CarouselContent className="-ml-4">
+                    <CarouselContent className="-ml-6">
                         {bestSellingProducts.map((product) => (
-                            <CarouselItem key={product.id} className="pl-4 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
+                            <CarouselItem key={product.id} className="pl-6 basis-full sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
                                 <ProductCard product={product} />
                             </CarouselItem>
                         ))}

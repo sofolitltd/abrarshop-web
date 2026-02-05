@@ -70,6 +70,8 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     return items.reduce((total, item) => total + item.price * item.quantity, 0);
   }, [items]);
 
+  const [isDrawerOpen, setDrawerOpen] = useState(false);
+
   return (
     <CartContext.Provider
       value={{
@@ -80,6 +82,8 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
         clearCart,
         totalItems,
         totalPrice,
+        isDrawerOpen,
+        setDrawerOpen,
       }}
     >
       {children}

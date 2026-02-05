@@ -40,9 +40,9 @@ export function Footer() {
           <div className="space-y-6">
             <h4 className="text-white font-bold uppercase tracking-widest text-xs">Quick Links</h4>
             <ul className="space-y-3 text-sm">
-              <li><Link href="/products" className="hover:text-orange-500 transition-colors">All Products</Link></li>
-              <li><Link href="/brands" className="hover:text-orange-500 transition-colors">Shop by Brands</Link></li>
-              <li><Link href="/categories" className="hover:text-orange-500 transition-colors">Shop by Categories</Link></li>
+              <li><Link href="/product" className="hover:text-orange-500 transition-colors">All Products</Link></li>
+              <li><Link href="/brand" className="hover:text-orange-500 transition-colors">Shop by Brands</Link></li>
+              <li><Link href="/category" className="hover:text-orange-500 transition-colors">Shop by Categories</Link></li>
               <li><Link href="/contact" className="hover:text-orange-500 transition-colors">Contact Us</Link></li>
             </ul>
           </div>

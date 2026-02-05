@@ -47,7 +47,7 @@ export function SearchInput() {
             return;
         }
         setPopoverOpen(false);
-        router.push(`/products?q=${encodeURIComponent(query)}`);
+        router.push(`/product?q=${encodeURIComponent(query)}`);
     };
 
     const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -87,7 +87,7 @@ export function SearchInput() {
                     <div className="flex flex-col">
                         <div className="p-2 space-y-1 max-h-[40vh] overflow-y-auto">
                             {results.map(product => (
-                                <Link href={`/products/${product.slug}`} key={product.id} className="block hover:bg-accent rounded-none p-2" onClick={() => setPopoverOpen(false)}>
+                                <Link href={`/product/${product.slug}`} key={product.id} className="block hover:bg-accent rounded-none p-2" onClick={() => setPopoverOpen(false)}>
                                     <div className="flex items-center gap-4">
                                         <Image src={product.images[0]} alt={product.name} width={40} height={40} className="rounded-none" />
                                         <div className="flex-1">
@@ -99,7 +99,7 @@ export function SearchInput() {
                             ))}
                         </div>
                         <div className="border-t p-2 text-center">
-                            <Link href={`/products?q=${encodeURIComponent(query)}`} className="text-sm text-primary hover:underline" onClick={() => setPopoverOpen(false)}>
+                            <Link href={`/product?q=${encodeURIComponent(query)}`} className="text-sm text-primary hover:underline" onClick={() => setPopoverOpen(false)}>
                                 See all results
                             </Link>
                         </div>

@@ -43,7 +43,7 @@ const mainNavItems = [
       { href: "/admin/products", label: "All Products", icon: List },
       { href: "/admin/products/new", label: "Add New Product", icon: PlusCircle },
       { href: "/admin/categories", label: "Categories", icon: Folder },
-      { href: "/admin/brands", label: "Brands", icon: Tag },
+      { href: "/admin/brand", label: "Brands", icon: Tag },
     ],
   },
   { href: "/admin/hero-sliders", label: "Hero Sliders", icon: GalleryHorizontal },

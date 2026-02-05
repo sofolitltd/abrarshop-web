@@ -10,8 +10,8 @@ export default function CheckoutPage() {
   const [deliveryFee, setDeliveryFee] = useState(100); // Default to full country
 
   return (
-    <div className="container mx-auto pt-6 pb-20">
-      <div className="mb-8">
+    <div className="container mx-auto pt-4 pb-20">
+      <div className="mb-6">
         <Breadcrumb
           items={[
             { name: "Home", href: "/" },
@@ -19,7 +19,7 @@ export default function CheckoutPage() {
             { name: "Checkout", href: "/checkout" }
           ]}
         />
-        <h1 className="text-3xl font-bold tracking-tight font-headline mt-4">
+        <h1 className="text-2xl font-bold tracking-tight font-headline mt-4 uppercase">
           Checkout
         </h1>
       </div>
@@ -30,10 +30,10 @@ export default function CheckoutPage() {
         </div>
         <div className="lg:col-span-1">
           <Card className="sticky top-24 border-zinc-200 rounded-none shadow-sm">
-            <CardHeader className="border-b border-zinc-100 pb-4">
-              <CardTitle className="text-xl font-bold font-headline uppercase tracking-tight">Order Summary</CardTitle>
+            <CardHeader className="border-b border-zinc-100 py-2.5">
+              <CardTitle className="text-sm font-bold font-headline uppercase tracking-tight">Order Summary</CardTitle>
             </CardHeader>
-            <CardContent className="pt-6">
+            <CardContent className="pt-4">
               <OrderSummary deliveryFee={deliveryFee} />
             </CardContent>
           </Card>

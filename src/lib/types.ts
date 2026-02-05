@@ -63,6 +63,8 @@ export type CartContextType = {
   clearCart: () => void;
   totalItems: number;
   totalPrice: number;
+  isDrawerOpen: boolean;
+  setDrawerOpen: (open: boolean) => void;
 };
 
 export type HeroSlider = {

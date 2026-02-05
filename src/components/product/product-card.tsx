@@ -5,83 +5,98 @@ import Link from "next/link";
 import type { Product } from "@/lib/types";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart } from "lucide-react";
 import { useCart } from "@/context/cart-context";
-import { useToast } from "@/hooks/use-toast";
 
 type ProductCardProps = {
   product: Product;
   isFeatured?: boolean;
+  priority?: boolean;
 };
 
-const NO_IMAGE_URL = "https://placehold.co/600x400?text=No+Image";
 
-export function ProductCard({ product, isFeatured = false }: ProductCardProps) {
+export function ProductCard({ product, isFeatured = false, priority = false }: ProductCardProps) {
   const hasDiscount = !!(product.discount && product.discount > 0);
   const showStrikethrough = !!(product.originalPrice && product.originalPrice > product.price);
-  const savedAmount = showStrikethrough ? (product.originalPrice as number) - product.price : 0;
 
-  const { addItem } = useCart();
-  const { toast } = useToast();
+  const { addItem, setDrawerOpen } = useCart();
 
   const handleAddToCart = () => {
     addItem(product, 1);
-    toast({
-      title: "Added to cart!",
-      description: `"${product.name}" has been added to your cart.`,
-    });
+    setDrawerOpen(true);
   };
 
   return (
-    <Card className="flex h-full flex-col justify-between overflow-hidden rounded-none transition-shadow duration-300 hover:shadow-lg group border p-3">
-      <Link href={`/products/${product.slug}`} className="flex flex-col bg-card">
-        <div className="relative overflow-hidden">
+    <Card className="flex h-full flex-col justify-between overflow-hidden transition-all duration-500 hover:shadow-2xl group shadow-sm bg-white hover:-translate-y-1 border border-zinc-200 rounded-md p-0 gap-0">
+      <Link href={`/product/${product.slug}`} className="flex flex-col relative">
+        <div className="relative overflow-hidden aspect-square bg-[#f9f9f9]">
           {hasDiscount && (
             <Badge
-              className="absolute z-10 rounded-none bg-primary text-primary-foreground"
+              className="absolute top-3 left-3 z-10 rounded-none bg-orange-600 text-white font-bold text-[10px] uppercase tracking-widest px-2 py-1 border-none"
             >
-              Save: {Math.round(savedAmount).toLocaleString()}৳ (-{product.discount}%)
+              -{product.discount}% OFF
             </Badge>
           )}
-          <div className={cn("relative overflow-hidden bg-[#f5f6f7]", "aspect-square")}>
-            {product.images && product.images.length > 0 && product.images[0] ? (
-              <Image
-                src={product.images[0]}
-                alt={product.name}
-                fill
-                data-ai-hint={product.keywords?.length > 0 ? product.keywords[0] : product.name.split(' ').slice(0, 2).join(' ')}
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 250px"
-              />
-            ) : (
-              <div className="w-full h-full bg-muted flex items-center justify-center text-muted-foreground text-xs font-bold uppercase tracking-tighter">
-                No Image
-              </div>
-            )}
+
+          {product.images && product.images.length > 0 && product.images[0] ? (
+            <Image
+              src={product.images[0]}
+              alt={product.name}
+              fill
+              priority={priority}
+              className="object-cover transition-transform duration-700 group-hover:scale-110"
+              sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 250px"
+            />
+          ) : (
+            <div className="w-full h-full flex items-center justify-center text-zinc-300">
+              <ShoppingCart className="w-12 h-12 opacity-10" />
+            </div>
+          )}
+
+          {/* Overlay Quick Add (Desktop) */}
+          <div className="absolute inset-0 bg-black/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300 hidden md:flex items-end p-4">
+            <Button
+              className="w-full bg-black text-white hover:bg-orange-600 rounded-none h-10 font-bold text-[10px] uppercase tracking-[0.2em] transform translate-y-4 group-hover:translate-y-0 transition-all duration-500"
+              onClick={(e) => {
+                e.preventDefault();
+                handleAddToCart();
+              }}
+              disabled={product.stock <= 0}
+            >
+              Add To Cart
+            </Button>
           </div>
         </div>
 
-        <div>
-          <h3 className="font-bold leading-tight text-md  min-h-[40px] mt-3 mb-2">{product.name}</h3>
+        <div className="p-4 space-y-3">
+          <div className="space-y-1">
+            <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest leading-none">
+              {product.brand || 'Premium'}
+            </p>
+            <h3 className="font-bold leading-tight text-sm sm:text-base line-clamp-2 group-hover:text-orange-600 transition-colors h-10 sm:h-12 uppercase tracking-tighter">
+              {product.name}
+            </h3>
+          </div>
+
+          <div className="flex items-center gap-3 pt-1">
+            <p className="text-base sm:text-lg font-black text-black">৳{product.price.toLocaleString()}</p>
+            {showStrikethrough && (
+              <p className="text-xs sm:text-sm text-zinc-400 line-through decoration-zinc-300 font-medium">৳{product.originalPrice?.toLocaleString()}</p>
+            )}
+          </div>
         </div>
       </Link>
 
-      <div>
-        <div className="flex items-baseline gap-2">
-          <p className="text-md font-bold ">৳ {product.price.toLocaleString()}</p>
-          {showStrikethrough && (
-            <p className="text-md text-muted-foreground line-through">৳ {product.originalPrice?.toLocaleString()}</p>
-          )}
-        </div>
+      {/* Mobile Add to Cart Button */}
+      <div className="px-4 pb-4 md:hidden">
         <Button
           variant="outline"
           size="sm"
-          className="w-full mt-2"
+          className="w-full border-zinc-200 rounded-none font-bold text-[10px] uppercase tracking-widest hover:bg-black hover:text-white transition-all h-9"
           onClick={handleAddToCart}
           disabled={product.stock <= 0}
         >
-          <ShoppingCart className="mr-2 h-4 w-4" />
           {product.stock > 0 ? "Add to Cart" : "Out of Stock"}
         </Button>
       </div>

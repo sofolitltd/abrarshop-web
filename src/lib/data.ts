@@ -261,7 +261,87 @@ export const getProductBySlug = async (
 };
 
 
-// Brand Functions
+
+// Brand Functions (Categorized)
+export const getBrandsByCategoryId = async (categoryId: string): Promise<Brand[]> => {
+  try {
+    // 1. Get the category and all its descendants to match the logic in getProducts
+    const allCategories = await db.select().from(categoriesTable);
+    const allCategoryIds: string[] = [categoryId];
+
+    const getDescendants = (parentId: string) => {
+      const children = allCategories.filter(c => c.parentId === parentId);
+      children.forEach(child => {
+        allCategoryIds.push(child.id);
+        getDescendants(child.id);
+      });
+    };
+    getDescendants(categoryId);
+
+    // 2. Fetch distinct brands that have products in these categories
+    const result = await db
+      .selectDistinct({
+        id: brandsTable.id,
+        name: brandsTable.name,
+        slug: brandsTable.slug,
+        imageUrl: brandsTable.imageUrl,
+        createdAt: brandsTable.createdAt,
+        updatedAt: brandsTable.updatedAt,
+      })
+      .from(brandsTable)
+      .innerJoin(productsTable, eq(productsTable.brandId, brandsTable.id))
+      .where(sql`${productsTable.categoryId} IN (${sql.join(allCategoryIds.map(id => sql`${id}`), sql`, `)})`)
+      .orderBy(brandsTable.name);
+
+    return result as Brand[];
+  } catch (error) {
+    console.error('Failed to fetch brands by category:', error);
+    return [];
+  }
+};
+
+export const getBrandsByCategoryIds = async (categoryIds: string[]): Promise<Brand[]> => {
+  if (!categoryIds || categoryIds.length === 0) {
+    return getBrands();
+  }
+  try {
+    const allCategories = await db.select().from(categoriesTable);
+    const allCategoryIds: string[] = [];
+
+    categoryIds.forEach(catId => {
+      allCategoryIds.push(catId);
+      const getDescendants = (parentId: string) => {
+        const children = allCategories.filter(c => c.parentId === parentId);
+        children.forEach(child => {
+          allCategoryIds.push(child.id);
+          getDescendants(child.id);
+        });
+      };
+      getDescendants(catId);
+    });
+
+    const uniqueCategoryIds = [...new Set(allCategoryIds)];
+
+    const result = await db
+      .selectDistinct({
+        id: brandsTable.id,
+        name: brandsTable.name,
+        slug: brandsTable.slug,
+        imageUrl: brandsTable.imageUrl,
+        createdAt: brandsTable.createdAt,
+        updatedAt: brandsTable.updatedAt,
+      })
+      .from(brandsTable)
+      .innerJoin(productsTable, eq(productsTable.brandId, brandsTable.id))
+      .where(sql`${productsTable.categoryId} IN (${sql.join(uniqueCategoryIds.map(id => sql`${id}`), sql`, `)})`)
+      .orderBy(brandsTable.name);
+
+    return result as Brand[];
+  } catch (error) {
+    console.error('Failed to fetch brands by category IDs:', error);
+    return [];
+  }
+};
 export const getBrands = async (): Promise<Brand[]> => {
   try {
     const result = await db.select().from(brandsTable).orderBy(brandsTable.name);
@@ -357,6 +437,62 @@ export const getCategoryBySlug = async (slug: string): Promise<Category | undefi
   }
 }
 
+export const getCategoriesByBrandId = async (brandId: string): Promise<Category[]> => {
+  try {
+    const parentCategories = alias(categoriesTable, 'parent');
+
+    const result = await db
+      .selectDistinct({
+        id: categoriesTable.id,
+        name: categoriesTable.name,
+        slug: categoriesTable.slug,
+        parentId: categoriesTable.parentId,
+        parentName: parentCategories.name,
+        imageUrl: categoriesTable.imageUrl,
+        isFeatured: categoriesTable.isFeatured,
+        createdAt: categoriesTable.createdAt,
+        updatedAt: categoriesTable.updatedAt,
+      })
+      .from(categoriesTable)
+      .innerJoin(productsTable, eq(productsTable.categoryId, categoriesTable.id))
+      .leftJoin(parentCategories, eq(categoriesTable.parentId, parentCategories.id))
+      .where(eq(productsTable.brandId, brandId))
+      .orderBy(categoriesTable.name);
+
+    // Also need to include all parent categories of these categories to maintain the hierarchy in the UI
+    const categoryIds = result.map(c => c.id);
+    const parentIds = result.map(c => c.parentId).filter(Boolean) as string[];
+
+    if (parentIds.length === 0) return result as Category[];
+
+    const allCategories = await db.select().from(categoriesTable);
+    const finalCategoryIds = new Set(categoryIds);
+
+    parentIds.forEach(pId => {
+      let currentId: string | null = pId;
+      while (currentId) {
+        finalCategoryIds.add(currentId);
+        const parent = allCategories.find(c => c.id === currentId);
+        currentId = parent?.parentId || null;
+      }
+    });
+
+    const finalResult = allCategories
+      .filter(c => finalCategoryIds.has(c.id))
+      .map(c => {
+        const parent = allCategories.find(p => p.id === c.parentId);
+        return {
+          ...c,
+          parentName: parent?.name || null
+        };
+      });
+
+    return finalResult as Category[];
+  } catch (error) {
+    console.error('Failed to fetch categories by brand:', error);
+    return [];
+  }
+};
 
 // Hero Slider Functions
 export const getHeroSliders = async (options?: { isActive?: boolean; type?: 'carousel' | 'promo-top' | 'promo-bottom'; limit?: number }): Promise<HeroSlider[]> => {

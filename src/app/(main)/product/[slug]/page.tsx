@@ -1,5 +1,5 @@
 
-import { getProductBySlug } from "@/lib/data";
+import { getProductBySlug, getCategories } from "@/lib/data";
 import { notFound } from "next/navigation";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { Separator } from "@/components/ui/separator";
@@ -53,18 +53,47 @@ export default async function ProductDetailPage({
     notFound();
   }
 
+  // Fetch categories to build hierarchical breadcrumb
+  const allCategories = await getCategories();
+  const breadcrumbItems = [{ name: 'Home', href: '/' }];
+
+  if (product.categoryId) {
+    const parentTrail: any[] = [];
+    let currentId: string | null = product.categoryId;
+
+    // Trace up the tree
+    while (currentId) {
+      const cat = allCategories.find(c => c.id === currentId);
+      if (cat) {
+        parentTrail.unshift(cat);
+        currentId = cat.parentId;
+      } else {
+        break;
+      }
+    }
+
+    // Add to breadcrumb items with cumulative slugs
+    let cumulativeSlug = "";
+    parentTrail.forEach(cat => {
+      // Note: We're assuming the full slug path matches the category page structure
+      // For simplicity here, we'll try to reconstruct the slug path or use a flat structure if complex
+      // Based on the category page, it uses a full slug reconstructed from the chain
+      cumulativeSlug = cumulativeSlug ? `${cumulativeSlug}/${cat.slug}` : cat.slug;
+      breadcrumbItems.push({
+        name: cat.name,
+        href: `/category/${cumulativeSlug}`
+      });
+    });
+  }
+
+  // Add the product itself
+  breadcrumbItems.push({ name: product.name, href: `/product/${product.slug}` });
+
   return (
     <>
       <div className="container py-6">
         <div className="mb-6">
-          <Breadcrumb
-            items={[
-              { name: 'Home', href: '/' },
-              { name: 'Products', href: '/products' },
-              ...(product.category ? [{ name: product.category, href: `/category/${product.categorySlug}` }] : []),
-              { name: product.name, href: `/products/${product.slug}` }
-            ]}
-          />
+          <Breadcrumb items={breadcrumbItems} />
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12 items-start">

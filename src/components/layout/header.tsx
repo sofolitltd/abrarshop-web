@@ -5,20 +5,21 @@ import { useState, Suspense } from "react";
 import { Button } from "@/components/ui/button";
 import { CartIcon } from "@/components/cart/cart-icon";
 import { CartSheet } from "@/components/cart/cart-sheet";
+import { useCart } from "@/context/cart-context";
 import { SearchInput } from "./search-input";
 import { User, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const navLinks = [
-  { href: "/products", label: "Products" },
+  { href: "/product", label: "Products" },
 ];
 
 const SearchBarFallback = () => <Skeleton className="h-10 w-full" />;
 const DesktopSearchBarFallback = () => <Skeleton className="h-10 w-full min-w-[350px]" />;
 
 export function Header() {
-  const [isCartOpen, setCartOpen] = useState(false);
+  const { isDrawerOpen, setDrawerOpen } = useCart();
   const [isMobileSearchOpen, setMobileSearchOpen] = useState(false);
 
   return (
@@ -39,7 +40,7 @@ export function Header() {
               <Search className={cn("h-5 w-5", isMobileSearchOpen && "text-orange-500")} />
               <span className="sr-only">Toggle Search</span>
             </Button>
-            <CartIcon onClick={() => setCartOpen(true)} className="text-white hover:bg-zinc-900 hover:text-white" />
+            <CartIcon onClick={() => setDrawerOpen(true)} className="text-white hover:bg-zinc-900 hover:text-white" />
             <Button variant="ghost" size="icon" className="rounded-none hover:bg-zinc-900 text-white hover:text-white" asChild>
               <Link href="/login" aria-label="Login or view account">
                 <User className="h-5 w-5" />
@@ -74,7 +75,7 @@ export function Header() {
                 <SearchInput />
               </Suspense>
             </div>
-            <CartIcon onClick={() => setCartOpen(true)} className="text-white hover:bg-zinc-900 hover:text-white" />
+            <CartIcon onClick={() => setDrawerOpen(true)} className="text-white hover:bg-zinc-900 hover:text-white" />
             <Button variant="ghost" size="icon" className="rounded-none hover:bg-zinc-900 text-white hover:text-white" asChild>
               <Link href="/login" aria-label="Login or view account">
                 <User className="h-5 w-5" />
@@ -95,7 +96,7 @@ export function Header() {
         </div>
       )}
 
-      <CartSheet open={isCartOpen} onOpenChange={setCartOpen} />
+      <CartSheet open={isDrawerOpen} onOpenChange={setDrawerOpen} />
     </header>
   );
 }

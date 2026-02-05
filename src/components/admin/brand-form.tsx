@@ -190,7 +190,7 @@ export function BrandForm({ brand, onSubmit, hideCard = false, onSuccess }: Bran
                         <CardFooter className="border-t px-6 py-4">
                             <div className="flex justify-end gap-2 w-full">
                                 <Button variant="outline" asChild disabled={isSubmitting}>
-                                    <Link href="/admin/brands">Cancel</Link>
+                                    <Link href="/admin/brand">Cancel</Link>
                                 </Button>
                                 <Button type="submit" disabled={isSubmitting}>
                                     {uploadProgress !== null ? (

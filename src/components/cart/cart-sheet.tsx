@@ -12,7 +12,7 @@ import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import Image from "next/image";
 import { Input } from "@/components/ui/input";
-import { Trash2, ShoppingBag } from "lucide-react";
+import { Trash2, ShoppingBag, Plus, Minus } from "lucide-react";
 import Link from "next/link";
 import { Separator } from "../ui/separator";
 
@@ -52,26 +52,39 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
                         sizes="80px"
                       />
                     </div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{item.name}</h3>
-                      <p className="text-sm text-muted-foreground">
-                        {item.price.toFixed(0)}৳
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold text-sm sm:text-base truncate">{item.name}</h3>
+                      <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                        {item.price.toLocaleString()}৳
                       </p>
-                      <div className="mt-2 flex items-center gap-2">
-                        <Input
-                          type="number"
-                          min="1"
-                          value={item.quantity}
-                          onChange={(e) =>
-                            updateItemQuantity(item.id, parseInt(e.target.value))
-                          }
-                          className="h-8 w-16"
-                          aria-label={`Quantity for ${item.name}`}
-                        />
+                      <div className="mt-2.5 flex items-center justify-between">
+                        <div className="flex items-center border rounded-none">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 sm:h-8 sm:w-8 rounded-none hover:bg-zinc-100"
+                            onClick={() => updateItemQuantity(item.id, item.quantity - 1)}
+                            aria-label={`Decrease quantity for ${item.name}`}
+                          >
+                            <Minus className="h-3 w-3" />
+                          </Button>
+                          <span className="w-8 sm:w-10 text-center text-xs sm:text-sm font-medium">
+                            {item.quantity}
+                          </span>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 sm:h-8 sm:w-8 rounded-none hover:bg-zinc-100"
+                            onClick={() => updateItemQuantity(item.id, item.quantity + 1)}
+                            aria-label={`Increase quantity for ${item.name}`}
+                          >
+                            <Plus className="h-3 w-3" />
+                          </Button>
+                        </div>
                         <Button
-                          variant="outline"
+                          variant="ghost"
                           size="icon"
-                          className="h-8 w-8"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/5"
                           onClick={() => removeItem(item.id)}
                           aria-label={`Remove ${item.name} from cart`}
                         >
@@ -79,25 +92,30 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
                         </Button>
                       </div>
                     </div>
-                    <p className="font-semibold">
-                      {(item.price * item.quantity).toFixed(0)}৳
+                    <p className="font-bold text-sm sm:text-base whitespace-nowrap">
+                      {(item.price * item.quantity).toLocaleString()}৳
                     </p>
                   </div>
                 ))}
               </div>
             </ScrollArea>
-            <SheetFooter className="bg-card p-6">
-              <div className="flex w-full flex-col gap-4">
-                <div className="flex justify-between text-lg font-semibold">
+            <SheetFooter className="p-6 border-t">
+              <div className="flex w-full flex-col gap-3">
+                <div className="flex justify-between text-base sm:text-lg font-bold">
                   <span>Subtotal</span>
-                  <span>{totalPrice.toFixed(0)}৳</span>
+                  <span>{totalPrice.toLocaleString()}৳</span>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  Shipping and taxes calculated at checkout.
+                <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight">
+                  Shipping and taxes are calculated during checkout. Prices are inclusive of VAT where applicable.
                 </p>
-                <Button asChild size="lg" className="w-full">
-                  <Link href="/checkout">Proceed to Checkout</Link>
-                </Button>
+                <div className="flex flex-col gap-2 mt-2">
+                  <Button asChild size="lg" className="w-full rounded-none h-12 text-sm sm:text-base" onClick={() => onOpenChange(false)}>
+                    <Link href="/checkout">Proceed to Checkout</Link>
+                  </Button>
+                  <Button asChild variant="outline" size="lg" className="w-full rounded-none h-12 text-sm sm:text-base" onClick={() => onOpenChange(false)}>
+                    <Link href="/cart">View Shopping Cart</Link>
+                  </Button>
+                </div>
               </div>
             </SheetFooter>
           </>

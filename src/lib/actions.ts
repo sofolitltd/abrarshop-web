@@ -10,7 +10,6 @@ import { createId } from '@paralleldrive/cuid2';
 import { getProducts, getProductById, getBrandById, getCategoryById, getHeroSliderById } from './data';
 import { generateSlug } from '@/lib/utils';
 import { v2 as cloudinary } from 'cloudinary';
-import { createBkashPayment } from './bkash';
 
 if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
   cloudinary.config({
@@ -278,8 +277,8 @@ export async function createBrand(data: unknown) {
     console.error(error);
     return { success: false, message: error.message || 'Database Error: Failed to create brand.' };
   }
-  revalidatePath('/admin/brands');
-  redirect('/admin/brands');
+  revalidatePath('/admin/brand');
+  redirect('/admin/brand');
 }
 
 export async function updateBrand(id: string, data: unknown) {
@@ -300,9 +299,9 @@ export async function updateBrand(id: string, data: unknown) {
     console.error(error);
     return { success: false, message: error.message || 'Database Error: Failed to update brand.' };
   }
-  revalidatePath('/admin/brands');
-  revalidatePath(`/admin/brands/${id}/edit`);
-  redirect('/admin/brands');
+  revalidatePath('/admin/brand');
+  revalidatePath(`/admin/brand/${id}/edit`);
+  redirect('/admin/brand');
 }
 
 export async function deleteBrand(id: string) {
@@ -316,7 +315,7 @@ export async function deleteBrand(id: string) {
     }
 
     await db.delete(brands).where(eq(brands.id, id));
-    revalidatePath('/admin/brands');
+    revalidatePath('/admin/brand');
     return { message: 'Deleted brand.' };
   } catch (error: any) {
     if (error && error.code === '23503') {
@@ -455,7 +454,7 @@ export async function createBrandJson(data: unknown) {
 
   try {
     const [newBrand] = await db.insert(brands).values({ id: createId(), name, slug, imageUrl }).returning();
-    revalidatePath('/admin/brands');
+    revalidatePath('/admin/brand');
     return { success: true, brand: newBrand };
   } catch (error) {
     console.error(error);
@@ -722,19 +721,19 @@ export async function processCheckout(data: unknown, totalAmount: number) {
       const invoice = `INV-${Date.now()}`;
 
       // Only attempt to call bKash if credentials exist
-      if (process.env.BKASH_APP_KEY && process.env.BKASH_APP_SECRET) {
-        const payment = await createBkashPayment(totalAmount, invoice);
+      // if (process.env.BKASH_APP_KEY && process.env.BKASH_APP_SECRET) {
+      //   const payment = await createBkashPayment(totalAmount, invoice);
 
-        if (payment && payment.bkashURL) {
-          return { success: true, url: payment.bkashURL };
-        } else {
-          console.error("bKash payment creation failed:", payment);
-          return { success: false, message: "Could not create bKash payment session." };
-        }
-      } else {
-        console.warn("bKash credentials missing. Mocking success for development.");
-        return { success: true, url: '/checkout/thank-you' };
-      }
+      //   if (payment && payment.bkashURL) {
+      //     return { success: true, url: payment.bkashURL };
+      //   } else {
+      //     console.error("bKash payment creation failed:", payment);
+      //     return { success: false, message: "Could not create bKash payment session." };
+      //   }
+      // } else {
+      //   console.warn("bKash credentials missing. Mocking success for development.");
+      //   return { success: true, url: '/checkout/thank-you' };
+      // }
     }
 
     // Handle Cash on Delivery or fallback
