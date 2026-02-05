@@ -41,8 +41,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 let lastName = null;
                 if (firebaseUser.displayName) {
                     const parts = firebaseUser.displayName.split(" ");
-                    firstName = parts[0];
-                    lastName = parts.slice(1).join(" ");
+                    if (parts.length >= 2) {
+                        // Take all parts except the last one as first name
+                        firstName = parts.slice(0, -1).join(" ");
+                        // Take the last part as last name
+                        lastName = parts[parts.length - 1];
+                    } else if (parts.length === 1) {
+                        firstName = parts[0];
+                        lastName = null;
+                    }
                 }
 
                 // Sync user with Neon
@@ -51,6 +58,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     email: firebaseUser.email,
                     firstName,
                     lastName,
+                    phoneNumber: firebaseUser.phoneNumber,
                 });
 
                 if (result.success && result.user) {

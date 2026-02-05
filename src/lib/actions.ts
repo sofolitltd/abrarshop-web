@@ -842,6 +842,7 @@ export async function syncUserWithNeon(profile: {
         email: profile.email || '',
         firstName: profile.firstName,
         lastName: profile.lastName,
+        phoneNumber: profile.phoneNumber || existingUser.phoneNumber,
         updatedAt: new Date(),
       }).where(eq(users.id, profile.uid));
       return { success: true, user: existingUser };

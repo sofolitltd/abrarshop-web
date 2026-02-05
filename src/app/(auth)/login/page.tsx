@@ -16,7 +16,7 @@ import { signInWithEmailAndPassword } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 export default function LoginPage() {
   const [email, setEmail] = useState("");
@@ -47,6 +47,7 @@ export default function LoginPage() {
           ABRAR<span className="text-orange-500">{" "}SHOP</span>
         </span>
       </Link>
+
       <Card className="w-full max-w-md border-zinc-200 rounded-none shadow-sm bg-white">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold font-headline">Login</CardTitle>
@@ -112,6 +113,16 @@ export default function LoginPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Back Button - Below Card */}
+      <Button
+        variant="ghost"
+        className="mt-4"
+        onClick={() => window.history.back()}
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back
+      </Button>
     </div>
   );
 }

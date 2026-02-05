@@ -16,7 +16,7 @@ import { createUserWithEmailAndPassword, updateProfile } from "firebase/auth";
 import { auth } from "@/lib/firebase";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { Loader2, Eye, EyeOff } from "lucide-react";
+import { Loader2, Eye, EyeOff, ArrowLeft } from "lucide-react";
 import { syncUserWithNeon } from "@/lib/actions";
 
 export default function SignupPage() {
@@ -65,6 +65,7 @@ export default function SignupPage() {
           ABRAR<span className="text-orange-500">{" "}SHOP</span>
         </span>
       </Link>
+
       <Card className="w-full max-w-md border-zinc-200 rounded-none shadow-sm bg-white">
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold font-headline">Sign Up</CardTitle>
@@ -108,7 +109,7 @@ export default function SignupPage() {
               />
             </div>
             <div className="grid gap-1">
-              <p className="text-[10px] text-orange-600 font-medium uppercase tracking-wider">Use this email for future login</p>
+              <p className="text-xs text-orange-600 font-medium uppercase tracking-tight mb-2">Use this email & password for future login</p>
               <div className="grid gap-2">
                 <Label htmlFor="email">Email</Label>
                 <Input
@@ -158,6 +159,16 @@ export default function SignupPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Back Button - Below Card */}
+      <Button
+        variant="ghost"
+        className="mt-4"
+        onClick={() => window.history.back()}
+      >
+        <ArrowLeft className="mr-2 h-4 w-4" />
+        Back
+      </Button>
     </div>
   );
 }

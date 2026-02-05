@@ -10,8 +10,8 @@ export const metadata: Metadata = {
 
 export default function CartPage() {
     return (
-        <div className="container py-12 md:py-16">
-            <div className="mb-12">
+        <div className="container py-6">
+            <div className="mb-4">
                 <Breadcrumb
                     items={[
                         { name: "Home", href: "/" },
@@ -20,8 +20,8 @@ export default function CartPage() {
                 />
             </div>
 
-            <h1 className="text-3xl md:text-4xl font-black font-headline uppercase tracking-tighter mb-10">
-                Your <span className="text-orange-500">Shopping Cart</span>
+            <h1 className="text-2xl md:text-3xl font-black font-headline uppercase tracking-tighter mb-10">
+                Shopping Cart
             </h1>
 
             <CartPageContent />

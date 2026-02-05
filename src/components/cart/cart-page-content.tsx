@@ -4,7 +4,7 @@
 import { useCart } from "@/context/cart-context";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import { Trash2, ShoppingBag, ArrowRight, Minus, Plus } from "lucide-react";
+import { Trash2, ShoppingBag, ArrowRight, Minus, Plus, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -40,7 +40,7 @@ export function CartPageContent() {
 
     return (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
-            <div className="lg:col-span-8 space-y-6">
+            <div className="lg:col-span-8 space-y-4">
                 <div className="hidden md:grid grid-cols-12 gap-4 px-6 py-4 bg-zinc-50 border border-zinc-200 text-[10px] font-black uppercase tracking-widest text-zinc-500">
                     <div className="col-span-6">Product Information</div>
                     <div className="col-span-2 text-center">Price</div>
@@ -50,11 +50,11 @@ export function CartPageContent() {
 
                 <div className="space-y-4">
                     {items.map((item) => (
-                        <div key={item.id} className="group relative bg-white border border-zinc-200 p-4 md:p-6 transition-all hover:border-zinc-400">
+                        <div key={item.id} className="group relative bg-white border border-zinc-200   transition-all hover:border-zinc-400">
                             <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
                                 {/* Product Info */}
-                                <div className="col-span-1 md:col-span-6 flex items-center gap-6">
-                                    <div className="relative h-24 w-24 md:h-32 md:w-32 flex-shrink-0 overflow-hidden bg-zinc-50 group-hover:scale-105 transition-transform duration-500">
+                                <div className="col-span-1 md:col-span-6 flex items-center gap-4">
+                                    <div className="relative h-20    w-20 md:h-24 md:w-24 flex-shrink-0 overflow-hidden bg-zinc-50">
                                         <Image
                                             src={item.image}
                                             alt={item.name}
@@ -64,7 +64,7 @@ export function CartPageContent() {
                                         />
                                     </div>
                                     <div className="space-y-2">
-                                        <h3 className="font-bold text-lg md:text-xl leading-tight group-hover:text-orange-600 transition-colors uppercase tracking-tighter">
+                                        <h3 className="font-bold text-base md:text-lg leading-tight group-hover:text-orange-600 transition-colors uppercase tracking-tight">
                                             {item.name}
                                         </h3>
                                         <button
@@ -79,7 +79,7 @@ export function CartPageContent() {
 
                                 {/* Price */}
                                 <div className="hidden md:flex flex-col items-center justify-center col-span-2">
-                                    <span className="font-bold text-lg">{item.price.toLocaleString()}৳</span>
+                                    <span className="font-medium ">Tk {" "}{item.price.toLocaleString()}</span>
                                 </div>
 
                                 {/* Quantity */}
@@ -106,28 +106,27 @@ export function CartPageContent() {
                                 {/* Subtotal */}
                                 <div className="col-span-1 md:col-span-2 flex md:flex-col items-center justify-between md:justify-center md:text-right">
                                     <span className="text-zinc-400 text-[10px] md:hidden font-bold uppercase tracking-widest">Subtotal</span>
-                                    <span className="font-black text-xl text-orange-600">{(item.price * item.quantity).toLocaleString()}৳</span>
+                                    <span className="font-black text-xl text-orange-600">Tk {" "}{(item.price * item.quantity).toLocaleString()}</span>
                                 </div>
                             </div>
                         </div>
                     ))}
                 </div>
 
-                <div className="flex justify-between items-center pt-6">
-                    <Button asChild variant="link" className="text-zinc-500 hover:text-black font-bold uppercase tracking-widest text-[10px] p-0 h-auto">
-                        <Link href="/product" className="flex items-center gap-2">
-                            Continue Shopping
-                        </Link>
-                    </Button>
-                    <p className="text-zinc-400 text-[10px] font-bold uppercase tracking-widest">
-                        Prices include all applicable taxes
-                    </p>
-                </div>
+
+                <Button asChild variant="link" className="text-zinc-500 hover:text-black font-bold uppercase tracking-widest text-xs p-0 h-auto">
+                    <Link href="/product" className="flex items-center gap-2">
+                        {"<"} Continue Shopping
+                    </Link>
+                </Button>
+
             </div>
 
-            <div className="lg:col-span-4">
-                <div className="sticky top-24 bg-zinc-900 text-white p-8 md:p-10">
-                    <h2 className="text-2xl font-black uppercase tracking-tighter mb-8 border-b border-zinc-800 pb-4">Order Summary</h2>
+            {/*  */}
+            <div className="lg:col-span-4 mb-8">
+                <div className="sticky top-24 bg-zinc-800 text-white p-4 md:p-6">
+                    <h2 className="text-2xl font-black uppercase tracking-tighter border-b border-zinc-800 ">Order Summary</h2>
+                    <Separator className="my-4" />
 
                     <div className="space-y-6">
                         <div className="flex justify-between items-center">
@@ -140,7 +139,7 @@ export function CartPageContent() {
                                 <span className="text-zinc-400 text-sm uppercase font-bold tracking-widest">Total Bill</span>
                                 <p className="text-[10px] text-zinc-500">Shipping calculated at checkout</p>
                             </div>
-                            <span className="text-4xl font-black text-orange-500">{totalPrice.toLocaleString()}৳</span>
+                            <span className="text-3xl font-black text-orange-500">Tk {" "}{totalPrice.toLocaleString()}</span>
                         </div>
 
                         <div className="pt-6">
@@ -166,7 +165,7 @@ export function CartPageContent() {
                                 <span className="text-[8px] font-bold uppercase tracking-widest">Quality</span>
                             </div>
                             <div className="flex flex-col items-center text-center gap-2">
-                                <div className="h-10 w-10 flex items-center justify-center border border-zinc-700 rounded-full">
+                                <div className="h-10 w-10 flex items-center justify-center border border-zinc-700 rounded-full ">
                                     <ArrowRight className="h-4 w-4 rotate-[135deg]" />
                                 </div>
                                 <span className="text-[8px] font-bold uppercase tracking-widest">Support</span>

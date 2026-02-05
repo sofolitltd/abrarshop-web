@@ -8,9 +8,10 @@ import { Button } from "@/components/ui/button";
 
 interface OrderSummaryProps {
   deliveryFee: number;
+  deliveryMethodField?: React.ReactNode;
 }
 
-export function OrderSummary({ deliveryFee }: OrderSummaryProps) {
+export function OrderSummary({ deliveryFee, deliveryMethodField }: OrderSummaryProps) {
   const { items, totalPrice: subtotal } = useCart();
 
   if (items.length === 0) {
@@ -45,7 +46,7 @@ export function OrderSummary({ deliveryFee }: OrderSummaryProps) {
               </p>
             </div>
             <p className="font-bold text-xs text-zinc-900">
-              {(item.price * item.quantity).toLocaleString()}৳
+              <span className="text-xs ml-0.5">Tk</span> {(item.price * item.quantity).toLocaleString()}
             </p>
           </div>
         ))}
@@ -58,26 +59,37 @@ export function OrderSummary({ deliveryFee }: OrderSummaryProps) {
         <Button variant="outline" className="flex-shrink-0 rounded-none border-black hover:bg-black hover:text-white transition-colors">Apply</Button>
       </div>
 
-      <Separator className="bg-zinc-100" />
+      {/* Delivery Method - Integrated into order summary */}
+      {deliveryMethodField && (
+        <>
+          <Separator className="bg-zinc-100" />
+          <div className="pt-2">
+            <p className=" text-base uppercase tracking-wider font-bold border-b border-zinc-100 pb-2 mb-3">Delivery Method</p>
+            {deliveryMethodField}
+          </div>
+        </>
+      )}
 
-      <div className="space-y-2 text-xs">
+      <Separator className="bg-zinc-100 " />
+
+      <div className="space-y-2 text-xs pt-2">
         <div className="flex justify-between">
-          <p className="text-zinc-500 uppercase tracking-wider font-bold text-[10px]">Subtotal</p>
-          <p className="font-bold text-zinc-900">{subtotal.toLocaleString()}৳</p>
+          <p className="text-zinc-500  tracking-wider font-semibold text-xs">Subtotal</p>
+          <p className="font-bold text-zinc-900"> {"Tk "}{subtotal.toLocaleString()}</p>
         </div>
         <div className="flex justify-between">
-          <p className="text-zinc-500 uppercase tracking-wider font-bold text-[10px]">Delivery Fee</p>
-          <p className="font-bold text-orange-600">{deliveryFee.toLocaleString()}৳</p>
+          <p className="text-zinc-500  tracking-wider font-semibold text-xs">Delivery Fee</p>
+          <p className="font-bold text-orange-600"> {"Tk "}{deliveryFee.toLocaleString()}</p>
         </div>
       </div>
 
       <Separator className="bg-zinc-200" />
 
-      <div className="flex justify-between items-center py-2">
+      <div className="flex justify-between items-center">
         <p className="text-sm font-black uppercase tracking-tighter">Total Payable</p>
         <div className="text-right">
           <p className="text-xl font-black text-black leading-none">
-            {total.toLocaleString()}<span className="text-xs ml-0.5">৳</span>
+            <span className="text-xs ml-0.5">Tk</span> {total.toLocaleString()}
           </p>
         </div>
       </div>

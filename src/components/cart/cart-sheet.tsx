@@ -33,17 +33,17 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent className="flex w-full flex-col pr-0 sm:max-w-lg">
-        <SheetHeader className="px-6">
+        <SheetHeader className="px-6 pb-0">
           <SheetTitle>Shopping Cart ({totalItems})</SheetTitle>
         </SheetHeader>
         <Separator />
         {items.length > 0 ? (
           <>
             <ScrollArea className="flex-1">
-              <div className="flex flex-col gap-6 p-6">
+              <div className="flex flex-col gap-6 px-4">
                 {items.map((item) => (
-                  <div key={item.id} className="flex items-center gap-4">
-                    <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden rounded-none">
+                  <div key={item.id} className="flex items-center gap-4 border p-2">
+                    <div className="relative border size-22.5 flex-shrink-0 overflow-hidden rounded-none">
                       <Image
                         src={item.image}
                         alt={item.name}
@@ -54,9 +54,16 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
                     </div>
                     <div className="flex-1 min-w-0">
                       <h3 className="font-semibold text-sm sm:text-base truncate">{item.name}</h3>
-                      <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                        {item.price.toLocaleString()}৳
-                      </p>
+                      <div className="flex items-center justify-between">
+
+                        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
+                          Tk {""}{item.price.toLocaleString()}
+                        </p>
+                        <p className="font-bold text-sm sm:text-base whitespace-nowrap">Tk{" "}
+                          {(item.price * item.quantity).toLocaleString()}
+                        </p>
+                      </div>
+
                       <div className="mt-2.5 flex items-center justify-between">
                         <div className="flex items-center border rounded-none">
                           <Button
@@ -89,12 +96,11 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
                           aria-label={`Remove ${item.name} from cart`}
                         >
                           <Trash2 className="h-4 w-4" />
+
                         </Button>
                       </div>
                     </div>
-                    <p className="font-bold text-sm sm:text-base whitespace-nowrap">
-                      {(item.price * item.quantity).toLocaleString()}৳
-                    </p>
+
                   </div>
                 ))}
               </div>
@@ -103,10 +109,10 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
               <div className="flex w-full flex-col gap-3">
                 <div className="flex justify-between text-base sm:text-lg font-bold">
                   <span>Subtotal</span>
-                  <span>{totalPrice.toLocaleString()}৳</span>
+                  <span>Tk {""}{totalPrice.toLocaleString()}</span>
                 </div>
                 <p className="text-[10px] sm:text-xs text-muted-foreground leading-tight">
-                  Shipping and taxes are calculated during checkout. Prices are inclusive of VAT where applicable.
+                  Shipping and delivery charge are calculated during checkout.
                 </p>
                 <div className="flex flex-col gap-2 mt-2">
                   <Button asChild size="lg" className="w-full rounded-none h-12 text-sm sm:text-base" onClick={() => onOpenChange(false)}>

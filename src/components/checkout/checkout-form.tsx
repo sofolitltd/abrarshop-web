@@ -18,9 +18,11 @@ import { Input } from "@/components/ui/input";
 import { processCheckout } from "@/lib/actions";
 import { useCart } from "@/context/cart-context";
 import { useToast } from "@/hooks/use-toast";
-import { Loader2 } from "lucide-react";
+import { Loader2, TruckIcon } from "lucide-react";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/context/auth-context";
+
+import Image from "next/image";
 
 const checkoutSchema = z.object({
   firstName: z.string().min(1, "First name is required."),
@@ -38,9 +40,16 @@ type CheckoutFormValues = z.infer<typeof checkoutSchema>;
 
 interface CheckoutFormProps {
   onDeliveryChange: (fee: number) => void;
+  children?: (props: {
+    form: any;
+    isPending: boolean;
+    DeliveryMethodField: React.ReactNode;
+    PaymentMethodField: React.ReactNode;
+    SubmitButton: React.ReactNode;
+  }) => React.ReactNode;
 }
 
-export function CheckoutForm({ onDeliveryChange }: CheckoutFormProps) {
+export function CheckoutForm({ onDeliveryChange, children }: CheckoutFormProps) {
   const { clearCart, items, totalPrice } = useCart();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -140,9 +149,89 @@ export function CheckoutForm({ onDeliveryChange }: CheckoutFormProps) {
     });
   };
 
+  const DeliveryMethodField = (
+    <FormField control={form.control} name="deliveryMethod" render={({ field }) => (
+      <FormItem className="space-y-0">
+        <FormControl>
+          <RadioGroup onValueChange={field.onChange} value={field.value} className="gap-3">
+            <FormItem className="flex items-center space-x-3 space-y-0 p-2.5 border border-zinc-100 hover:bg-zinc-50 transition-colors flex-1 min-w-[180px] cursor-pointer">
+              <FormControl><RadioGroupItem value="gaibandha" className="text-orange-500 border-zinc-300 h-4 w-4" /></FormControl>
+              <FormLabel className="text-sm font-medium cursor-pointer flex-1">
+                <div className="flex w-full justify-between">
+                  <p className="">Inside Gaibandha</p>
+                  <span className="ml-2 font-bold ">Tk 50</span>
+                </div>
+              </FormLabel>
+            </FormItem>
+
+            {/*  */}
+            <FormItem className="flex items-center space-x-3 space-y-0 p-2.5 border border-zinc-100 hover:bg-zinc-50 transition-colors flex-1 min-w-[180px] cursor-pointer">
+              <FormControl><RadioGroupItem value="full_country" className="text-orange-500 border-zinc-300 h-4 w-4" /></FormControl>
+              <FormLabel className="text-sm font-medium cursor-pointer flex-1">
+                <div className="flex w-full justify-between">
+                  <p className="">All Over Bangladesh</p>
+                  <span className="ml-2 font-bold ">Tk 100</span>
+                </div>
+              </FormLabel>
+            </FormItem>
+          </RadioGroup>
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    )} />
+  );
+
+  const PaymentMethodField = (
+    <FormField control={form.control} name="paymentMethod" render={({ field }) => (
+      <FormItem className="space-y-0">
+        <FormControl>
+          <RadioGroup onValueChange={field.onChange} value={field.value} className="gap-3">
+            <FormItem className="flex items-center space-x-3 space-y-0 p-2.5 border border-zinc-100 hover:bg-zinc-50 transition-colors flex-1 min-w-[180px] cursor-pointer">
+              <FormControl><RadioGroupItem value="cod" className="text-orange-500 border-zinc-300 h-4 w-4" /></FormControl>
+              <FormLabel className="text-sm font-medium cursor-pointer flex-1">
+                <div className="flex w-full h-6 items-center gap-2 justify-between">
+                  <p>Cash on Delivery</p>
+                  <p className="text-xs text-gray-500">(Pay with cash upon delivery)</p>
+                </div>
+              </FormLabel>
+            </FormItem>
+            <FormItem className="flex items-center space-x-3 space-y-0 p-2.5 border border-zinc-100 hover:bg-zinc-50 transition-colors flex-1 min-w-[180px] cursor-pointer">
+              <FormControl><RadioGroupItem value="bkash" className="text-orange-500 border-zinc-300 h-4 w-4" /></FormControl>
+              <FormLabel className="text-sm font-medium cursor-pointer flex-1 font-bold">
+                <div className="flex w-full h-6 items-center gap-2 justify-between">
+                  <p>BKash Payment</p>
+                  <Image src="/bkash.png" alt="bKash" width={50} height={50} />
+                </div>
+              </FormLabel>
+            </FormItem>
+          </RadioGroup>
+        </FormControl>
+        <FormMessage />
+      </FormItem>
+    )} />
+  );
+
+  const SubmitButton = (
+    <Button type="submit" disabled={isPending} size="lg" className="w-full px-12 py-6 bg-black hover:bg-zinc-900 rounded-none font-bold uppercase tracking-widest text-white">
+      {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+      Place Order
+    </Button>
+  );
+
+  if (children) {
+    return (
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} id="checkout-form">
+          {children({ form, isPending, DeliveryMethodField, PaymentMethodField, SubmitButton })}
+        </form>
+      </Form>
+    );
+  }
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4" id="checkout-form">
+        {/* Shipping Contact */}
         <div className="border border-zinc-200 bg-white rounded-none shadow-sm">
           <div className="border-b border-zinc-100 py-3 px-6">
             <h2 className="text-base font-bold font-headline uppercase tracking-tight">Shipping Contact</h2>
@@ -197,71 +286,17 @@ export function CheckoutForm({ onDeliveryChange }: CheckoutFormProps) {
           </div>
         </div>
 
-        <div className="space-y-4">
-          <div className="border border-zinc-200 bg-white rounded-none shadow-sm">
-            <div className="border-b border-zinc-100 py-2.5 px-6">
-              <h2 className="text-sm font-bold font-headline uppercase tracking-tight">Payment Method</h2>
-            </div>
-            <div className="p-6 pt-3">
-              <FormField control={form.control} name="paymentMethod" render={({ field }) => (
-                <FormItem className="space-y-0">
-                  <FormControl>
-                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-row flex-wrap gap-3">
-                      <FormItem className="flex items-center space-x-3 space-y-0 p-2.5 border border-zinc-100 hover:bg-zinc-50 transition-colors flex-1 min-w-[180px] cursor-pointer">
-                        <FormControl><RadioGroupItem value="cod" className="text-orange-500 border-zinc-300 h-4 w-4" /></FormControl>
-                        <FormLabel className="text-sm font-medium cursor-pointer flex-1">Cash on Delivery</FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-3 space-y-0 p-2.5 border border-zinc-100 hover:bg-zinc-50 transition-colors flex-1 min-w-[180px] cursor-pointer">
-                        <FormControl><RadioGroupItem value="bkash" className="text-orange-500 border-zinc-300 h-4 w-4" /></FormControl>
-                        <FormLabel className="text-sm font-medium cursor-pointer flex-1 text-pink-600 font-bold">bKash Gateway</FormLabel>
-                      </FormItem>
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            </div>
-          </div>
+        {/* Delivery Method - Hidden fields that will be rendered separately */}
+        <FormField control={form.control} name="deliveryMethod" render={({ field }) => (
+          <input type="hidden" {...field} />
+        )} />
 
-          <div className="border border-zinc-200 bg-white rounded-none shadow-sm">
-            <div className="border-b border-zinc-100 py-2.5 px-6">
-              <h2 className="text-sm font-bold font-headline uppercase tracking-tight">Delivery Method</h2>
-            </div>
-            <div className="p-6 pt-3">
-              <FormField control={form.control} name="deliveryMethod" render={({ field }) => (
-                <FormItem className="space-y-0">
-                  <FormControl>
-                    <RadioGroup onValueChange={field.onChange} defaultValue={field.value} className="flex flex-row flex-wrap gap-3">
-                      <FormItem className="flex items-center space-x-3 space-y-0 p-2.5 border border-zinc-100 hover:bg-zinc-50 transition-colors flex-1 min-w-[180px] cursor-pointer">
-                        <FormControl><RadioGroupItem value="gaibandha" className="text-orange-500 border-zinc-300 h-4 w-4" /></FormControl>
-                        <FormLabel className="text-sm font-medium cursor-pointer flex-1">
-                          Gaibandha
-                          <span className="ml-2 font-bold text-orange-500">50৳</span>
-                        </FormLabel>
-                      </FormItem>
-                      <FormItem className="flex items-center space-x-3 space-y-0 p-2.5 border border-zinc-100 hover:bg-zinc-50 transition-colors flex-1 min-w-[180px] cursor-pointer">
-                        <FormControl><RadioGroupItem value="full_country" className="text-orange-500 border-zinc-300 h-4 w-4" /></FormControl>
-                        <FormLabel className="text-sm font-medium cursor-pointer flex-1">
-                          Countrywide
-                          <span className="ml-2 font-bold text-orange-500">100৳</span>
-                        </FormLabel>
-                      </FormItem>
-                    </RadioGroup>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )} />
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-end pt-4">
-          <Button type="submit" disabled={isPending} size="lg" className="px-12 py-6 bg-black hover:bg-zinc-900 rounded-none font-bold uppercase tracking-widest text-white">
-            {isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-            Confirm Order
-          </Button>
-        </div>
+        {/* Payment Method - Hidden fields that will be rendered separately */}
+        <FormField control={form.control} name="paymentMethod" render={({ field }) => (
+          <input type="hidden" {...field} />
+        )} />
       </form>
     </Form>
   );
 }
+
