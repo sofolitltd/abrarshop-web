@@ -136,3 +136,35 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
     relationName: 'product',
   }),
 }));
+
+export const reviews = pgTable('reviews', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  productId: text('product_id').notNull().references(() => products.id, { onDelete: 'cascade' }),
+  userId: text('user_id').references(() => users.id, { onDelete: 'cascade' }), // Made optional in case we allow guest reviews later, but for now enforcing in logic
+  userName: varchar('user_name', { length: 256 }).notNull(),
+  rating: integer('rating').notNull(),
+  comment: text('comment'),
+  status: varchar('status', { length: 20 }).notNull().default('approved'), // approved, pending, rejected
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  product: one(products, {
+    fields: [reviews.productId],
+    references: [products.id],
+    relationName: 'product_reviews',
+  }),
+  user: one(users, {
+    fields: [reviews.userId],
+    references: [users.id],
+    relationName: 'user_reviews',
+  }),
+}));
+
+export const productsRelations = relations(products, ({ many }) => ({
+  reviews: many(reviews, { relationName: 'product_reviews' }),
+  orderItems: many(orderItems, { relationName: 'product' }),
+}));

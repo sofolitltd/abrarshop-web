@@ -124,7 +124,7 @@ export function ProductFilters({ categories = [], brands = [], hideCategories = 
         <div className="flex flex-col gap-4 w-full">
 
             {/* --- CATEGORIES SECTION --- */}
-            {!hideCategories && (
+            {!hideCategories && categories.length > 0 && (
                 <div className="border rounded-md">
                     <button
                         onClick={() => setIsCatSectionOpen(!isCatSectionOpen)}
@@ -191,7 +191,7 @@ export function ProductFilters({ categories = [], brands = [], hideCategories = 
             )}
 
             {/* --- BRANDS SECTION --- */}
-            {!hideBrands && (
+            {!hideBrands && brands.length > 0 && (
                 <div className="border rounded-md">
                     <button
                         onClick={() => setIsBrandSectionOpen(!isBrandSectionOpen)}

@@ -4,7 +4,8 @@ import { FaWhatsapp } from "react-icons/fa";
 
 export function TopBar() {
     return (
-        <div className="w-full bg-zinc-900 text-zinc-300 text-[11px] font-medium tracking-wider uppercase border-b border-zinc-800">
+        // hide on sm 
+        <div className="hidden sm:block w-full bg-zinc-900 text-zinc-300 text-[11px] font-medium tracking-wider uppercase border-b border-zinc-800">
             <div className="container flex items-center justify-between h-9 px-4">
                 {/* Left Side: Quick Order & WhatsApp */}
                 <div className="flex items-center gap-6">

@@ -43,7 +43,9 @@ export function Footer() {
               <li><Link href="/product" className="hover:text-orange-500 transition-colors">All Products</Link></li>
               <li><Link href="/brand" className="hover:text-orange-500 transition-colors">Shop by Brands</Link></li>
               <li><Link href="/category" className="hover:text-orange-500 transition-colors">Shop by Categories</Link></li>
+              <li><Link href="/about" className="hover:text-orange-500 transition-colors">About Us</Link></li>
               <li><Link href="/contact" className="hover:text-orange-500 transition-colors">Contact Us</Link></li>
+              <li><Link href="/refund-policy" className="hover:text-orange-500 transition-colors">Refund Policy</Link></li>
             </ul>
           </div>
 
@@ -86,9 +88,11 @@ export function Footer() {
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
           <p>&copy; {new Date().getFullYear()} ABRAR SHOP. All rights reserved.</p>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center justify-center md:justify-end gap-x-6 gap-y-2">
+            <Link href="/about" className="hover:text-white transition-colors">About Us</Link>
             <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
             <Link href="/terms" className="hover:text-white transition-colors">Terms & Conditions</Link>
+            <Link href="/refund-policy" className="hover:text-white transition-colors">Refund Policy</Link>
           </div>
         </div>
       </div>

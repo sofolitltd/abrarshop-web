@@ -75,14 +75,14 @@ export function ProductCard({ product, isFeatured = false, priority = false }: P
               {product.category || '-'}
             </p>
 
-            <h3 className="font-semibold leading-tight text-sm sm:text-base line-clamp-2 group-hover:text-orange-600 transition-colors h-10 sm:h-12 uppercase tracking-tight">
+            <h3 className="font-semibold leading-tight text-sm sm:text-base line-clamp-2 group-hover:text-orange-600 transition-colors  h-14 uppercase tracking-normal">
               {product.name}
             </h3>
 
 
           </div>
 
-          <div className="flex items-center gap-3 pt-1">
+          <div className="flex items-center gap-3 ">
             <p className="text-base sm:text-lg font-black text-black">৳{product.price.toLocaleString()}</p>
             {showStrikethrough && (
               <p className="text-xs sm:text-sm text-zinc-400 line-through decoration-zinc-300 font-medium">৳{product.originalPrice?.toLocaleString()}</p>

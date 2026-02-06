@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { db } from '@/lib/db';
-import { products, brands, categories, heroSliders, users, orders, orderItems } from '@/lib/schema';
+import { products, brands, categories, heroSliders, users, orders, orderItems, reviews } from '@/lib/schema';
 import { eq, and, ne, desc, inArray, or } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 import { getProducts, getProductById, getBrandById, getCategoryById, getHeroSliderById } from './data';
@@ -934,5 +934,47 @@ export async function getOrderByNumber(orderNumber: string) {
   } catch (error) {
     console.error('Get Order By Number Error:', error);
     return null;
+  }
+}
+
+
+// Review Actions
+const reviewSchema = z.object({
+  productId: z.string().min(1, 'Product ID is required.'),
+  userName: z.string().min(1, 'Name is required.'),
+  rating: z.coerce.number().min(1, 'Rating must be at least 1.').max(5, 'Rating must be at most 5.'),
+  comment: z.string().optional(),
+  userId: z.string().optional(),
+});
+
+export async function submitReview(data: unknown) {
+  const validatedFields = reviewSchema.safeParse(data);
+
+  if (!validatedFields.success) {
+    return {
+      success: false,
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Invalid review data.',
+    };
+  }
+
+  const { productId, userName, rating, comment, userId } = validatedFields.data;
+
+  try {
+    await db.insert(reviews).values({
+      id: createId(),
+      productId,
+      userId: userId || null,
+      userName,
+      rating,
+      comment: comment || null,
+      status: 'approved',
+    });
+
+    revalidatePath(`/product/[slug]`); // Only generic path revalidation works reliably without dynamic params
+    return { success: true, message: 'Review submitted successfully.' };
+  } catch (error: any) {
+    console.error('Submit Review Error:', error);
+    return { success: false, message: 'Failed to submit review.' };
   }
 }

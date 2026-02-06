@@ -45,6 +45,21 @@ export type Product = {
   discount: number;
   createdAt?: Date;
   updatedAt?: Date;
+  // Computed fields (optional)
+  rating?: number;
+  reviewCount?: number;
+};
+
+export type Review = {
+  id: string;
+  productId: string;
+  userId: string | null;
+  userName: string;
+  rating: number;
+  comment: string | null;
+  status: 'approved' | 'pending' | 'rejected';
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 export type CartItem = {

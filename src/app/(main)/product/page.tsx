@@ -2,7 +2,7 @@ import { Suspense } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { ProductFilters } from "@/components/product/product-filters";
-import { getProducts, getCategories, getBrands, getBrandsByCategoryIds } from "@/lib/data";
+import { getProducts, getFilteredCategories, getFilteredBrands } from "@/lib/data";
 import { ProductCard } from "@/components/product/product-card";
 import { Pagination, PaginationContent, PaginationItem, PaginationPrevious, PaginationLink, PaginationNext, PaginationEllipsis } from "@/components/ui/pagination";
 import { ProductSort } from "@/components/product/product-sort";
@@ -21,7 +21,7 @@ function ProductListSkeleton() {
     )
 }
 
-function PaginationComponent({ totalPages, currentPage, query, sortBy, categories, brands }: { totalPages: number, currentPage: number, query?: string, sortBy?: string, categories?: string, brands?: string }) {
+function PaginationComponent({ totalPages, currentPage, query, sortBy, categories, brands, isTrending, isBestSelling, isFeatured }: { totalPages: number, currentPage: number, query?: string, sortBy?: string, categories?: string, brands?: string, isTrending?: string, isBestSelling?: string, isFeatured?: string }) {
     if (totalPages <= 1) return null;
 
     const pageNumbers = [];
@@ -56,6 +56,9 @@ function PaginationComponent({ totalPages, currentPage, query, sortBy, categorie
         if (sortBy && sortBy !== 'newest') params.set('sort', sortBy);
         if (categories) params.set('categories', categories);
         if (brands) params.set('brands', brands);
+        if (isTrending) params.set('isTrending', isTrending);
+        if (isBestSelling) params.set('isBestSelling', isBestSelling);
+        if (isFeatured) params.set('isFeatured', isFeatured);
         params.set(name, value);
         return params.toString();
     }
@@ -97,6 +100,9 @@ async function ProductGrid({
     sortBy,
     categories,
     brands,
+    isTrending,
+    isBestSelling,
+    isFeatured,
     categoriesData,
     brandsData
 }: {
@@ -105,6 +111,9 @@ async function ProductGrid({
     sortBy?: string,
     categories?: string,
     brands?: string,
+    isTrending?: boolean,
+    isBestSelling?: boolean,
+    isFeatured?: boolean,
     categoriesData: Category[],
     brandsData: Brand[]
 }) {
@@ -120,7 +129,10 @@ async function ProductGrid({
         page: currentPage,
         sortBy,
         categoryIds: categoryIds.length > 0 ? categoryIds : undefined,
-        brandIds: brandIds.length > 0 ? brandIds : undefined
+        brandIds: brandIds.length > 0 ? brandIds : undefined,
+        isTrending,
+        isBestSelling,
+        isFeatured
     });
     const totalPages = Math.ceil(totalCount / limit);
 
@@ -141,102 +153,127 @@ async function ProductGrid({
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col gap-4 border border-zinc-200 p-2">
-                {/* Mobile/Tablet Header: Filter + Sort */}
-                <div className="flex items-center justify-between min-[1400px]:hidden w-full">
+            <div className="flex items-center justify-between gap-4 border border-zinc-200 p-4 bg-white shadow-sm">
+                <div className="flex items-center gap-3 w-full sm:w-auto min-[1200px]:hidden">
                     <MobileFilterSheet categories={categoriesData} brands={brandsData} />
-                    <ProductSort />
                 </div>
-
-                {/* Desktop Header: Count + Sort */}
-                <div className="hidden min-[1400px]:flex items-center justify-between w-full">
-                    <p className="text-sm text-muted-foreground">
-                        Showing {products.length} of {totalCount} products
-                    </p>
-                    <ProductSort />
-                </div>
+                <p className="hidden min-[1200px]:block text-sm font-medium">
+                    Showing <span className="text-primary">{products.length}</span> of <span className="font-bold">{totalCount}</span> products
+                </p>
+                <ProductSort />
             </div>
 
-            {/* Mobile/Tablet Text outside the box */}
-            <p className="min-[1400px]:hidden text-sm text-muted-foreground">
-                Showing {products.length} of {totalCount} products
+            <p className="min-[1200px]:hidden text-sm font-medium">
+                Showing <span className="text-primary">{products.length}</span> of <span className="font-bold">{totalCount}</span> products
             </p>
 
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 min-[1400px]:grid-cols-4 md:gap-6">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 lg:grid-cols-4 min-[1200px]:grid-cols-3 xl:grid-cols-4 lg:gap-x-6 lg:gap-y-10">
                 {products.map((product, index) => (
                     <ProductCard key={product.id} product={product} priority={index < 8} />
                 ))}
             </div>
-            <PaginationComponent totalPages={totalPages} currentPage={currentPage} query={query} sortBy={sortBy} categories={categories} brands={brands} />
+
+            <div className="pt-10 border-t">
+                <PaginationComponent totalPages={totalPages} currentPage={currentPage} query={query} sortBy={sortBy} categories={categories} brands={brands} isTrending={isTrending ? 'true' : undefined} isBestSelling={isBestSelling ? 'true' : undefined} isFeatured={isFeatured ? 'true' : undefined} />
+            </div>
         </div>
     )
 }
 
-export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ q?: string, page?: string, sort?: string, categories?: string, brands?: string }> }) {
+export default async function ProductsPage({ searchParams }: { searchParams: Promise<{ q?: string, page?: string, sort?: string, categories?: string, brands?: string, isTrending?: string, isBestSelling?: string, isFeatured?: string }> }) {
     const sParams = await searchParams;
     const query = sParams?.q || '';
     const currentPage = Number(sParams?.page) || 1;
     const sortBy = sParams?.sort || 'newest';
     const categoriesFilter = sParams?.categories || '';
     const brandsFilter = sParams?.brands || '';
+    const isTrending = sParams?.isTrending === 'true';
+    const isBestSelling = sParams?.isBestSelling === 'true';
+    const isFeatured = sParams?.isFeatured === 'true';
 
     const categoryIds = categoriesFilter.split(',').filter(Boolean);
+    const brandIds = brandsFilter.split(',').filter(Boolean);
+
     const [categoriesData, brandsData] = await Promise.all([
-        getCategories(),
-        categoryIds.length > 0 ? getBrandsByCategoryIds(categoryIds) : getBrands()
+        getFilteredCategories({
+            query,
+            isTrending,
+            isBestSelling,
+            isFeatured,
+            brandIds: brandIds.length > 0 ? brandIds : undefined
+        }),
+        getFilteredBrands({
+            query,
+            isTrending,
+            isBestSelling,
+            isFeatured,
+            categoryIds: categoryIds.length > 0 ? categoryIds : undefined
+        })
     ]);
 
     return (
-        <div className="container py-6">
-            <div className="mb-8">
-                <Breadcrumb items={[{ name: 'Home', href: '/' }, { name: 'Product', href: '/product' }]} />
-                <h1 className="text-3xl font-bold tracking-tight font-headline mt-4">
-                    {query ? `Search results for "${query}"` : "All Products"}
-                </h1>
+        <div className="bg-[#fcfcfc] min-h-screen">
+            {/* --- PREMIUM HEADER --- */}
+            <div className="bg-black text-white pt-4 pb-6 md:pt-6 md:pb-8 relative overflow-hidden">
+                <div className="container relative z-10">
+                    <Breadcrumb items={[{ name: 'Home', href: '/' }, { name: 'Product', href: '/product' }]} className="text-white" />
+                    <div className="mt-4 flex flex-col md:flex-row md:items-end justify-between gap-6">
+                        <div className="space-y-4">
+                            <h1 className="text-2xl md:text-4xl font-black font-headline tracking-tighter uppercase leading-none">
+                                {query ? `Search results for "${query}"` : isTrending ? "Trending Products" : isBestSelling ? "Best Selling Products" : isFeatured ? "Featured Products" : "All Products"}
+                            </h1>
+                            <div className="h-1 w-16 md:h-1.5 md:w-24 bg-orange-500"></div>
+                            <h3 className="text-zinc-400 text-sm md:text-base font-medium">
+                                {query ? `Showing search results for "${query}"` : isTrending ? "Discover what's trending now. The most popular products in Bangladesh." : isBestSelling ? "Our top-selling products. Trusted by thousands of customers." : isFeatured ? "Handpicked premium products. Curated just for you." : "Explore our complete collection. Find the best products at the best prices in Bangladesh."}
+                            </h3>
+                        </div>
+                    </div>
+                </div>
+                {/* Abstract background elements */}
+                <div className="absolute top-0 right-0 w-1/3 h-full bg-gradient-to-l from-orange-500/10 to-transparent pointer-events-none"></div>
+                <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-zinc-900 rounded-full blur-3xl opacity-50 pointer-events-none"></div>
             </div>
 
-            <div className="grid grid-cols-1 min-[1400px]:grid-cols-4 gap-8">
-                <aside className="hidden min-[1400px]:block min-[1400px]:col-span-1">
-                    <Suspense fallback={<Skeleton className="h-[500px] w-full" />}>
+            <div className="container py-12">
 
+                <div className="grid grid-cols-1 min-[1200px]:grid-cols-4 gap-12">
+                    <main className="col-span-1 min-[1200px]:col-span-3">
+                        <Suspense key={query + currentPage + sortBy + categoriesFilter + brandsFilter + isTrending + isBestSelling + isFeatured} fallback={<ProductListSkeleton />}>
+                            <ProductGrid
+                                query={query}
+                                currentPage={currentPage}
+                                sortBy={sortBy}
+                                categories={categoriesFilter}
+                                brands={brandsFilter}
+                                isTrending={isTrending}
+                                isBestSelling={isBestSelling}
+                                isFeatured={isFeatured}
+                                categoriesData={categoriesData}
+                                brandsData={brandsData}
+                            />
+                        </Suspense>
+                    </main>
 
-                        {/* add filter tile and clean up */}
-                        <div className="flex items-center justify-between mb-3">
-                            <h2 className="text-xl font-bold tracking-tight font-headline">Filters</h2>
-                            {categoriesFilter || brandsFilter ? (
-                                <Button variant="link" asChild className="p-0 h-auto">
-                                    <Link href="/product">
-                                        Clear
-                                    </Link>
-                                </Button>
-                            ) : (
-                                <Button variant="link" disabled className="p-0 h-auto opacity-50 cursor-not-allowed">
-                                    Clear
-                                </Button>
-                            )}
+                    <aside className="hidden min-[1200px]:block min-[1200px]:col-span-1 bg-card border border-zinc-200">
+                        <div className="sticky top-24 space-y-8 p-4">
+                            <div>
+                                <div className="flex items-center justify-between mb-6 pb-2 border-b-2 border-black">
+                                    <h2 className="text-lg font-black uppercase tracking-tight font-headline">Filters</h2>
+                                    {categoriesFilter || brandsFilter ? (
+                                        <Button variant="link" asChild className="p-0 h-auto font-bold text-[10px] uppercase tracking-widest hover:text-orange-600">
+                                            <Link href="/product">
+                                                Reset All
+                                            </Link>
+                                        </Button>
+                                    ) : null}
+                                </div>
+                                <Suspense fallback={<Skeleton className=" w-full" />}>
+                                    <ProductFilters categories={categoriesData} brands={brandsData} />
+                                </Suspense>
+                            </div>
                         </div>
-
-
-
-
-                        {/*  */}
-                        <ProductFilters categories={categoriesData} brands={brandsData} />
-                    </Suspense>
-                </aside>
-
-                <main className="col-span-1 min-[1400px]:col-span-3">
-                    <Suspense key={query + currentPage + sortBy + categoriesFilter + brandsFilter} fallback={<ProductListSkeleton />}>
-                        <ProductGrid
-                            query={query}
-                            currentPage={currentPage}
-                            sortBy={sortBy}
-                            categories={categoriesFilter}
-                            brands={brandsFilter}
-                            categoriesData={categoriesData}
-                            brandsData={brandsData}
-                        />
-                    </Suspense>
-                </main>
+                    </aside>
+                </div>
             </div>
         </div>
     )

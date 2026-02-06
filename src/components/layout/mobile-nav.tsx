@@ -131,11 +131,27 @@ export function MobileNav({ categories }: MobileNavProps) {
                         </Accordion>
 
                         <Link
+                            href="/about"
+                            onClick={() => setOpen(false)}
+                            className="px-6 py-4 text-sm font-bold uppercase tracking-wider hover:bg-zinc-50 transition-colors border-b border-zinc-50"
+                        >
+                            About Us
+                        </Link>
+
+                        <Link
                             href="/track-order"
                             onClick={() => setOpen(false)}
                             className="px-6 py-4 text-sm font-bold uppercase tracking-wider hover:bg-zinc-50 transition-colors border-b border-zinc-50"
                         >
                             Track Order
+                        </Link>
+
+                        <Link
+                            href="/refund-policy"
+                            onClick={() => setOpen(false)}
+                            className="px-6 py-4 text-sm font-bold uppercase tracking-wider hover:bg-zinc-50 transition-colors border-b border-zinc-50"
+                        >
+                            Refund Policy
                         </Link>
                     </div>
 

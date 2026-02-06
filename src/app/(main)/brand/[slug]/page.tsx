@@ -144,20 +144,22 @@ async function ProductGrid({ brandId, currentPage, sortBy, slug, categoriesData,
     }
 
     return (
-        <div className="space-y-8">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border p-4 bg-white shadow-sm">
-                <p className="text-sm font-medium">
+        <div className="space-y-6">
+            <div className="flex items-center justify-between gap-4 border p-4 bg-white shadow-sm">
+                <div className="flex items-center gap-3 w-full sm:w-auto min-[1200px]:hidden">
+                    <MobileFilterSheet categories={categoriesData} brands={brandsData} hideBrands={true} />
+                </div>
+                <p className="hidden min-[1200px]:block text-sm font-medium">
                     Showing <span className="text-primary">{products.length}</span> of <span className="font-bold">{totalCount}</span> products
                 </p>
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <div className="min-[1400px]:hidden flex-1">
-                        <MobileFilterSheet categories={categoriesData} brands={brandsData} hideBrands={true} />
-                    </div>
-                    <ProductSort />
-                </div>
+                <ProductSort />
             </div>
 
-            <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 min-[1400px]:grid-cols-4 lg:gap-x-6 lg:gap-y-10">
+            <p className="min-[1200px]:hidden text-sm font-medium">
+                Showing <span className="text-primary">{products.length}</span> of <span className="font-bold">{totalCount}</span> products
+            </p>
+
+            <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 lg:grid-cols-4 min-[1200px]:grid-cols-3 xl:grid-cols-4 lg:gap-x-6 lg:gap-y-10">
                 {products.map((product, index) => (
                     <ProductCard key={product.id} product={product} priority={index < 8} />
                 ))}
@@ -190,23 +192,23 @@ export default async function BrandPage({ params, searchParams }: { params: Prom
 
     // Build breadcrumb items
     const breadcrumbItems = [
-        { name: 'Home', href: '/' }, 
-        { name: 'Brand', href: '/brand' }, 
+        { name: 'Home', href: '/' },
+        { name: 'Brand', href: '/brand' },
         { name: brand.name, href: `/brand/${brand.slug}` }
     ];
 
     return (
         <div className="bg-[#fcfcfc] min-h-screen">
             {/* --- PREMIUM BRAND HEADER --- */}
-            <div className="bg-black text-white pt-6 pb-8 relative overflow-hidden">
+            <div className="bg-black text-white pt-4 pb-6 md:pt-6 md:pb-8 relative overflow-hidden">
                 <div className="container relative z-10">
-                    <Breadcrumb items={breadcrumbItems} className="text-zinc-400 hover:text-white" />
+                    <Breadcrumb items={breadcrumbItems} className="text-white" />
                     <div className="mt-4 flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div className="space-y-4">
-                            <h1 className="text-3xl md:text-4xl font-black font-headline tracking-tighter uppercase leading-none">
+                            <h1 className="text-2xl md:text-4xl font-black font-headline tracking-tighter uppercase leading-none">
                                 {brand.name}
                             </h1>
-                            <div className="h-1.5 w-24 bg-orange-500"></div>
+                            <div className="h-1 w-16 md:h-1.5 md:w-24 bg-orange-500"></div>
                             <p className="text-zinc-400 text-sm md:text-base font-medium">
                                 Shop the best {brand.name} products in Bangladesh. Premium quality with authentic warranty.
                             </p>
@@ -231,9 +233,9 @@ export default async function BrandPage({ params, searchParams }: { params: Prom
             </div>
 
             <div className="container py-12">
-                <div className="grid grid-cols-1 min-[1400px]:grid-cols-4 gap-12">
+                <div className="grid grid-cols-1 min-[1200px]:grid-cols-4 gap-12">
                     {/* --- PRODUCT MAIN GRID --- */}
-                    <main className="col-span-1 min-[1400px]:col-span-3">
+                    <main className="col-span-1 min-[1200px]:col-span-3">
                         <Suspense key={brand.id + currentPage + sortBy + categoriesFilter} fallback={<ProductListSkeleton />}>
                             <ProductGrid
                                 brandId={brand.id}
@@ -248,7 +250,7 @@ export default async function BrandPage({ params, searchParams }: { params: Prom
                     </main>
 
                     {/* --- SIDEBAR FILTERS --- */}
-                    <aside className="hidden min-[1400px]:block min-[1400px]:col-span-1 bg-card border border-zinc-200">
+                    <aside className="hidden min-[1200px]:block min-[1200px]:col-span-1 bg-card border border-zinc-200">
                         <div className="sticky top-24 space-y-8 p-4">
                             <div>
                                 <div className="flex items-center justify-between mb-6 pb-2 border-b-2 border-black">

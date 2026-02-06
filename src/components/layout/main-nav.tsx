@@ -15,11 +15,11 @@ export function MainNav({ categories }: MainNavProps) {
         categories.filter(cat => cat.parentId === parentId);
 
     return (
-        <div className="w-full bg-white border-b border-zinc-200 hidden md:block shadow-sm">
+        <div className="w-full bg-white border-b border-zinc-200 hidden min-[1200px]:block shadow-sm">
             <div className="container">
                 <nav className="flex items-center gap-1">
                     {/* Home */}
-                    <Link href="/" className="h-10 px-4 flex items-center text-xs font-bold uppercase tracking-widest text-black hover:text-orange-600 transition-colors">
+                    <Link href="/" className="h-10 pr-4 flex items-center text-xs font-bold uppercase tracking-widest text-black hover:text-orange-600 transition-colors">
                         Home
                     </Link>
 
@@ -78,7 +78,7 @@ export function MainNav({ categories }: MainNavProps) {
                         return (
                             <div key={category.id} className="group relative">
                                 <Link
-                                    href={`/product?category=${category.slug}`}
+                                    href={`/category/${category.slug}`}
                                     className="h-10 px-4 flex items-center gap-1 text-xs font-bold uppercase tracking-widest text-black hover:text-orange-600 transition-colors"
                                 >
                                     {category.name}
@@ -99,7 +99,7 @@ export function MainNav({ categories }: MainNavProps) {
                                                 {subcategories.map((subcat) => (
                                                     <Link
                                                         key={subcat.id}
-                                                        href={`/product?category=${subcat.slug}`}
+                                                        href={`/category/${subcat.slug}`}
                                                         className="block text-sm font-medium text-zinc-800 hover:text-orange-600 hover:pl-2 transition-all"
                                                     >
                                                         {subcat.name}
@@ -108,7 +108,7 @@ export function MainNav({ categories }: MainNavProps) {
                                             </div>
                                             <div className="pt-4 mt-4 border-t border-zinc-100">
                                                 <Link
-                                                    href={`/product?category=${category.slug}`}
+                                                    href={`/category/${category.slug}`}
                                                     className="block text-sm font-bold text-black uppercase tracking-wide hover:text-orange-600 transition-colors"
                                                 >
                                                     View All {category.name} →

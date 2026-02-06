@@ -163,8 +163,8 @@ async function ProductGrid({
     if (products.length === 0) {
         return (
             <div className="space-y-12">
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/30 p-4 min-[1400px]:hidden">
-                    <MobileFilterSheet categories={[]} brands={brandsData} />
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-4 bg-muted/30 p-4 min-[1200px]:hidden">
+                    <MobileFilterSheet categories={[]} brands={brandsData} hideCategories={true} />
                     <ProductSort />
                 </div>
                 <div className="py-24 text-center border-2 border-dashed rounded-none">
@@ -177,20 +177,22 @@ async function ProductGrid({
     }
 
     return (
-        <div className="space-y-8">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4 border p-4 bg-white shadow-sm">
-                <p className="text-sm font-medium">
+        <div className="space-y-6">
+            <div className="flex items-center justify-between gap-4 border p-4 bg-white shadow-sm">
+                <div className="flex items-center gap-3 w-full sm:w-auto min-[1200px]:hidden">
+                    <MobileFilterSheet categories={[]} brands={brandsData} hideCategories={true} />
+                </div>
+                <p className="hidden min-[1200px]:block text-sm font-medium">
                     Showing <span className="text-primary">{products.length}</span> of <span className="font-bold">{totalCount}</span> products
                 </p>
-                <div className="flex items-center gap-3 w-full sm:w-auto">
-                    <div className="min-[1400px]:hidden flex-1">
-                        <MobileFilterSheet categories={[]} brands={brandsData} />
-                    </div>
-                    <ProductSort />
-                </div>
+                <ProductSort />
             </div>
 
-            <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 min-[1400px]:grid-cols-4 lg:gap-x-6 lg:gap-y-10">
+            <p className="min-[1200px]:hidden text-sm font-medium">
+                Showing <span className="text-primary">{products.length}</span> of <span className="font-bold">{totalCount}</span> products
+            </p>
+
+            <div className="grid grid-cols-2 gap-x-4 gap-y-8 md:grid-cols-3 lg:grid-cols-4 min-[1200px]:grid-cols-3 xl:grid-cols-4 lg:gap-x-6 lg:gap-y-10">
                 {products.map((product, index) => (
                     <ProductCard key={product.id} product={product} priority={index < 8} />
                 ))}
@@ -263,18 +265,18 @@ export default async function CategoryPage({ params, searchParams }: { params: P
     return (
         <div className="bg-[#fcfcfc] min-h-screen">
             {/* --- PREMIUM CATEGORY HEADER --- */}
-            <div className="bg-black text-white pt-6 pb-8 relative overflow-hidden">
+            <div className="bg-black text-white pt-4 pb-6 md:pt-6 md:pb-8 relative overflow-hidden">
                 <div className="container relative z-10">
-                    <Breadcrumb items={breadcrumbItems} className="text-zinc-400 hover:text-white" />
+                    <Breadcrumb items={breadcrumbItems} className="text-white" />
                     <div className="mt-4 flex flex-col md:flex-row md:items-end justify-between gap-6">
                         <div className="space-y-4">
-                            <h1 className="text-3xl md:text-4xl font-black font-headline tracking-tighter uppercase leading-none">
+                            <h1 className="text-2xl md:text-4xl font-black font-headline tracking-tighter uppercase leading-none">
                                 {category.name}
                             </h1>
-                            <div className="h-1.5 w-24 bg-orange-500"></div>
-                            <p className="text-zinc-400  text-sm md:text-base font-medium">
-                                Latest {category.name} collection. We offer the best {category.name} prices in Bangladesh. Check below and order yours now!
-                            </p>
+                            <div className="h-1 w-16 md:h-1.5 md:w-24 bg-orange-500"></div>
+                            <h3 className="text-zinc-400  text-sm md:text-base font-medium">
+                                Latest {category.name} collection. We offer the best {category.name} prices in Bangladesh.
+                            </h3>
                         </div>
                     </div>
                 </div>
@@ -291,7 +293,7 @@ export default async function CategoryPage({ params, searchParams }: { params: P
                             <h2 className="text-lg font-black uppercase tracking-widest leading-none">Explore Collections</h2>
                             <div className="flex-1 h-px bg-zinc-200"></div>
                         </div>
-                        <div className="grid grid-cols-5 md:grid-cols-8 lg:grid-cols-12 gap-6">
+                        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 lg:grid-cols-8 xl:grid-cols-12 gap-3 md:gap-6">
                             {subcategories.map(subcat => (
                                 <Link
                                     key={subcat.id}
@@ -324,10 +326,12 @@ export default async function CategoryPage({ params, searchParams }: { params: P
                     </div>
                 )}
 
-                <div className="grid grid-cols-1 min-[1400px]:grid-cols-4 gap-12">
-                   
+
+                {/*  */}
+                <div className="grid grid-cols-1 min-[1200px]:grid-cols-4 gap-12">
+
                     {/* --- PRODUCT MAIN GRID --- */}
-                    <main className="col-span-1 min-[1400px]:col-span-3">
+                    <main className="col-span-1 min-[1200px]:col-span-3">
                         <Suspense key={category.id + currentPage + sortBy + brandsFilter} fallback={<ProductListSkeleton />}>
                             <ProductGrid
                                 categoryId={category.id}
@@ -340,8 +344,8 @@ export default async function CategoryPage({ params, searchParams }: { params: P
                         </Suspense>
                     </main>
 
-                     {/* --- SIDEBAR FILTERS --- */}
-                    <aside className="hidden min-[1400px]:block min-[1400px]:col-span-1 bg-card border border-zinc-200">
+                    {/* --- SIDEBAR FILTERS --- */}
+                    <aside className="hidden min-[1200px]:block min-[1200px]:col-span-1 bg-card border border-zinc-200">
                         <div className="sticky top-24 space-y-8 p-4">
                             <div>
                                 <div className="flex items-center justify-between mb-6 pb-2 border-b-2 border-black">
@@ -359,7 +363,7 @@ export default async function CategoryPage({ params, searchParams }: { params: P
                                 </Suspense>
                             </div>
 
-                    
+
                         </div>
                     </aside>
                 </div>

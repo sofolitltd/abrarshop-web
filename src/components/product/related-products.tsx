@@ -24,11 +24,11 @@ export async function RelatedProducts({ categoryId, currentProductId }: RelatedP
     return (
         <section className="py-10 border-t">
             <div className="container">
-                <div className="flex items-center justify-between mb-8">
+                <div className="flex md:flex-row flex-col items-center justify-between mb-8">
                     <h2 className="text-3xl font-bold tracking-tight font-headline">
                         Related Products
                     </h2>
-                    <Link href={categoryLink} className="flex items-center gap-2 text-primary hover:underline">
+                    <Link href={categoryLink} className="flex items-center gap-2 text-primary bg-black text-white px-4 py-1 mt-2 md:mt-0">
                         View All <ArrowRight className="h-4 w-4" />
                     </Link>
                 </div>

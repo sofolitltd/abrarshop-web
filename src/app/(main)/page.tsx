@@ -41,28 +41,28 @@ export default async function HomePage() {
         <BestSelling />
       </FadeUp>
 
-      <section id="products" className="py-24 bg-[#fcfcfc] bg-grid relative overflow-hidden">
+      <section id="products" className="py-8 md:py-16 lg:py-20 bg-[#fcfcfc] bg-grid relative overflow-hidden">
         <div className="bg-noise" />
         <div className="container">
           <FadeUp>
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 md:mb-16">
               <div className="space-y-4">
                 <div className="flex items-center gap-2">
                   <div className="h-px w-8 bg-orange-600"></div>
                   <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-600">Top Choices</span>
                 </div>
-                <h2 className=" flex gap-4 text-4xl md:text-5xl font-black font-headline tracking-tight uppercase leading-none">
+                <h2 className="flex flex-col sm:flex-row gap-4 text-3xl sm:text-4xl md:text-5xl font-black font-headline tracking-tight uppercase leading-none">
                   Featured <br />
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-800 to-zinc-500">Products</span>
                 </h2>
-                <p className="text-zinc-500 text-sm font-medium uppercase tracking-[0.1em] pt-1">Check & Get Your Desired Product!</p>
+                <p className="text-zinc-500 text-xs md:text-sm font-medium uppercase tracking-[0.1em] pt-1">Check & Get Your Desired Product!</p>
               </div>
               <div className="h-1.5 w-24 bg-black hidden md:block"></div>
             </div>
           </FadeUp>
 
           <FadeUp delay={0.1}>
-            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-10">
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-x-4 gap-y-4">
               <ProductList isFeatured={true} limit={10} />
             </div>
           </FadeUp>

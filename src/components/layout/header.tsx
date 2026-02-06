@@ -31,12 +31,16 @@ export function Header({ categories = [] }: HeaderProps) {
 
   return (
     <header className="sticky top-0 z-50 w-full flex flex-col">
+
+      {/* Top Bar */}
       <TopBar />
+
+      {/* Main Header */}
       <div className="w-full border-b border-zinc-800 bg-black text-white">
         <div className="container flex h-16 items-center">
 
           {/* Mobile Header */}
-          <div className="flex w-full items-center justify-between md:hidden h-full py-4">
+          <div className="flex w-full items-center justify-between min-[1200px]:hidden h-full py-4">
             {/* Left side: Menu + Logo */}
             <div className="flex items-center gap-2">
               <MobileNav categories={categories} />
@@ -63,7 +67,7 @@ export function Header({ categories = [] }: HeaderProps) {
           </div>
 
           {/* Desktop Header */}
-          <div className="hidden w-full items-center justify-between md:flex h-full">
+          <div className="hidden min-[1200px]:flex w-full items-center justify-between h-full">
             <Link href="/" className="inline-block hover:opacity-90 transition-opacity mr-12">
               <span className="text-3xl font-bold font-headline tracking-tighter text-white">
                 ABRAR<span className="text-orange-500">{" "}SHOP</span>
@@ -96,10 +100,12 @@ export function Header({ categories = [] }: HeaderProps) {
         </div>
       </div>
 
+      {/* Main Navigation */}
       <MainNav categories={categories} />
 
+      {/* Mobile Search */}
       {isMobileSearchOpen && (
-        <div className="md:hidden border-t border-zinc-800 bg-black">
+        <div className="min-[1200px]:hidden border-t border-zinc-800 bg-black">
           <div className="container py-3">
             <Suspense fallback={<SearchBarFallback />}>
               <SearchInput />
