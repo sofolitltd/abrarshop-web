@@ -51,15 +51,15 @@ export function ProductDetailsTabs({ product, reviews }: ProductDetailsTabsProps
               <div className="space-y-5">
                 <div className="flex flex-col gap-3.5">
                   <p className="text-zinc-600 text-[13px] leading-relaxed m-0">
-                    Looking for the best <strong>{product.name} Price in BD</strong>? Abrar Shop offers this premium <strong>{product.brand || "authentic"}</strong> product at the most competitive price in the market.
+                    Looking for the best <strong>{product.name} Price in Bangladesh</strong>? Abrar Shop offers this premium <strong>{product.brand || "authentic"}</strong> product at the most competitive price in the market.
                     As a trusted retailer in the <strong>{product.category || "General"}</strong> category, we ensure you get the best value for your money.
                   </p>
 
                   <p className="text-zinc-600 text-[13px] leading-relaxed m-0">
-                    The current <strong>{product.name} Price in Bangladesh</strong> is only <strong>৳{product.price}</strong> at our store.
-                    Compared to the regular price of <strong>৳{product.originalPrice || product.price}</strong>, you can save more when you buy online from us.
+                    The current <strong>{product.name} Price in Bangladesh</strong> is only <strong>Tk {product.price}</strong> at our store.
+                    Compared to the regular price of <strong>Tk {product.originalPrice || product.price}</strong>, you can save more when you buy online from us.
                     {product.stock > 0 ? (
-                      <span> We have <strong>{product.stock} units</strong> available in our warehouse for fast shipping.</span>
+                      <span> We have <strong>{product.stock} units</strong> available in our shop for fast delivery.</span>
                     ) : (
                       <span> This item is currently out of stock, but you can contact us for the next availability date.</span>
                     )}
@@ -67,13 +67,13 @@ export function ProductDetailsTabs({ product, reviews }: ProductDetailsTabsProps
 
                   <p className="text-zinc-600 text-[13px] leading-relaxed m-0">
                     At Abrar Shop, we are committed to providing authentic products and the best shopping experience.
-                    Order <strong>{product.name}</strong> today and enjoy high-quality service, secure payment options, and fast shipping.
+                    Order <strong>{product.name}</strong> today and enjoy high-quality service, secure payment options, and fast delivery.
                   </p>
                 </div>
 
                 {product.keywords && product.keywords.length > 0 && (
                   <div className="mt-8 pt-5 border-t border-zinc-100">
-                    <span className="text-[10px] font-bold uppercase text-zinc-400 block mb-2.5 tracking-widest">Related Searches</span>
+                    <span className="text-xs font-bold uppercase text-zinc-400 block mb-2.5 tracking-widest">Related Searches</span>
                     <div className="flex flex-wrap gap-x-4 gap-y-1">
                       {product.keywords.map((keyword, i) => (
                         <span key={i} className="text-[12px] text-zinc-400 hover:text-orange-600 transition-colors cursor-default">

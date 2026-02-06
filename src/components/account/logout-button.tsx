@@ -19,9 +19,10 @@ import { cn } from "@/lib/utils";
 
 interface LogoutButtonProps {
     className?: string;
+    showLabelOnMd?: boolean;
 }
 
-export function LogoutButton({ className }: LogoutButtonProps) {
+export function LogoutButton({ className, showLabelOnMd = true }: LogoutButtonProps) {
     const router = useRouter();
 
     const handleSignOut = async () => {
@@ -34,12 +35,16 @@ export function LogoutButton({ className }: LogoutButtonProps) {
             <AlertDialogTrigger asChild>
                 <button
                     className={cn(
-                        "w-full flex items-center gap-3 px-4 py-3 border border-zinc-100 hover:bg-red-50 hover:text-red-600 font-bold uppercase text-xs tracking-widest transition-colors text-left",
+                        "w-full flex items-center gap-3 px-4 py-3 border border-zinc-100 hover:bg-red-50 hover:text-red-600 font-bold uppercase text-xs tracking-widest transition-colors text-left group",
                         className
                     )}
                 >
-                    <LogOut className="h-4 w-4" />
-                    Logout
+                    <LogOut className="h-4 w-4 shrink-0" />
+                    <span className={cn(
+                        !showLabelOnMd && "md:hidden lg:inline"
+                    )}>
+                        Logout
+                    </span>
                 </button>
             </AlertDialogTrigger>
             <AlertDialogContent className="rounded-none border-2 border-black">

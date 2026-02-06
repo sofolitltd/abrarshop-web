@@ -48,7 +48,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
     const { left, top, width, height } = containerRef.current.getBoundingClientRect();
     const x = ((e.pageX - left - window.scrollX) / width) * 100;
     const y = ((e.pageY - top - window.scrollY) / height) * 100;
-    setZoomStyle({ transformOrigin: `${x}% ${y}%`, transform: "scale(2.2)" });
+    setZoomStyle({ transformOrigin: `${x}% ${y}%`, transform: "scale(1.4)" });
   };
 
   if (!images || images.length === 0) {
@@ -140,7 +140,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
 
       {/* Lightbox / Fullscreen Dialog */}
       <Dialog open={isLightboxOpen} onOpenChange={setIsLightboxOpen}>
-        <DialogContent showCloseButton={false} className="max-w-screen h-[calc(60vh)] w-screen p-0 border-none bg-white flex flex-col items-center justify-center gap-0 outline-none">
+        <DialogContent showCloseButton={false} className="max-w-screen h-[calc(80vh)] w-screen p-0 border-none bg-white flex flex-col items-center justify-center gap-0 outline-none">
           {/* Header with Title and Close */}
           <div className="absolute top-0 left-0 right-0 h-16 bg-white/80 backdrop-blur-md z-50 flex items-center justify-between px-6 border-b border-zinc-100">
             <div className="flex flex-col">
@@ -171,7 +171,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
                 src={images[activeIndex]}
                 alt={`${productName} large view`}
                 fill
-                className="object-contain p-4 md:p-12"
+                className="object-contain"
                 sizes="100vw"
                 priority
               />

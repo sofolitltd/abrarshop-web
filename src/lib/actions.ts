@@ -5,7 +5,7 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { db } from '@/lib/db';
 import { products, brands, categories, heroSliders, users, orders, orderItems, reviews } from '@/lib/schema';
-import { eq, and, ne, desc, inArray, or } from 'drizzle-orm';
+import { eq, and, ne, desc, inArray, or, sql, asc, count as drizzleCount } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 import { getProducts, getProductById, getBrandById, getCategoryById, getHeroSliderById } from './data';
 import { generateSlug } from '@/lib/utils';
@@ -897,7 +897,6 @@ export async function updateUserProfile(uid: string, data: {
 
 export async function getUserOrders(uid: string) {
   try {
-    // Also try to match by email if possible to catch guest orders or migrated users
     const user = await db.query.users.findFirst({
       where: eq(users.id, uid),
       columns: { email: true }
@@ -912,7 +911,11 @@ export async function getUserOrders(uid: string) {
       where: or(...conditions),
       orderBy: desc(orders.createdAt),
       with: {
-        items: true,
+        items: {
+          with: {
+            product: true
+          }
+        },
       },
     });
     return userOrders;
@@ -922,12 +925,149 @@ export async function getUserOrders(uid: string) {
   }
 }
 
+export async function getAllOrders() {
+  try {
+    const allOrders = await db.query.orders.findMany({
+      orderBy: desc(orders.createdAt),
+      with: {
+        items: {
+          with: {
+            product: true
+          }
+        },
+      },
+    });
+    return allOrders;
+  } catch (error) {
+    console.error('Get All Orders Error:', error);
+    return [];
+  }
+}
+
+export async function updateOrderStatus(orderId: string, status: string) {
+  try {
+    const updateData: any = {
+      orderStatus: status,
+      updatedAt: new Date(),
+    };
+
+    // Set specific timestamps based on status
+    if (status === 'processing') updateData.processingAt = new Date();
+    if (status === 'shipped') updateData.shippedAt = new Date();
+    if (status === 'delivered') {
+      updateData.deliveredAt = new Date();
+      updateData.paymentStatus = 'paid';
+      updateData.paidAt = new Date();
+    }
+    if (status === 'cancelled') updateData.cancelledAt = new Date();
+
+    await db.update(orders).set(updateData).where(eq(orders.id, orderId));
+
+    revalidatePath('/admin/orders');
+    revalidatePath('/account/orders');
+    return { success: true, message: `Order status updated to ${status}.` };
+  } catch (error) {
+    console.error('Update Order Status Error:', error);
+    return { success: false, message: 'Failed to update order status.' };
+  }
+}
+
+export async function updatePaymentStatus(orderId: string, status: string) {
+  try {
+    const updateData: any = {
+      paymentStatus: status,
+      updatedAt: new Date(),
+    };
+
+    if (status === 'paid') {
+      updateData.paidAt = new Date();
+    }
+
+    await db.update(orders).set(updateData).where(eq(orders.id, orderId));
+
+    revalidatePath('/admin/orders');
+    revalidatePath('/admin/dashboard');
+    return { success: true, message: `Payment status updated to ${status}.` };
+  } catch (error) {
+    console.error('Update Payment Status Error:', error);
+    return { success: false, message: 'Failed to update payment status.' };
+  }
+}
+
+export async function getAllUsers() {
+  try {
+    const allUsers = await db.query.users.findMany({
+      orderBy: desc(users.createdAt),
+    });
+    return allUsers;
+  } catch (error) {
+    console.error('Get All Users Error:', error);
+    return [];
+  }
+}
+
+export async function getDashboardStats() {
+  try {
+    const totalOrdersCount = await db.select({ count: drizzleCount() }).from(orders);
+    const totalProductsCount = await db.select({ count: drizzleCount() }).from(products);
+    const totalCustomersCount = await db.select({ count: drizzleCount() }).from(users);
+
+    // Calculate total revenue from PAID orders only
+    const revenueResult = await db.select({
+      total: sql<number>`COALESCE(SUM(CAST(${orders.totalAmount} AS NUMERIC)), 0)`
+    }).from(orders).where(eq(orders.paymentStatus, 'paid'));
+
+    const recentOrders = await db.query.orders.findMany({
+      limit: 5,
+      orderBy: desc(orders.createdAt),
+      with: {
+        items: true
+      }
+    });
+
+    // Get sales data for the last 7 days (PAID only)
+    const salesDataRaw = await db.select({
+      date: sql<string>`TO_CHAR(${orders.createdAt}, 'YYYY-MM-DD')`,
+      total: sql<number>`SUM(CAST(${orders.totalAmount} AS NUMERIC))`
+    })
+      .from(orders)
+      .where(eq(orders.paymentStatus, 'paid'))
+      .groupBy(sql`TO_CHAR(${orders.createdAt}, 'YYYY-MM-DD')`)
+      .orderBy(asc(sql`TO_CHAR(${orders.createdAt}, 'YYYY-MM-DD')`));
+
+    return {
+      stats: {
+        totalRevenue: Number(revenueResult[0]?.total || 0),
+        totalSales: Number(totalOrdersCount[0]?.count || 0),
+        totalProducts: Number(totalProductsCount[0]?.count || 0),
+        totalCustomers: Number(totalCustomersCount[0]?.count || 0),
+      },
+      recentOrders,
+      salesData: salesDataRaw.map(item => ({
+        ...item,
+        total: Number(item.total)
+      })),
+    };
+  } catch (error) {
+    console.error('Get Dashboard Stats Error:', error);
+    return {
+      stats: { totalRevenue: 0, totalSales: 0, totalProducts: 0, totalCustomers: 0 },
+      recentOrders: [],
+      salesData: [],
+    };
+  }
+}
+
 export async function getOrderByNumber(orderNumber: string) {
   try {
     const order = await db.query.orders.findFirst({
       where: eq(orders.orderNumber, orderNumber),
       with: {
-        items: true,
+        items: {
+          with: {
+            product: true
+          }
+        },
       },
     });
     return order || null;

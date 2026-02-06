@@ -10,7 +10,16 @@ import {
   SidebarMenuSub,
   SidebarMenuSubItem,
   SidebarMenuSubButton,
+  useSidebar,
 } from "@/components/ui/sidebar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
 import {
   Collapsible,
   CollapsibleContent,
@@ -58,6 +67,8 @@ const bottomNavItems = [
 
 export function SidebarNav() {
   const pathname = usePathname();
+  const { state, isMobile } = useSidebar();
+  const isCollapsed = state === "collapsed" && !isMobile;
 
   const renderNavItems = (items: any[]) => {
     return items.map((item) => {
@@ -65,6 +76,41 @@ export function SidebarNav() {
         const isActive = item.items.some((subItem: any) =>
           pathname.startsWith(subItem.href)
         );
+
+        if (isCollapsed) {
+          return (
+            <SidebarMenuItem key={item.label}>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <SidebarMenuButton
+                    isActive={isActive}
+                    tooltip={item.label}
+                    className="group-data-[collapsible=icon]:justify-center"
+                  >
+                    {item.icon && <item.icon className="h-4 w-4" />}
+                  </SidebarMenuButton>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent side="right" align="start" className="w-56 rounded-none border-zinc-200 ml-1">
+                  <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-zinc-400">{item.label}</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {item.items.map((subItem: any) => (
+                    <DropdownMenuItem key={subItem.href} asChild>
+                      <Link
+                        href={subItem.href}
+                        className={cn(
+                          "cursor-pointer text-xs font-bold uppercase tracking-tight",
+                          pathname === subItem.href ? "bg-zinc-100 text-black" : "text-zinc-600"
+                        )}
+                      >
+                        {subItem.label}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </SidebarMenuItem>
+          );
+        }
 
         return (
           <Collapsible
@@ -75,10 +121,10 @@ export function SidebarNav() {
           >
             <SidebarMenuItem>
               <CollapsibleTrigger asChild>
-                <SidebarMenuButton tooltip={item.label}>
+                <SidebarMenuButton tooltip={item.label} className="group-data-[collapsible=icon]:justify-center">
                   {item.icon && <item.icon className="h-4 w-4" />}
-                  <span>{item.label}</span>
-                  <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90" />
+                  <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
+                  <ChevronRight className="ml-auto h-4 w-4 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 group-data-[collapsible=icon]:hidden" />
                 </SidebarMenuButton>
               </CollapsibleTrigger>
               <CollapsibleContent>
@@ -106,12 +152,13 @@ export function SidebarNav() {
         <SidebarMenuItem key={item.href}>
           <SidebarMenuButton
             asChild
-            isActive={pathname.startsWith(item.href)}
+            isActive={pathname === item.href || (item.href !== "/admin/dashboard" && pathname.startsWith(item.href))}
             tooltip={item.label}
+            className="group-data-[collapsible=icon]:justify-center"
           >
             <Link href={item.href}>
               <item.icon className="h-4 w-4" />
-              <span>{item.label}</span>
+              <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
             </Link>
           </SidebarMenuButton>
         </SidebarMenuItem>
@@ -121,10 +168,10 @@ export function SidebarNav() {
 
   return (
     <>
-      <SidebarMenu className="flex-1 p-3">
+      <SidebarMenu className="flex-1 px-2 py-3">
         {renderNavItems(mainNavItems)}
       </SidebarMenu>
-      <div className="p-2">
+      <div className="px-2 pb-2">
         <SidebarSeparator className="my-2" />
         <SidebarMenu>{renderNavItems(bottomNavItems)}</SidebarMenu>
       </div>

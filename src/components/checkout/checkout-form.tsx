@@ -194,8 +194,9 @@ export function CheckoutForm({ onDeliveryChange, children }: CheckoutFormProps) 
                   <p className="text-xs text-gray-500">(Pay with cash upon delivery)</p>
                 </div>
               </FormLabel>
+
             </FormItem>
-            <FormItem className="flex items-center space-x-3 space-y-0 p-2.5 border border-zinc-100 hover:bg-zinc-50 transition-colors flex-1 min-w-[180px] cursor-pointer">
+            {/* <FormItem className="flex items-center space-x-3 space-y-0 p-2.5 border border-zinc-100 hover:bg-zinc-50 transition-colors flex-1 min-w-[180px] cursor-pointer">
               <FormControl><RadioGroupItem value="bkash" className="text-orange-500 border-zinc-300 h-4 w-4" /></FormControl>
               <FormLabel className="text-sm font-medium cursor-pointer flex-1 font-bold">
                 <div className="flex w-full h-6 items-center gap-2 justify-between">
@@ -203,7 +204,7 @@ export function CheckoutForm({ onDeliveryChange, children }: CheckoutFormProps) 
                   <Image src="/bkash.png" alt="bKash" width={50} height={50} />
                 </div>
               </FormLabel>
-            </FormItem>
+            </FormItem> */}
           </RadioGroup>
         </FormControl>
         <FormMessage />

@@ -2,21 +2,19 @@
 
 import { useAuth } from "@/context/auth-context";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
-import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { Package, User, ShoppingBag, Loader2 } from "lucide-react";
-import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
+import { Loader2 } from "lucide-react";
 import { updateUserProfile } from "@/lib/actions";
-import { LogoutButton } from "@/components/account/logout-button";
 import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AccountNav } from "@/components/account/account-nav";
 
 export default function ProfilePage() {
-    const { user, profile, loading } = useAuth();
+    const { user, profile, loading: authLoading } = useAuth();
     const router = useRouter();
     const [isUpdating, setIsUpdating] = useState(false);
 
@@ -29,7 +27,7 @@ export default function ProfilePage() {
     });
 
     useEffect(() => {
-        if (!loading && !user) {
+        if (!authLoading && !user) {
             router.push("/login");
         }
         if (profile) {
@@ -41,9 +39,26 @@ export default function ProfilePage() {
                 district: profile.district || "",
             });
         }
-    }, [user, profile, loading, router]);
+    }, [user, profile, authLoading, router]);
 
-    if (loading) return null;
+    if (authLoading) {
+        return (
+            <div className="container mx-auto pt-4 pb-20 px-4">
+                <div className="mb-6">
+                    <Skeleton className="h-4 w-32 mb-4" />
+                    <Skeleton className="h-8 w-48" />
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                    <div className="md:col-span-1 lg:col-span-2 space-y-1">
+                        {[1, 2, 3, 4].map(i => <Skeleton key={i} className="h-10 w-full" />)}
+                    </div>
+                    <div className="md:col-span-11 lg:col-span-10">
+                        <Skeleton className="h-[500px] w-full" />
+                    </div>
+                </div>
+            </div>
+        );
+    }
     if (!user) return null;
 
     const handleUpdate = async (e: React.FormEvent) => {
@@ -74,103 +89,93 @@ export default function ProfilePage() {
                         { name: "Profile", href: "/account/profile" }
                     ]}
                 />
-                <h1 className="text-2xl font-bold tracking-tight font-headline mt-4 uppercase">
+                <h1 className="text-2xl font-bold tracking-tight font-headline mt-4 uppercase text-black">
                     Profile Settings
                 </h1>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-1 space-y-1">
-                    <Link href="/account" className="flex items-center gap-3 px-4 py-3 border border-zinc-100 hover:bg-zinc-50 font-bold uppercase text-xs tracking-widest transition-colors">
-                        <ShoppingBag className="h-4 w-4" />
-                        Dashboard
-                    </Link>
-                    <Link href="/account/orders" className="flex items-center gap-3 px-4 py-3 border border-zinc-100 hover:bg-zinc-50 font-bold uppercase text-xs tracking-widest transition-colors">
-                        <Package className="h-4 w-4" />
-                        My Orders
-                    </Link>
-                    <Link href="/account/profile" className="flex items-center gap-3 px-4 py-3 bg-black text-white font-bold uppercase text-xs tracking-widest">
-                        <User className="h-4 w-4" />
-                        Profile Settings
-                    </Link>
-                    <LogoutButton />
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                <AccountNav />
 
-                <div className="md:col-span-2">
-                    <div className="border border-zinc-200 bg-white p-6 md:p-8">
-                        <h2 className="text-lg font-bold font-headline uppercase mb-6 pb-2 border-b border-zinc-100">Personal Information</h2>
-                        <form onSubmit={handleUpdate} className="space-y-6">
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="firstName" className="text-xs font-bold uppercase text-zinc-500">First Name</Label>
+                <div className="md:col-span-11 lg:col-span-10">
+                    <div className="border border-zinc-200 bg-white p-6 md:p-10 shadow-sm">
+                        <div className="mb-8 pb-4 border-b border-zinc-100">
+                            <h2 className="text-lg font-black font-headline uppercase">Personal Information</h2>
+                            <p className="text-[10px] text-zinc-400 font-bold uppercase tracking-widest mt-1">Update your delivery and contact details</p>
+                        </div>
+
+                        <form onSubmit={handleUpdate} className="space-y-8">
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div className="space-y-3">
+                                    <Label htmlFor="firstName" className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">First Name</Label>
                                     <Input
                                         id="firstName"
                                         value={formData.firstName}
                                         onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                                        className="rounded-none border-zinc-200 focus-visible:ring-orange-500"
+                                        className="h-12 rounded-none border-zinc-200 focus-visible:ring-black font-medium"
                                         required
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="lastName" className="text-xs font-bold uppercase text-zinc-500">Last Name</Label>
+                                <div className="space-y-3">
+                                    <Label htmlFor="lastName" className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Last Name</Label>
                                     <Input
                                         id="lastName"
                                         value={formData.lastName}
                                         onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                                        className="rounded-none border-zinc-200 focus-visible:ring-orange-500"
+                                        className="h-12 rounded-none border-zinc-200 focus-visible:ring-black font-medium"
                                         required
                                     />
                                 </div>
                             </div>
 
                             <div className="grid grid-cols-1 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="email" className="text-xs font-bold uppercase text-zinc-500 hover:cursor-not-allowed">Email Address</Label>
+                                <div className="space-y-3">
+                                    <Label htmlFor="email" className="text-[10px] font-black uppercase text-zinc-400 tracking-widest hover:cursor-not-allowed">Email Address</Label>
                                     <Input
                                         id="email"
                                         value={user.email || ""}
                                         disabled
-                                        className="rounded-none border-zinc-100 bg-zinc-50 text-zinc-400 cursor-not-allowed"
+                                        className="h-12 rounded-none border-zinc-100 bg-zinc-50 text-zinc-400 cursor-not-allowed font-medium"
                                     />
                                 </div>
                             </div>
 
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div className="space-y-2">
-                                    <Label htmlFor="phoneNumber" className="text-xs font-bold uppercase text-zinc-500">Phone Number</Label>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                                <div className="space-y-3">
+                                    <Label htmlFor="phoneNumber" className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Phone Number</Label>
                                     <Input
                                         id="phoneNumber"
                                         value={formData.phoneNumber}
                                         onChange={(e) => setFormData({ ...formData, phoneNumber: e.target.value })}
                                         placeholder="017********"
-                                        className="rounded-none border-zinc-200 focus-visible:ring-orange-500"
+                                        className="h-12 rounded-none border-zinc-200 focus-visible:ring-black font-medium"
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label htmlFor="district" className="text-xs font-bold uppercase text-zinc-500">District</Label>
+                                <div className="space-y-3">
+                                    <Label htmlFor="district" className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">District</Label>
                                     <Input
                                         id="district"
                                         value={formData.district}
                                         onChange={(e) => setFormData({ ...formData, district: e.target.value })}
                                         placeholder="e.g. Gaibandha"
-                                        className="rounded-none border-zinc-200 focus-visible:ring-orange-500"
+                                        className="h-12 rounded-none border-zinc-200 focus-visible:ring-black font-medium"
                                     />
                                 </div>
                             </div>
 
-                            <div className="space-y-2">
-                                <Label htmlFor="address" className="text-xs font-bold uppercase text-zinc-500">Full Shipping Address</Label>
+                            <div className="space-y-3">
+                                <Label htmlFor="address" className="text-[10px] font-black uppercase text-zinc-400 tracking-widest">Full Shipping Address</Label>
                                 <Input
                                     id="address"
                                     value={formData.address}
                                     onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                                     placeholder="House #, Road #, Area..."
-                                    className="rounded-none border-zinc-200 focus-visible:ring-orange-500"
+                                    className="h-12 rounded-none border-zinc-200 focus-visible:ring-black font-medium"
                                 />
                             </div>
 
-                            <div className="flex justify-end pt-4">
-                                <Button type="submit" disabled={isUpdating} className="px-12 py-6 bg-black hover:bg-zinc-900 rounded-none font-bold uppercase tracking-widest text-white">
+                            <div className="flex justify-end pt-4 border-t border-zinc-50">
+                                <Button type="submit" disabled={isUpdating} className="h-14 px-12 bg-black hover:bg-zinc-800 rounded-none font-black uppercase tracking-widest text-[11px] text-white shadow-[6px_6px_0px_0px_rgba(0,0,0,1)] active:translate-y-1 active:shadow-none transition-all">
                                     {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                                     Save Changes
                                 </Button>

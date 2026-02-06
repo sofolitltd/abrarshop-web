@@ -4,39 +4,39 @@ import { useAuth } from "@/context/auth-context";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
-import { Package, User, ShoppingBag, ArrowRight } from "lucide-react";
-import { signOut } from "firebase/auth";
-import { auth } from "@/lib/firebase";
-import { LogoutButton } from "@/components/account/logout-button";
+import { useEffect } from "react";
+import { Package, ArrowRight } from "lucide-react";
 import { getUserOrders } from "@/lib/actions";
+import useSWR from "swr";
+import { OrdersSkeleton } from "@/components/account/orders-skeleton";
+import { AccountNav } from "@/components/account/account-nav";
+import { format } from "date-fns";
+import { cn } from "@/lib/utils";
 
 export default function OrdersPage() {
-    const { user, loading } = useAuth();
+    const { user, loading: authLoading } = useAuth();
     const router = useRouter();
 
-    const [orders, setOrders] = useState<any[]>([]);
-    const [isLoadingOrders, setIsLoadingOrders] = useState(true);
+    // Use SWR for caching and automatic revalidation
+    const {
+        data: orders = [],
+        isLoading: isLoadingOrders
+    } = useSWR(
+        user ? [`orders`, user.uid] : null,
+        ([, uid]) => getUserOrders(uid),
+        {
+            revalidateOnFocus: true,
+            dedupingInterval: 5000,
+        }
+    );
 
     useEffect(() => {
-        if (!loading && !user) {
+        if (!authLoading && !user) {
             router.push("/login");
-        } else if (user) {
-            async function fetchOrders() {
-                try {
-                    const fetchedOrders = await getUserOrders(user!.uid);
-                    setOrders(fetchedOrders);
-                } catch (error) {
-                    console.error("Failed to fetch orders", error);
-                } finally {
-                    setIsLoadingOrders(false);
-                }
-            }
-            fetchOrders();
         }
-    }, [user, loading, router]);
+    }, [user, authLoading, router]);
 
-    if (loading) return null;
+    if (authLoading) return <OrdersSkeleton />;
     if (!user) return null;
 
     return (
@@ -54,74 +54,67 @@ export default function OrdersPage() {
                 </h1>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div className="md:col-span-1 space-y-1">
-                    <Link href="/account" className="flex items-center gap-3 px-4 py-3 border border-zinc-100 hover:bg-zinc-50 font-bold uppercase text-xs tracking-widest transition-colors">
-                        <ShoppingBag className="h-4 w-4" />
-                        Dashboard
-                    </Link>
-                    <Link href="/account/orders" className="flex items-center gap-3 px-4 py-3 bg-black text-white font-bold uppercase text-xs tracking-widest">
-                        <Package className="h-4 w-4" />
-                        My Orders
-                    </Link>
-                    <Link href="/account/profile" className="flex items-center gap-3 px-4 py-3 border border-zinc-100 hover:bg-zinc-50 font-bold uppercase text-xs tracking-widest transition-colors">
-                        <User className="h-4 w-4" />
-                        Profile Settings
-                    </Link>
-                    <LogoutButton />
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+                <AccountNav />
 
-                <div className="md:col-span-2 space-y-4">
-                    {isLoadingOrders ? (
-                        <div className="py-20 text-center">
-                            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-                        </div>
+                <div className="md:col-span-11 lg:col-span-10 space-y-4">
+                    {isLoadingOrders && orders.length === 0 ? (
+                        <OrdersSkeleton />
                     ) : orders.length === 0 ? (
-                        <div className="border border-zinc-200 p-12 text-center bg-zinc-50">
-                            <Package className="h-12 w-12 mx-auto text-zinc-300 mb-4" />
-                            <h3 className="text-sm font-bold uppercase tracking-tight mb-2">No Orders Found</h3>
-                            <p className="text-xs text-zinc-500 mb-6">You haven't placed any orders yet.</p>
-                            <Link href="/" className="inline-flex items-center gap-2 bg-black text-white px-8 py-3 font-bold uppercase text-xs tracking-widest hover:bg-zinc-900 transition-colors">
-                                Continue Shopping
-                                <ArrowRight className="h-3 w-3" />
+                        <div className="border border-dashed border-zinc-200 p-20 text-center bg-zinc-50">
+                            <Package className="h-12 w-12 mx-auto mb-4 text-zinc-300" />
+                            <h2 className="text-lg font-bold font-headline uppercase">No orders yet</h2>
+                            <p className="text-zinc-500 text-sm mb-8 mt-2">When you place an order, it will appear here.</p>
+                            <Link href="/shop" className="px-8 py-4 bg-black text-white font-bold uppercase text-xs tracking-widest inline-flex items-center gap-2">
+                                Start Shopping <ArrowRight className="h-4 w-4" />
                             </Link>
                         </div>
                     ) : (
-                        <div className="space-y-4">
-                            {orders.map((order) => (
-                                <div key={order.id} className="border border-zinc-200 bg-white p-6">
-                                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-4 pb-4 border-b border-zinc-100 gap-4">
-                                        <div>
-                                            <p className="text-xs text-zinc-500 uppercase font-bold mb-1">Order Number</p>
-                                            <p className="font-mono text-lg font-bold">#{order.orderNumber}</p>
+                        <div className="space-y-3">
+                            {orders.map((order: any) => (
+                                <Link
+                                    key={order.id}
+                                    href={`/account/orders/${order.orderNumber}`}
+                                    className="p-4 md:p-6 border border-zinc-100 bg-white hover:border-black transition-all group block shadow-sm"
+                                >
+                                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                        <div className="space-y-2">
+                                            <div className="flex items-center gap-3">
+                                                <p className="font-mono font-black text-lg group-hover:text-orange-600 transition-colors tracking-tighter">#{order.orderNumber}</p>
+                                                <div className={cn(
+                                                    "px-3 py-1 text-[10px] font-black uppercase tracking-widest",
+                                                    order.orderStatus === 'delivered' ? "bg-green-50 text-green-700" : "bg-zinc-100 text-zinc-600"
+                                                )}>
+                                                    {order.orderStatus}
+                                                </div>
+                                            </div>
+                                            <p className="text-xs text-zinc-400 font-medium">
+                                                Placed on {format(new Date(order.createdAt), "MMMM d, yyyy")}
+                                            </p>
                                         </div>
-                                        <div className="text-left sm:text-right">
-                                            <p className="text-xs text-zinc-500 uppercase font-bold mb-1">Date Placed</p>
-                                            <p className="text-sm font-medium">{new Date(order.createdAt).toLocaleDateString()}</p>
-                                        </div>
-                                        <div className="text-left sm:text-right">
-                                            <p className="text-xs text-zinc-500 uppercase font-bold mb-1">Total Amount</p>
-                                            <p className="text-lg font-bold text-orange-600">৳{order.totalAmount}</p>
+                                        <div className="flex items-center justify-between md:text-right gap-4">
+                                            <div className="space-y-1">
+                                                <p className="text-[10px] uppercase font-bold text-zinc-400 tracking-widest">Total Amount</p>
+                                                <p className="font-black text-lg tracking-tight">Tk {order.totalAmount}</p>
+                                            </div>
+                                            <div className="h-10 w-10 flex items-center justify-center border border-zinc-100 group-hover:bg-black group-hover:text-white transition-colors ml-4">
+                                                <ArrowRight className="h-4 w-4" />
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
-                                        <div>
-                                            <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium uppercase tracking-wide
-                                                ${order.orderStatus === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                                                    order.orderStatus === 'processing' ? 'bg-blue-100 text-blue-800' :
-                                                        order.orderStatus === 'shipped' ? 'bg-indigo-100 text-indigo-800' :
-                                                            order.orderStatus === 'delivered' ? 'bg-green-100 text-green-800' :
-                                                                'bg-gray-100 text-gray-800'}`}>
-                                                {order.orderStatus}
-                                            </span>
-                                            <span className="ml-2 text-xs text-zinc-500 font-medium uppercase">{order.items.length} Items</span>
-                                        </div>
-                                        {/* 
-                                         // TODO: Add view details functionality
-                                         <Button variant="outline" size="sm" className="rounded-none uppercase text-xs font-bold">View Details</Button> 
-                                         */}
+                                    <div className="mt-4 pt-4 border-t border-zinc-50 flex flex-wrap gap-2">
+                                        {order.items.slice(0, 3).map((item: any, idx: number) => (
+                                            <div key={idx} className="h-10 w-10 border border-zinc-100 bg-zinc-50 p-1 flex items-center justify-center text-[10px] font-bold overflow-hidden">
+                                                {item.productId ? '📦' : ''}
+                                            </div>
+                                        ))}
+                                        {order.items.length > 3 && (
+                                            <div className="h-10 px-3 border border-zinc-100 bg-zinc-50 flex items-center justify-center text-[10px] font-bold text-zinc-400">
+                                                +{order.items.length - 3} More items
+                                            </div>
+                                        )}
                                     </div>
-                                </div>
+                                </Link>
                             ))}
                         </div>
                     )}

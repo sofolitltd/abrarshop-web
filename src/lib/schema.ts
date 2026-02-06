@@ -105,6 +105,11 @@ export const orders = pgTable('orders', {
   orderStatus: varchar('order_status', { length: 50 }).default('pending').notNull(),
   paymentId: varchar('payment_id', { length: 256 }),
   trxId: varchar('trx_id', { length: 256 }),
+  processingAt: timestamp('processing_at'),
+  shippedAt: timestamp('shipped_at'),
+  deliveredAt: timestamp('delivered_at'),
+  cancelledAt: timestamp('cancelled_at'),
+  paidAt: timestamp('paid_at'),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

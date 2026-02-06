@@ -121,6 +121,10 @@ export type Order = {
   orderStatus: string;
   paymentId: string | null;
   trxId: string | null;
+  processingAt: Date | null;
+  shippedAt: Date | null;
+  deliveredAt: Date | null;
+  cancelledAt: Date | null;
   createdAt: Date;
   updatedAt: Date;
   items?: Item[];

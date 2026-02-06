@@ -1,6 +1,7 @@
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
   SidebarInset,
   SidebarProvider,
@@ -10,6 +11,8 @@ import { Button } from "@/components/ui/button";
 import { Home } from "lucide-react";
 
 import Link from 'next/link';
+import Image from 'next/image';
+import { SidebarToggle } from "@/components/admin/sidebar-footer-toggle";
 import { SidebarNav } from "@/components/admin/sidebar-nav";
 
 export default function AdminLayout({
@@ -19,29 +22,45 @@ export default function AdminLayout({
 }) {
   return (
     <SidebarProvider>
-      <Sidebar className=" bg-grey">
-        <SidebarHeader>
-          <div className="flex items-center justify-between">
+      <Sidebar collapsible="icon" className="border-r border-zinc-200">
+        <SidebarHeader className="border-b border-zinc-200 h-14 justify-center">
+          <div className="flex items-center px-2 group-data-[collapsible=icon]:justify-center">
             <Link href="/" className="flex items-center gap-2">
-              <span className="font-semibold text-lg ml-2">Abrar Shop</span>
+              {/* Logo - Only visible when sidebar is collapsed */}
+              <div className="hidden group-data-[collapsible=icon]:block h-8 w-8 relative flex items-center justify-center shrink-0">
+                <Image
+                  src="/abrarshop-logo.png"
+                  alt="Abrar Shop"
+                  fill
+                  className="object-contain"
+                />
+              </div>
+
+              {/* Text Name - Only visible when NOT collapsed */}
+              <span className="font-black text-sm uppercase tracking-tighter group-data-[collapsible=icon]:hidden">
+                Abrar <span className="text-orange-600">Shop</span>
+              </span>
             </Link>
-            <Button variant="ghost" size="icon" className="h-7 w-7" asChild>
-              <Link href="/" aria-label="Back to shop">
-                <Home className="size-4" />
-              </Link>
-            </Button>
           </div>
         </SidebarHeader>
         <SidebarContent>
           <SidebarNav />
         </SidebarContent>
+        <SidebarFooter className="border-t border-zinc-200 p-0">
+          <SidebarToggle />
+        </SidebarFooter>
       </Sidebar>
       <SidebarInset className="flex flex-col">
-        <header className="flex h-14 items-center gap-4 border-b bg-background/95 px-6 sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:hidden">
+        {/* Mobile Header - Visible only on small screens */}
+        <header className="flex h-14 items-center gap-4 border-b bg-white border-zinc-200 px-4 sticky top-0 z-40 md:hidden">
           <SidebarTrigger />
-          <h1 className="text-lg font-semibold">Admin Panel</h1>
+          <Link href="/" className="flex items-center gap-2">
+            <span className="font-black text-xs uppercase tracking-tighter">
+              Abrar <span className="text-orange-600">Shop</span>
+            </span>
+          </Link>
         </header>
-        <main className="flex-1 overflow-auto p-6">{children}</main>
+        <main className="flex-1 overflow-auto p-6 bg-zinc-50/50">{children}</main>
       </SidebarInset>
     </SidebarProvider>
   );
