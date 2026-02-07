@@ -56,8 +56,8 @@ export default function ContactPage() {
                                 <p className="text-sm text-zinc-600">We reply within 24 hours</p>
                             </div>
                         </div>
-                        <a href="mailto:info@abrarshop.online" className="block text-lg font-semibold hover:text-blue-600 transition-colors break-words">
-                            info@abrarshop.online
+                        <a href="mailto:support@abrarshop.com.bd" className="block text-lg font-semibold hover:text-blue-600 transition-colors break-words">
+                            support@abrarshop.com.bd
                         </a>
                     </div>
 

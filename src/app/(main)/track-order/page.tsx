@@ -143,7 +143,7 @@ export default function TrackOrderPage() {
                                 </a>
 
                                 <a
-                                    href="mailto:info@abrarshop.online"
+                                    href="mailto:support@abrarshop.com.bd"
                                     className="flex items-center gap-4 p-4 border border-zinc-100 bg-zinc-50/50 hover:bg-white hover:border-black hover:shadow-lg transition-all group"
                                 >
                                     <div className="h-10 w-10 bg-white flex items-center justify-center border border-zinc-100 shrink-0 shadow-sm">
@@ -151,7 +151,7 @@ export default function TrackOrderPage() {
                                     </div>
                                     <div>
                                         <p className="text-[9px] font-black uppercase text-zinc-400 tracking-widest mb-0.5">Support Email</p>
-                                        <p className="text-[11px] font-black tracking-widest uppercase text-zinc-900	">info@abrarshop</p>
+                                        <p className="text-[11px] font-black tracking-widest text-zinc-900	">support@abrarshop.com.bd</p>
                                     </div>
                                 </a>
                             </div>
