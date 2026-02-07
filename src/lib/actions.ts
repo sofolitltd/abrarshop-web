@@ -19,6 +19,12 @@ if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && proce
   });
 }
 
+// Helper to extract public ID from Cloudinary URL
+function extractPublicId(url: string) {
+  if (!url || !url.includes('cloudinary')) return null;
+  const match = url.match(/abrar-shop\/([^.]+)/);
+  return match ? match[0] : null;
+}
 
 const productFormSchema = z.object({
   name: z.string().min(3, "Product name must be at least 3 characters long."),
@@ -136,6 +142,27 @@ export async function updateProduct(id: string, data: unknown) {
   const images = validatedFields.data.images || [];
 
   try {
+    // Get existing product to check for deleted images
+    const oldProduct = await db.query.products.findFirst({
+      where: eq(products.id, id)
+    });
+
+    if (oldProduct && oldProduct.images) {
+      const removedImages = oldProduct.images.filter(
+        (oldImg: string) => !images.includes(oldImg) && oldImg.includes('cloudinary')
+      );
+
+      if (removedImages.length > 0) {
+        const publicIds = removedImages
+          .map(extractPublicId)
+          .filter((id): id is string => id !== null);
+
+        if (publicIds.length > 0) {
+          await cloudinary.api.delete_resources(publicIds);
+        }
+      }
+    }
+
     await db.update(products).set({
       ...validatedFields.data,
       description: validatedFields.data.description || null,
@@ -180,10 +207,9 @@ export async function deleteProduct(id: string) {
     if (productToDelete && productToDelete.images.length > 0) {
       const imagesToDelete = productToDelete.images.filter(img => img && img.includes('cloudinary'));
       if (imagesToDelete.length > 0) {
-        const publicIds = imagesToDelete.map(url => {
-          const match = url.match(/abrar-shop\/([^.]+)/);
-          return match ? match[0] : null;
-        }).filter((id): id is string => id !== null);
+        const publicIds = imagesToDelete
+          .map(extractPublicId)
+          .filter((id): id is string => id !== null);
 
         if (publicIds.length > 0) {
           await cloudinary.api.delete_resources(publicIds);
@@ -294,6 +320,14 @@ export async function updateBrand(id: string, data: unknown) {
   }
 
   try {
+    const oldBrand = await getBrandById(id);
+    if (oldBrand && oldBrand.imageUrl && oldBrand.imageUrl !== imageUrl && oldBrand.imageUrl.includes('cloudinary')) {
+      const publicId = extractPublicId(oldBrand.imageUrl);
+      if (publicId) {
+        await cloudinary.uploader.destroy(publicId);
+      }
+    }
+
     await db.update(brands).set({ name, slug, imageUrl, updatedAt: new Date() }).where(eq(brands.id, id));
   } catch (error: any) {
     console.error(error);
@@ -308,9 +342,9 @@ export async function deleteBrand(id: string) {
   try {
     const brandToDelete = await getBrandById(id);
     if (brandToDelete && brandToDelete.imageUrl && brandToDelete.imageUrl.includes('cloudinary')) {
-      const publicIdMatch = brandToDelete.imageUrl.match(/abrar-shop\/([^.]+)/);
-      if (publicIdMatch && publicIdMatch[0]) {
-        await cloudinary.uploader.destroy(publicIdMatch[0]);
+      const publicId = extractPublicId(brandToDelete.imageUrl);
+      if (publicId) {
+        await cloudinary.uploader.destroy(publicId);
       }
     }
 
@@ -377,6 +411,14 @@ export async function updateCategory(id: string, data: unknown) {
   }
 
   try {
+    const oldCategory = await getCategoryById(id);
+    if (oldCategory && oldCategory.imageUrl && oldCategory.imageUrl !== imageUrl && oldCategory.imageUrl.includes('cloudinary')) {
+      const publicId = extractPublicId(oldCategory.imageUrl);
+      if (publicId) {
+        await cloudinary.uploader.destroy(publicId);
+      }
+    }
+
     await db.update(categories).set({
       name,
       slug,
@@ -403,9 +445,9 @@ export async function deleteCategory(id: string) {
 
     const categoryToDelete = await getCategoryById(id);
     if (categoryToDelete && categoryToDelete.imageUrl && categoryToDelete.imageUrl.includes('cloudinary')) {
-      const publicIdMatch = categoryToDelete.imageUrl.match(/abrar-shop\/([^.]+)/);
-      if (publicIdMatch && publicIdMatch[0]) {
-        await cloudinary.uploader.destroy(publicIdMatch[0]);
+      const publicId = extractPublicId(categoryToDelete.imageUrl);
+      if (publicId) {
+        await cloudinary.uploader.destroy(publicId);
       }
     }
 
@@ -649,6 +691,14 @@ export async function updateHeroSlider(id: string, data: unknown) {
   const { title, subtitle, imageUrl, link, displayOrder, isActive, type } = validatedFields.data;
 
   try {
+    const oldSlider = await getHeroSliderById(id);
+    if (oldSlider && oldSlider.imageUrl && oldSlider.imageUrl !== imageUrl && oldSlider.imageUrl.includes('cloudinary')) {
+      const publicId = extractPublicId(oldSlider.imageUrl);
+      if (publicId) {
+        await cloudinary.uploader.destroy(publicId);
+      }
+    }
+
     await db.update(heroSliders).set({
       title,
       subtitle: subtitle || null,
@@ -675,9 +725,9 @@ export async function deleteHeroSlider(id: string) {
 
     if (sliderToDelete && sliderToDelete.imageUrl && sliderToDelete.imageUrl.includes('cloudinary')) {
       // Extract public ID from URL and delete from Cloudinary
-      const publicIdMatch = sliderToDelete.imageUrl.match(/abrar-shop\/([^.]+)/);
-      if (publicIdMatch && publicIdMatch[0]) {
-        await cloudinary.uploader.destroy(publicIdMatch[0]);
+      const publicId = extractPublicId(sliderToDelete.imageUrl);
+      if (publicId) {
+        await cloudinary.uploader.destroy(publicId);
       }
     }
 
