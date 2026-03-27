@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState, Suspense, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { CartIcon } from "@/components/cart/cart-icon";
 import { CartSheet } from "@/components/cart/cart-sheet";
@@ -29,6 +30,28 @@ export function Header({ categories = [] }: HeaderProps) {
   const { user } = useAuth();
   const [isMobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
+
+  const pathname = usePathname();
+
+  // Instant scroll resetting on page change
+  useEffect(() => {
+    const html = document.documentElement;
+    const originalScrollBehavior = html.style.scrollBehavior;
+    
+    // Temporarily turn off smooth scroll
+    html.style.scrollBehavior = "auto";
+    
+    // Instantly jump to top
+    window.scrollTo(0, 0);
+    setIsVisible(true);
+    
+    // Restore user's global smooth scroll preference
+    const timeout = setTimeout(() => {
+      html.style.scrollBehavior = originalScrollBehavior || "";
+    }, 50);
+
+    return () => clearTimeout(timeout);
+  }, [pathname]);
 
   useEffect(() => {
     let lastScrollY = window.scrollY;
