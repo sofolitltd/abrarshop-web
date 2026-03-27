@@ -41,7 +41,7 @@ export async function BestSelling() {
                     </div>
                     <CarouselContent className="-ml-6">
                         {bestSellingProducts.map((product) => (
-                            <CarouselItem key={product.id} className="pl-6 basis-[75%] sm:basis-1/2 md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
+                            <CarouselItem key={product.id} className="pl-6 basis-[45%] sm:basis-[30%] md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
                                 <ProductCard product={product} />
                             </CarouselItem>
                         ))}
