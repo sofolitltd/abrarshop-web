@@ -39,8 +39,8 @@ export async function FeaturedBrands() {
                     {brands.map((brand, index) => (
                         <FadeUp key={brand.id} delay={index * 0.05} distance={20}>
                             <Link href={`/brand/${brand.slug}`} className="group border-r border-b border-zinc-100 block">
-                                <div className="flex flex-col items-center justify-center p-4 sm:p-6 md:p-8 h-28 sm:h-32 transition-all duration-500 hover:bg-zinc-50 relative overflow-hidden">
-                                    <div className="relative h-12 w-12 sm:h-16 sm:w-16 md:h-20 md:w-20 flex items-center justify-center grayscale opacity-40 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500 group-hover:scale-110">
+                                <div className="flex flex-col items-center justify-center p-3 sm:p-6 md:p-8 h-28 sm:h-32 lg:h-36 transition-all duration-500 hover:bg-zinc-50 relative overflow-hidden">
+                                    <div className="relative h-10 w-10 sm:h-14 sm:w-14 md:h-16 md:w-16 lg:h-12 lg:w-12 flex items-center justify-center grayscale opacity-40 group-hover:grayscale-0 group-hover:opacity-100 transition-all duration-500 group-hover:scale-110">
                                         {brand.imageUrl ? (
                                             <Image
                                                 src={brand.imageUrl}
@@ -54,7 +54,7 @@ export async function FeaturedBrands() {
                                         )}
                                     </div>
                                     <div className="absolute inset-x-0 bottom-0 h-1 bg-orange-600 scale-x-0 group-hover:scale-x-100 transition-transform origin-left duration-500"></div>
-                                    <span className="mt-2 md:mt-4 text-[8px] md:text-[10px] text-center font-black uppercase tracking-widest text-zinc-400 group-hover:text-black transition-colors line-clamp-1">
+                                    <span className="mt-2 text-[8px] lg:text-[9px] text-center font-black uppercase tracking-widest text-zinc-400 group-hover:text-black transition-colors line-clamp-2 px-1">
                                         {brand.name}
                                     </span>
                                 </div>
