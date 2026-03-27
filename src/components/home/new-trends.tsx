@@ -25,8 +25,8 @@ export async function NewTrends() {
                     className="w-full"
                 >
                     <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-8 md:mb-12">
-                        <div className="space-y-4">
-                            <div className="flex items-center gap-2">
+                        <div className="space-y-4 text-center md:text-left">
+                            <div className="flex items-center gap-2 justify-center md:justify-start">
                                 <div className="h-px w-8 bg-orange-600"></div>
                                 <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-600">Just In</span>
                             </div>
