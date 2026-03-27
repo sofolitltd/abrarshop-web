@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { db } from '@/lib/db';
-import { products, brands, categories, heroSliders, users, orders, orderItems, reviews } from '@/lib/schema';
+import { products, brands, categories, heroSliders, users, orders, orderItems, reviews, coupons } from '@/lib/schema';
 import { eq, and, ne, desc, inArray, or, sql, asc, count as drizzleCount } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 import { getProducts, getProductById, getBrandById, getCategoryById, getHeroSliderById } from './data';
@@ -756,7 +756,13 @@ const checkoutSchema = z.object({
 });
 
 
-export async function processCheckout(data: unknown, totalAmount: number, items: any[]) {
+export async function processCheckout(
+  data: any,
+  totalAmount: number,
+  items: { id: string; quantity: number; price: number }[],
+  couponId?: string,
+  discountAmount?: number
+): Promise<{ success: true; url: string } | { success: false; message: string }> {
   const validatedFields = checkoutSchema.safeParse(data);
 
   if (!validatedFields.success) {
@@ -799,6 +805,13 @@ export async function processCheckout(data: unknown, totalAmount: number, items:
           .where(eq(products.id, item.id));
       }
 
+      // 2.5 Coupon Usage
+      if (couponId) {
+        await tx.update(coupons)
+          .set({ usedCount: sql`${coupons.usedCount} + 1` })
+          .where(eq(coupons.id, couponId));
+      }
+
       // 3. Create Order
       const orderId = createId();
       await tx.insert(orders).values({
@@ -815,6 +828,8 @@ export async function processCheckout(data: unknown, totalAmount: number, items:
         deliveryFee,
         totalAmount: String(totalAmount),
         paymentMethod: validatedFields.data.paymentMethod,
+        couponId: couponId || null,
+        discountAmount: String(discountAmount || 0),
         paymentStatus: 'pending',
         orderStatus: 'pending',
       });
@@ -879,11 +894,11 @@ export async function verifyCartStock(items: { id: string; quantity: number }[])
 }
 
 
-export async function searchProducts(query: string, limit: number) {
+export async function searchProducts(query: string, limit: number, searchBy: 'all' | 'sku' = 'all') {
   if (!query) {
     return [];
   }
-  const { products } = await getProducts({ query, limit });
+  const { products } = await getProducts({ query, limit, searchBy });
   return products;
 }
 
@@ -1212,5 +1227,229 @@ export async function submitReview(data: unknown) {
   } catch (error: any) {
     console.error('Submit Review Error:', error);
     return { success: false, message: 'Failed to submit review.' };
+  }
+}
+
+/**
+ * Manual/POS Order System (Unified)
+ * Handles in-shop purchases (local) and manual online orders (WhatsApp/Phone).
+ */
+export async function createOrderManual(
+  data: {
+    customerName?: string;
+    customerMobile?: string;
+    customerEmail?: string;
+    customerAddress?: string;
+    customerDistrict?: string;
+    deliveryMethod?: string;
+    deliveryFee?: number;
+    paymentMethod: 'cash' | 'bkash' | 'nagad' | 'pos' | 'other';
+    items: { id: string; quantity: number; price: number; name: string; discount?: number }[];
+    orderSource: 'local' | 'online';
+    orderStatus?: string;
+    paymentStatus?: string;
+    couponId?: string;
+    discountAmount?: number;
+  }
+): Promise<{ success: true; orderNumber: string; totalAmount: number } | { success: false; message: string }> {
+  try {
+    const { 
+      customerName, 
+      customerMobile, 
+      customerEmail,
+      customerAddress,
+      customerDistrict,
+      deliveryMethod,
+      deliveryFee = 0,
+      paymentMethod, 
+      items,
+      orderSource = 'local',
+      couponId,
+      discountAmount = 0
+    } = data;
+
+    const isOnline = orderSource === 'online';
+    const orderNumber = `${isOnline ? 'ONL' : 'POS'}-${Date.now().toString().slice(-6)}`;
+    
+    // Total calculation: sum(items) + deliveryFee - couponDiscount
+    const itemsTotal = items.reduce((sum, item) => sum + (Number(item.price) * item.quantity), 0);
+    const finalTotal = itemsTotal + Number(deliveryFee) - Number(discountAmount);
+
+    return await db.transaction(async (tx) => {
+      // 1. Stock Adjustment
+      for (const item of items) {
+        const product = await tx.query.products.findFirst({
+          where: eq(products.id, item.id),
+          columns: { stock: true, name: true }
+        });
+
+        if (!product) throw new Error(`Product "${item.name}" not found.`);
+        if (product.stock < item.quantity) {
+          throw new Error(`Insufficient stock for "${product.name}". Only ${product.stock} available.`);
+        }
+
+        await tx.update(products)
+          .set({ 
+            stock: sql`${products.stock} - ${item.quantity}`,
+            updatedAt: new Date()
+          })
+          .where(eq(products.id, item.id));
+      }
+
+      // 1.5 Coupon Usage
+      if (couponId) {
+        await tx.update(coupons)
+          .set({ usedCount: sql`${coupons.usedCount} + 1` })
+          .where(eq(coupons.id, couponId));
+      }
+
+      // 2. Create Order Record
+      const orderId = createId();
+      await tx.insert(orders).values({
+        id: orderId,
+        orderNumber,
+        firstName: customerName || 'Walk-in',
+        lastName: isOnline ? '' : '', 
+        mobile: customerMobile || 'N/A',
+        email: customerEmail || null,
+        address: customerAddress || (isOnline ? '' : 'In-Shop Purchase'),
+        district: customerDistrict || 'Gaibandha',
+        deliveryMethod: deliveryMethod || 'gaibandha', 
+        deliveryFee: String(deliveryFee),
+        totalAmount: String(finalTotal),
+        paymentMethod,
+        couponId: couponId || null,
+        discountAmount: String(discountAmount),
+        paymentStatus: isOnline ? (data.paymentStatus || 'pending') : 'paid', 
+        orderStatus: isOnline ? (data.orderStatus || 'pending') : 'delivered', 
+        orderSource: orderSource,
+      });
+
+      // 3. Order Items
+      const orderItemsValues = items.map((item) => ({
+        id: createId(),
+        orderId: orderId,
+        productId: item.id,
+        quantity: item.quantity,
+        price: String(item.price),
+      }));
+
+      await tx.insert(orderItems).values(orderItemsValues);
+
+      revalidatePath('/admin/orders');
+      revalidatePath('/admin/dashboard');
+      
+      return { success: true, orderNumber, totalAmount: finalTotal };
+    });
+  } catch (error: any) {
+    console.error('Order Creation Error:', error);
+    return { success: false, message: error.message || "Failed to create order" };
+  }
+}
+
+// COUPON ACTIONS
+export async function getCoupons() {
+  try {
+    return await db.select().from(coupons).orderBy(desc(coupons.createdAt));
+  } catch (error) {
+    console.error('Failed to fetch coupons:', error);
+    return [];
+  }
+}
+
+export async function createCoupon(data: any) {
+  try {
+    const id = createId();
+    await db.insert(coupons).values({
+      ...data,
+      id,
+      code: data.code.toUpperCase().trim(),
+      discountValue: String(data.discountValue),
+      minOrderAmount: String(data.minOrderAmount || 0),
+      maxDiscountAmount: data.maxDiscountAmount ? String(data.maxDiscountAmount) : null,
+      usageLimit: data.usageLimit ? Number(data.usageLimit) : null,
+      startDate: data.startDate ? new Date(data.startDate) : null,
+      endDate: data.endDate ? new Date(data.endDate) : null,
+      usedCount: 0,
+    });
+    revalidatePath('/admin/coupons');
+    return { success: true };
+  } catch (error: any) {
+    console.error('Failed to create coupon:', error);
+    return { success: false, message: error.message || 'Failed to create coupon' };
+  }
+}
+
+export async function updateCoupon(id: string, data: any) {
+  try {
+    await db.update(coupons).set({
+      ...data,
+      code: data.code?.toUpperCase().trim(),
+      discountValue: String(data.discountValue),
+      minOrderAmount: String(data.minOrderAmount || 0),
+      maxDiscountAmount: data.maxDiscountAmount ? String(data.maxDiscountAmount) : null,
+      usageLimit: data.usageLimit ? Number(data.usageLimit) : null,
+      startDate: data.startDate ? new Date(data.startDate) : null,
+      endDate: data.endDate ? new Date(data.endDate) : null,
+      updatedAt: new Date(),
+    }).where(eq(coupons.id, id));
+    revalidatePath('/admin/coupons');
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to update coupon:', error);
+    return { success: false };
+  }
+}
+
+export async function deleteCoupon(id: string) {
+  try {
+    await db.delete(coupons).where(eq(coupons.id, id));
+    revalidatePath('/admin/coupons');
+    return { success: true };
+  } catch (error) {
+    console.error('Failed to delete coupon:', error);
+    return { success: false };
+  }
+}
+
+export async function validateCoupon(code: string, orderAmount: number) {
+  try {
+    const coupon = await db.query.coupons.findFirst({
+      where: and(
+        eq(coupons.code, code.toUpperCase().trim()),
+        eq(coupons.isActive, true)
+      )
+    });
+
+    if (!coupon) return { success: false, message: 'Invalid or inactive coupon code' };
+
+    // Date check
+    const now = new Date();
+    if (coupon.startDate && now < new Date(coupon.startDate)) return { success: false, message: 'Coupon not yet active' };
+    if (coupon.endDate && now > new Date(coupon.endDate)) return { success: false, message: 'Coupon expired' };
+
+    // Usage limit check
+    if (coupon.usageLimit && coupon.usedCount >= coupon.usageLimit) return { success: false, message: 'Coupon usage limit reached' };
+
+    // Min amount check
+    if (Number(coupon.minOrderAmount) > orderAmount) {
+      return { success: false, message: `Minimum order amount of Tk ${coupon.minOrderAmount} required` };
+    }
+
+    // Calculate discount
+    let discount = 0;
+    if (coupon.discountType === 'percentage') {
+      discount = (orderAmount * Number(coupon.discountValue)) / 100;
+      if (coupon.maxDiscountAmount && discount > Number(coupon.maxDiscountAmount)) {
+        discount = Number(coupon.maxDiscountAmount);
+      }
+    } else {
+      discount = Number(coupon.discountValue);
+    }
+
+    return { success: true, coupon, discount };
+  } catch (error) {
+    console.error('Failed to validate coupon:', error);
+    return { success: false, message: 'Validation error' };
   }
 }

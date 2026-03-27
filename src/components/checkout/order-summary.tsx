@@ -9,10 +9,19 @@ import { Button } from "@/components/ui/button";
 interface OrderSummaryProps {
   deliveryFee: number;
   deliveryMethodField?: React.ReactNode;
+  onCouponChange?: (coupon: any, discount: number) => void;
 }
 
-export function OrderSummary({ deliveryFee, deliveryMethodField }: OrderSummaryProps) {
+import { useState } from "react";
+import { validateCoupon } from "@/lib/actions";
+import { toast } from "sonner";
+import { CheckCircle2, Ticket, X } from "lucide-react";
+
+export function OrderSummary({ deliveryFee, deliveryMethodField, onCouponChange }: OrderSummaryProps) {
   const { items, totalPrice: subtotal } = useCart();
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
 
   if (items.length === 0) {
     return (
@@ -20,7 +29,27 @@ export function OrderSummary({ deliveryFee, deliveryMethodField }: OrderSummaryP
     )
   }
 
-  const total = subtotal + deliveryFee;
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    const result = await validateCoupon(couponCode, subtotal);
+    if (result.success) {
+      setAppliedCoupon(result.coupon);
+      setDiscountAmount(result.discount || 0);
+      onCouponChange?.(result.coupon, result.discount || 0);
+      toast.success("Coupon applied!");
+    } else {
+      toast.error(result.message || "Invalid coupon");
+    }
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setDiscountAmount(0);
+    setCouponCode("");
+    onCouponChange?.(null, 0);
+  };
+
+  const total = subtotal + deliveryFee - discountAmount;
 
   return (
     <div className="space-y-4">
@@ -54,10 +83,38 @@ export function OrderSummary({ deliveryFee, deliveryMethodField }: OrderSummaryP
 
       <Separator className="bg-zinc-100" />
 
-      <div className="flex gap-2">
-        <Input placeholder="Coupon code" className="rounded-none border-zinc-200 focus-visible:ring-orange-500" />
-        <Button variant="outline" className="flex-shrink-0 rounded-none border-black hover:bg-black hover:text-white transition-colors">Apply</Button>
-      </div>
+      {appliedCoupon ? (
+        <div className="flex items-center justify-between bg-emerald-50 border border-emerald-100 p-3">
+          <div className="flex items-center gap-2">
+            <Ticket className="h-4 w-4 text-emerald-600" />
+            <div className="flex flex-col">
+              <span className="text-xs font-bold uppercase tracking-wider text-emerald-800">{appliedCoupon.code}</span>
+              <span className="text-[10px] font-medium text-emerald-600 italic">Saved Tk {discountAmount.toLocaleString()}</span>
+            </div>
+          </div>
+          <Button variant="ghost" size="icon" onClick={removeCoupon} className="h-6 w-6 text-emerald-700 hover:bg-emerald-100">
+            <X className="h-3 w-3" />
+          </Button>
+        </div>
+      ) : (
+        <div className="flex gap-2">
+          <Input 
+            placeholder="Coupon code" 
+            value={couponCode}
+            onChange={(e) => setCouponCode(e.target.value.toUpperCase())}
+            className="rounded-none border-zinc-200 focus-visible:ring-orange-500 uppercase font-bold text-xs" 
+          />
+          <Button 
+            type="button"
+            onClick={handleApplyCoupon}
+            disabled={!couponCode}
+            variant="outline" 
+            className="flex-shrink-0 rounded-none border-black hover:bg-black hover:text-white transition-colors text-xs font-bold uppercase"
+          >
+            Apply
+          </Button>
+        </div>
+      )}
 
       {/* Delivery Method - Integrated into order summary */}
       {deliveryMethodField && (
@@ -78,9 +135,15 @@ export function OrderSummary({ deliveryFee, deliveryMethodField }: OrderSummaryP
           <p className="font-bold text-zinc-900"> {"Tk "}{subtotal.toLocaleString()}</p>
         </div>
         <div className="flex justify-between">
-          <p className="text-zinc-500  tracking-wider font-semibold text-xs">Delivery Fee</p>
+          <p className="text-zinc-500 tracking-wider font-semibold text-xs">Delivery Fee</p>
           <p className="font-bold text-orange-600"> {"Tk "}{deliveryFee.toLocaleString()}</p>
         </div>
+        {discountAmount > 0 && (
+          <div className="flex justify-between">
+            <p className="text-emerald-600 tracking-wider font-semibold text-xs italic">Coupon Discount</p>
+            <p className="font-bold text-emerald-600"> {"- Tk "}{discountAmount.toLocaleString()}</p>
+          </div>
+        )}
       </div>
 
       <Separator className="bg-zinc-200" />

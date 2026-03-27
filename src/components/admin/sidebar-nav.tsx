@@ -39,12 +39,20 @@ import {
   ChevronRight,
   PlusCircle,
   List,
+  Percent,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const mainNavItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/admin/orders", label: "Orders", icon: ShoppingCart },
+  {
+    label: "Orders",
+    icon: ShoppingCart,
+    items: [
+      { href: "/admin/orders", label: "All Orders", icon: List },
+      { href: "/admin/orders/new", label: "New Order", icon: PlusCircle },
+    ],
+  },
   {
     label: "Products",
     icon: Package,
@@ -58,6 +66,7 @@ const mainNavItems = [
   { href: "/admin/hero-sliders", label: "Hero Sliders", icon: GalleryHorizontal },
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/reports", label: "Reports", icon: BarChart3 },
+  { href: "/admin/coupons", label: "Coupons", icon: Percent },
 ];
 
 const bottomNavItems = [

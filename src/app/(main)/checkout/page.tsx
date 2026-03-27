@@ -8,10 +8,18 @@ import { useAuth } from "@/context/auth-context";
 import Link from "next/link";
 import { FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
+import { DistrictSelect } from "@/components/district-select";
 
 export default function CheckoutPage() {
-  const [deliveryFee, setDeliveryFee] = useState(100); // Default to full country
+  const [deliveryFee, setDeliveryFee] = useState(100);
+  const [appliedCoupon, setAppliedCoupon] = useState<any>(null);
+  const [discountAmount, setDiscountAmount] = useState(0);
   const { user } = useAuth();
+
+  const handleCouponChange = (coupon: any, discount: number) => {
+    setAppliedCoupon(coupon);
+    setDiscountAmount(discount);
+  };
 
   return (
     <div className="container mx-auto pt-4 pb-20 px-4">
@@ -30,7 +38,7 @@ export default function CheckoutPage() {
         </div>
       </div>
 
-      <CheckoutForm onDeliveryChange={setDeliveryFee}>
+      <CheckoutForm onDeliveryChange={setDeliveryFee} couponId={appliedCoupon?.id} discountAmount={discountAmount}>
         {({ form, isPending, DeliveryMethodField, PaymentMethodField, SubmitButton }) => (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
             {/* Left Column - Shipping Contact */}
@@ -93,7 +101,9 @@ export default function CheckoutPage() {
                   <FormField control={form.control} name="district" render={({ field }) => (
                     <FormItem>
                       <FormLabel className="text-xs font-bold uppercase text-zinc-500">District</FormLabel>
-                      <FormControl><Input placeholder="e.g. Gaibandha" className="rounded-none border-zinc-200 focus-visible:ring-orange-500" {...field} /></FormControl>
+                      <FormControl>
+                        <DistrictSelect value={field.value} onChange={field.onChange} placeholder="Select District" />
+                      </FormControl>
                       <FormMessage />
                     </FormItem>
                   )} />
@@ -109,7 +119,11 @@ export default function CheckoutPage() {
                   <h2 className="text-base uppercase tracking-wider font-bold">Order Summary</h2>
                 </div>
                 <div className="p-6 pt-4">
-                  <OrderSummary deliveryFee={deliveryFee} deliveryMethodField={DeliveryMethodField} />
+                  <OrderSummary 
+                    deliveryFee={deliveryFee} 
+                    deliveryMethodField={DeliveryMethodField} 
+                    onCouponChange={handleCouponChange}
+                  />
                 </div>
               </div>
 

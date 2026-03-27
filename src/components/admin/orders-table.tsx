@@ -14,7 +14,8 @@ import {
     Clock,
     ExternalLink,
     ChevronDown,
-    Printer
+    Printer,
+    Plus
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -122,6 +123,11 @@ export function AdminOrdersTable({ initialOrders }: { initialOrders: any[] }) {
                 <div className="flex items-center gap-2 w-full sm:w-auto">
                     <Button variant="outline" className="rounded-none h-11 border-zinc-200 font-bold uppercase text-[10px] tracking-widest gap-2">
                         <Filter className="h-3 w-3" /> Filter
+                    </Button>
+                    <Button variant="outline" className="rounded-none h-11 border-zinc-200 font-bold uppercase text-[10px] tracking-widest flex-1 sm:flex-none" asChild>
+                        <Link href="/admin/orders/new">
+                            <Plus className="h-3 w-3 mr-2" /> New Order
+                        </Link>
                     </Button>
                     <Button className="rounded-none h-11 bg-black text-white hover:bg-zinc-900 font-bold uppercase text-[10px] tracking-widest flex-1 sm:flex-none">
                         Export

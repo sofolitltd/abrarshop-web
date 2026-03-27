@@ -104,6 +104,7 @@ export const orders = pgTable('orders', {
   paymentMethod: varchar('payment_method', { length: 50 }).notNull(),
   paymentStatus: varchar('payment_status', { length: 50 }).default('pending').notNull(),
   orderStatus: varchar('order_status', { length: 50 }).default('pending').notNull(),
+  orderSource: varchar('order_source', { length: 20 }).default('online').notNull(),
   paymentId: varchar('payment_id', { length: 256 }),
   trxId: varchar('trx_id', { length: 256 }),
   processingAt: timestamp('processing_at'),
@@ -111,6 +112,8 @@ export const orders = pgTable('orders', {
   deliveredAt: timestamp('delivered_at'),
   cancelledAt: timestamp('cancelled_at'),
   paidAt: timestamp('paid_at'),
+  couponId: text('coupon_id').references(() => coupons.id),
+  discountAmount: numeric('discount_amount', { precision: 10, scale: 2 }).default('0').notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
@@ -126,8 +129,12 @@ export const orderItems = pgTable('order_items', {
 
 import { relations } from 'drizzle-orm';
 
-export const ordersRelations = relations(orders, ({ many }) => ({
+export const ordersRelations = relations(orders, ({ many, one }) => ({
   items: many(orderItems),
+  coupon: one(coupons, {
+    fields: [orders.couponId],
+    references: [coupons.id],
+  }),
 }));
 
 export const orderItemsRelations = relations(orderItems, ({ one }) => ({
@@ -141,6 +148,28 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
     references: [products.id],
     relationName: 'product',
   }),
+}));
+
+export const coupons = pgTable('coupons', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  code: varchar('code', { length: 50 }).notNull().unique(),
+  discountType: varchar('discount_type', { length: 20 }).notNull(), // 'percentage', 'fixed'
+  discountValue: numeric('discount_value', { precision: 10, scale: 2 }).notNull(),
+  minOrderAmount: numeric('min_order_amount', { precision: 10, scale: 2 }).default('0'),
+  maxDiscountAmount: numeric('max_discount_amount', { precision: 10, scale: 2 }),
+  usageLimit: integer('usage_limit'),
+  usedCount: integer('used_count').default(0).notNull(),
+  startDate: timestamp('start_date'),
+  endDate: timestamp('end_date'),
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const couponsRelations = relations(coupons, ({ many }) => ({
+  orders: many(orders),
 }));
 
 export const reviews = pgTable('reviews', {

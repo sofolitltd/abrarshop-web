@@ -23,6 +23,7 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { useAuth } from "@/context/auth-context";
 
 import Image from "next/image";
+import { DistrictSelect } from "@/components/district-select";
 
 const checkoutSchema = z.object({
   firstName: z.string().min(1, "First name is required."),
@@ -47,9 +48,11 @@ interface CheckoutFormProps {
     PaymentMethodField: React.ReactNode;
     SubmitButton: React.ReactNode;
   }) => React.ReactNode;
+  couponId?: string;
+  discountAmount?: number;
 }
 
-export function CheckoutForm({ onDeliveryChange, children }: CheckoutFormProps) {
+export function CheckoutForm({ onDeliveryChange, children, couponId, discountAmount = 0 }: CheckoutFormProps) {
   const { clearCart, items, totalPrice } = useCart();
   const { toast } = useToast();
   const [isPending, startTransition] = useTransition();
@@ -111,15 +114,16 @@ export function CheckoutForm({ onDeliveryChange, children }: CheckoutFormProps) 
       try {
         const orderData = {
           ...data,
-          userId: user?.uid,
+          userId: user?.uid || undefined,
         };
-        const result = await processCheckout(orderData, finalTotal, items);
+        const result = await processCheckout(orderData, finalTotal - discountAmount, items, couponId, discountAmount);
 
-        if (result.success && result.url) {
-          if (result.url.startsWith('/')) {
+        if (result.success) {
+          const url = result.url;
+          if (url.startsWith('/')) {
             // Internal redirect (COD or Mock)
             clearCart();
-            router.push(result.url);
+            router.push(url);
           } else {
             // External redirect (bKash)
             toast({
@@ -129,7 +133,7 @@ export function CheckoutForm({ onDeliveryChange, children }: CheckoutFormProps) 
             // Small delay to let toast show
             setTimeout(() => {
               clearCart();
-              window.location.href = result.url!;
+              window.location.href = url;
             }, 1500);
           }
         } else {
@@ -280,7 +284,9 @@ export function CheckoutForm({ onDeliveryChange, children }: CheckoutFormProps) 
             <FormField control={form.control} name="district" render={({ field }) => (
               <FormItem>
                 <FormLabel className="text-xs font-bold uppercase text-zinc-500">District</FormLabel>
-                <FormControl><Input placeholder="e.g. Gaibandha" className="rounded-none border-zinc-200 focus-visible:ring-orange-500" {...field} /></FormControl>
+                <FormControl>
+                   <DistrictSelect value={field.value} onChange={field.onChange} placeholder="Select District" />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )} />

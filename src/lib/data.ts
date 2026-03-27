@@ -5,17 +5,38 @@ import { eq, desc, asc, isNull, sql, or, ilike, and, ne, count as drizzleCount }
 import { alias } from 'drizzle-orm/pg-core';
 
 // Product Functions
-export const getProducts = async (options?: { query?: string, limit?: number, page?: number, isTrending?: boolean, isBestSelling?: boolean, isFeatured?: boolean, sortBy?: string, categoryId?: string, categoryIds?: string[], brandId?: string, brandIds?: string[], excludeProductId?: string }): Promise<{ products: Product[], totalCount: number }> => {
-  const { query, limit, page, isTrending, isBestSelling, isFeatured, sortBy, categoryId, categoryIds, brandId, brandIds, excludeProductId } = options || {};
+export const getProducts = async (options?: { query?: string, limit?: number, page?: number, isTrending?: boolean, isBestSelling?: boolean, isFeatured?: boolean, sortBy?: string, categoryId?: string, categoryIds?: string[], brandId?: string, brandIds?: string[], excludeProductId?: string, searchBy?: 'all' | 'sku' }): Promise<{ products: Product[], totalCount: number }> => {
+  const { query, limit, page, isTrending, isBestSelling, isFeatured, sortBy, categoryId, categoryIds, brandId, brandIds, excludeProductId, searchBy = 'all' } = options || {};
   try {
     const conditions = [];
     if (query && query.trim().length > 0) {
-      const searchPattern = `%${query.replace(/%/g, '\\%').replace(/_/g, '\\_')}%`;
-      conditions.push(or(
-        ilike(productsTable.name, searchPattern),
-        ilike(productsTable.description, searchPattern),
-        ilike(sql`array_to_string(${productsTable.keywords}, ' ')`, searchPattern)
-      ));
+      if (searchBy === 'sku') {
+        const queryAsNumber = parseInt(query);
+        if (!isNaN(queryAsNumber)) {
+          conditions.push(eq(productsTable.sku, queryAsNumber));
+        } else {
+          // If not a number, try exact match on ID
+          conditions.push(eq(productsTable.id, query.trim()));
+        }
+      } else {
+        const searchPattern = `%${query.replace(/%/g, '\\%').replace(/_/g, '\\_')}%`;
+        const orConditions = [
+          ilike(productsTable.name, searchPattern),
+          ilike(productsTable.description, searchPattern),
+          ilike(sql`array_to_string(${productsTable.keywords}, ' ')`, searchPattern),
+          ilike(productsTable.id, searchPattern),
+          eq(productsTable.id, query.trim()) // Exact ID Match
+        ];
+
+        // If query is exactly a number, check SKU or SKU partial
+        const queryAsNumber = parseInt(query);
+        if (!isNaN(queryAsNumber)) {
+          orConditions.push(eq(productsTable.sku, queryAsNumber));
+          orConditions.push(ilike(sql`${productsTable.sku}::text`, searchPattern)); // Also allow partial SKU match
+        }
+
+        conditions.push(or(...orConditions));
+      }
     }
 
     // Handle multiple categories with hierarchical expansion
