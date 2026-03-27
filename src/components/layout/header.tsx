@@ -29,9 +29,10 @@ export function Header({ categories = [] }: HeaderProps) {
   const { user } = useAuth();
   const [isMobileSearchOpen, setMobileSearchOpen] = useState(false);
   const [isVisible, setIsVisible] = useState(true);
-  const [lastScrollY, setLastScrollY] = useState(0);
 
   useEffect(() => {
+    let lastScrollY = window.scrollY;
+
     const handleScroll = () => {
       const currentScrollY = window.scrollY;
       
@@ -46,21 +47,22 @@ export function Header({ categories = [] }: HeaderProps) {
         setIsVisible(true);
       }
       
-      setLastScrollY(currentScrollY);
+      lastScrollY = currentScrollY;
     };
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
-  }, [lastScrollY, isMobileSearchOpen, isDrawerOpen]);
+  }, [isMobileSearchOpen, isDrawerOpen]);
+
 
   return (
-    <header className="sticky top-0 z-50 w-full flex flex-col backdrop-blur-md bg-white/70 border-b border-zinc-200/50 shadow-sm">
+    <header className={cn(
+      "sticky z-50 w-full flex flex-col backdrop-blur-md bg-white/70 border-b border-zinc-200/50 shadow-sm transition-all duration-300",
+      isVisible ? "top-0" : "-top-9"
+    )}>
       
-      {/* Top Bar Wrapper - Hides on scroll down */}
-      <div className={cn(
-        "hidden sm:block overflow-hidden transition-all duration-300 ease-in-out border-b border-zinc-200/50",
-        !isVisible ? "h-0 opacity-0" : "h-9 opacity-100"
-      )}>
+      {/* Top Bar Wrapper */}
+      <div className="hidden sm:block h-9 border-b border-zinc-200/50">
         <TopBar />
       </div>
 
