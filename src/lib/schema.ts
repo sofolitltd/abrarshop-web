@@ -203,3 +203,16 @@ export const productsRelations = relations(products, ({ many }) => ({
   reviews: many(reviews, { relationName: 'product_reviews' }),
   orderItems: many(orderItems, { relationName: 'product' }),
 }));
+
+export const admins = pgTable('admins', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  username: varchar('username', { length: 50 }).notNull().unique(),
+  email: varchar('email', { length: 100 }).notNull().unique(),
+  password: text('password').notNull(),
+  role: varchar('role', { length: 50 }).notNull().default('staff'), // superadmin, staff, manager
+  isActive: boolean('is_active').default(true).notNull(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});

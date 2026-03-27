@@ -25,6 +25,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { logoutAdmin } from "@/lib/actions";
 import {
   LayoutDashboard,
   Package,
@@ -40,6 +41,9 @@ import {
   PlusCircle,
   List,
   Percent,
+  LogOut,
+  ShieldCheck,
+  ClipboardList,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -67,6 +71,14 @@ const mainNavItems = [
   { href: "/admin/customers", label: "Customers", icon: Users },
   { href: "/admin/reports", label: "Reports", icon: BarChart3 },
   { href: "/admin/coupons", label: "Coupons", icon: Percent },
+  {
+    label: "Administration",
+    icon: ShieldCheck,
+    items: [
+      { href: "/admin/administration", label: "Staff Management", icon: Users },
+      { href: "/admin/administration/logs", label: "System Logs", icon: ClipboardList },
+    ],
+  },
 ];
 
 const bottomNavItems = [
@@ -182,7 +194,19 @@ export function SidebarNav() {
       </SidebarMenu>
       <div className="px-2 pb-2">
         <SidebarSeparator className="my-2" />
-        <SidebarMenu>{renderNavItems(bottomNavItems)}</SidebarMenu>
+        <SidebarMenu>
+          {renderNavItems(bottomNavItems)}
+          <SidebarMenuItem>
+            <SidebarMenuButton 
+              onClick={async () => await logoutAdmin()}
+              tooltip="Logout"
+              className="group-data-[collapsible=icon]:justify-center text-red-600 hover:text-red-700 hover:bg-red-50"
+            >
+              <LogOut className="h-4 w-4" />
+              <span className="group-data-[collapsible=icon]:hidden font-bold uppercase text-[10px] tracking-widest">Logout</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
       </div>
     </>
   );

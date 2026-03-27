@@ -1,15 +1,17 @@
 'use server';
 
 import { revalidatePath } from 'next/cache';
+import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { db } from '@/lib/db';
-import { products, brands, categories, heroSliders, users, orders, orderItems, reviews, coupons } from '@/lib/schema';
+import { products, brands, categories, heroSliders, users, orders, orderItems, reviews, coupons, admins } from '@/lib/schema';
 import { eq, and, ne, desc, inArray, or, sql, asc, count as drizzleCount } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 import { getProducts, getProductById, getBrandById, getCategoryById, getHeroSliderById } from './data';
 import { generateSlug } from '@/lib/utils';
 import { v2 as cloudinary } from 'cloudinary';
+import bcrypt from 'bcryptjs';
 
 if (process.env.CLOUDINARY_CLOUD_NAME && process.env.CLOUDINARY_API_KEY && process.env.CLOUDINARY_API_SECRET) {
   cloudinary.config({
@@ -1451,5 +1453,138 @@ export async function validateCoupon(code: string, orderAmount: number) {
   } catch (error) {
     console.error('Failed to validate coupon:', error);
     return { success: false, message: 'Validation error' };
+  }
+}
+
+// ADMIN AUTH ACTIONS
+export async function loginAdmin(data: any) {
+  const { identifier, password } = data;
+  
+  try {
+    const admin = await db.query.admins.findFirst({
+      where: and(
+        or(
+          eq(admins.username, identifier),
+          eq(admins.email, identifier)
+        ),
+        eq(admins.isActive, true)
+      )
+    });
+
+    if (!admin) {
+      return { success: false, message: "Invalid credentials." };
+    }
+
+    const passwordMatch = await bcrypt.compare(password, admin.password);
+    
+    if (!passwordMatch) {
+      return { success: false, message: "Invalid credentials." };
+    }
+
+    (await cookies()).set("admin_session", "authenticated", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 60 * 60 * 24, // 1 day
+      path: "/",
+    });
+
+    // Optionally set another cookie for the admin's role/username if needed
+    (await cookies()).set("admin_username", admin.username, {
+       httpOnly: false, // accessible to client if needed for UI
+       maxAge: 60 * 60 * 24,
+       path: "/",
+    });
+
+    return { success: true };
+  } catch (error) {
+    console.error("Login Error:", error);
+    return { success: false, message: "Something went wrong during login." };
+  }
+}
+
+export async function logoutAdmin() {
+  (await cookies()).delete("admin_session");
+  (await cookies()).delete("admin_username");
+  redirect("/admin/login");
+}
+
+export async function getAllAdmins() {
+  try {
+    return await db.query.admins.findMany({
+      orderBy: desc(admins.createdAt)
+    });
+  } catch (error) {
+    console.error("Failed to fetch admins:", error);
+    return [];
+  }
+}
+
+export async function createAdmin(data: any) {
+  try {
+    const hashedPassword = await bcrypt.hash(data.password, 10);
+    const id = createId();
+    await db.insert(admins).values({
+      ...data,
+      id,
+      password: hashedPassword,
+    });
+    revalidatePath('/admin/administration');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, message: error.message || "Failed to create staff member." };
+  }
+}
+
+export async function updateAdmin(id: string, data: any) {
+  try {
+    let updateData = { ...data, updatedAt: new Date() };
+    if (data.password) {
+      updateData.password = await bcrypt.hash(data.password, 10);
+    } else {
+      delete updateData.password;
+    }
+
+    await db.update(admins)
+      .set(updateData)
+      .where(eq(admins.id, id));
+
+    revalidatePath('/admin/administration');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, message: error.message || "Failed to update staff member." };
+  }
+}
+
+export async function deleteAdmin(id: string) {
+  try {
+    // Prevent self-deletion if we had a session ID, but for now simple delete
+    await db.delete(admins).where(eq(admins.id, id));
+    revalidatePath('/admin/administration');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, message: error.message || "Failed to delete staff member." };
+  }
+}
+
+// Temporary Seed Function - call this if you need to create the first admin
+export async function seedInitialAdmin() {
+  try {
+    const existing = await db.query.admins.findFirst({
+      where: eq(admins.username, 'reyad')
+    });
+
+    if (existing) return { success: true, message: "Admin already exists" };
+
+    const hashedPassword = await bcrypt.hash('12345678', 10);
+    await db.insert(admins).values({
+      username: 'reyad',
+      email: 'asifreyad1@gmail.com',
+      password: hashedPassword,
+      role: 'superadmin',
+      isActive: true
+    });
+    return { success: true, message: "Initial Admin Seeded" };
+  } catch (error: any) {
+    return { success: false, message: error.message };
   }
 }

@@ -3,6 +3,7 @@ import { db } from '@/lib/db';
 import { products as productsTable, categories as categoriesTable, brands as brandsTable, heroSliders as heroSlidersTable, reviews as reviewsTable } from '@/lib/schema';
 import { eq, desc, asc, isNull, sql, or, ilike, and, ne, count as drizzleCount } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
+import { cache } from 'react';
 
 // Product Functions
 export const getProducts = async (options?: { query?: string, limit?: number, page?: number, isTrending?: boolean, isBestSelling?: boolean, isFeatured?: boolean, sortBy?: string, categoryId?: string, categoryIds?: string[], brandId?: string, brandIds?: string[], excludeProductId?: string, searchBy?: 'all' | 'sku' }): Promise<{ products: Product[], totalCount: number }> => {
@@ -177,7 +178,7 @@ export const getProducts = async (options?: { query?: string, limit?: number, pa
   }
 };
 
-export const getProductById = async (
+export const getProductById = cache(async (
   id: string
 ): Promise<Product | undefined> => {
   if (!id) return undefined;
@@ -227,9 +228,9 @@ export const getProductById = async (
     console.error('Failed to fetch product by ID:', error);
     return undefined;
   }
-};
+});
 
-export const getProductBySlug = async (
+export const getProductBySlug = cache(async (
   slug: string
 ): Promise<Product | undefined> => {
   if (!slug) return undefined;
@@ -279,7 +280,7 @@ export const getProductBySlug = async (
     console.error('Failed to fetch product by slug:', error);
     return undefined;
   }
-};
+});
 
 
 
@@ -395,7 +396,7 @@ export const getBrandBySlug = async (slug: string): Promise<Brand | undefined> =
 }
 
 // Category Functions
-export const getCategories = async (options?: { topLevelOnly?: boolean, isFeatured?: boolean }): Promise<Category[]> => {
+export const getCategories = cache(async (options?: { topLevelOnly?: boolean, isFeatured?: boolean }): Promise<Category[]> => {
   try {
     const { topLevelOnly, isFeatured } = options || {};
     const parentCategories = alias(categoriesTable, 'parent');
@@ -434,7 +435,30 @@ export const getCategories = async (options?: { topLevelOnly?: boolean, isFeatur
     console.error('Failed to fetch categories:', error);
     return [];
   }
-}
+});
+
+export const getCategoryAncestors = cache(async (categoryId: string): Promise<Category[]> => {
+  if (!categoryId) return [];
+  try {
+    const allCategories = await getCategories(); // Still needs full list to traverse, but getCategories is cached
+    const ancestors: Category[] = [];
+    let currentId: string | null = categoryId;
+
+    while (currentId) {
+      const cat = allCategories.find((c: any) => c.id === currentId);
+      if (cat) {
+        ancestors.unshift(cat);
+        currentId = cat.parentId;
+      } else {
+        break;
+      }
+    }
+    return ancestors;
+  } catch (error) {
+    console.error('Failed to get ancestors:', error);
+    return [];
+  }
+});
 
 export const getCategoryById = async (id: string): Promise<Category | undefined> => {
   if (!id) return undefined;

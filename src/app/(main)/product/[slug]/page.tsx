@@ -1,7 +1,9 @@
 
-import { getProductBySlug, getCategories, getProductReviews } from "@/lib/data";
+import { getProductBySlug, getCategoryAncestors, getProductReviews } from "@/lib/data";
 import { ProductRatingInfo } from "@/components/product/product-rating-info";
 import { notFound } from "next/navigation";
+import { Suspense } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { ProductGallery } from "@/components/product/product-gallery";
 import { Separator } from "@/components/ui/separator";
 import { ProductDetailsTabs } from "@/components/product/product-details-tabs";
@@ -59,36 +61,23 @@ export default async function ProductDetailPage({
     notFound();
   }
 
-  const reviews = await getProductReviews(product.id);
+  // Concurrent fetching of non-critical data
+  const [reviews, parentTrail] = await Promise.all([
+     getProductReviews(product.id),
+     product.categoryId ? getCategoryAncestors(product.categoryId) : Promise.resolve([])
+  ]);
+
   const averageRating = reviews.length > 0
     ? (reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)
     : null;
 
   // Fetch categories to build hierarchical breadcrumb
-  const allCategories = await getCategories();
   const breadcrumbItems = [{ name: 'Home', href: '/' }];
 
-  if (product.categoryId) {
-    const parentTrail: any[] = [];
-    let currentId: string | null = product.categoryId;
-
-    // Trace up the tree
-    while (currentId) {
-      const cat = allCategories.find(c => c.id === currentId);
-      if (cat) {
-        parentTrail.unshift(cat);
-        currentId = cat.parentId;
-      } else {
-        break;
-      }
-    }
-
+  if (parentTrail.length > 0) {
     // Add to breadcrumb items with cumulative slugs
     let cumulativeSlug = "";
     parentTrail.forEach(cat => {
-      // Note: We're assuming the full slug path matches the category page structure
-      // For simplicity here, we'll try to reconstruct the slug path or use a flat structure if complex
-      // Based on the category page, it uses a full slug reconstructed from the chain
       cumulativeSlug = cumulativeSlug ? `${cumulativeSlug}/${cat.slug}` : cat.slug;
       breadcrumbItems.push({
         name: cat.name,
@@ -197,14 +186,25 @@ export default async function ProductDetailPage({
           </div>
         </div>
 
-        {/* Reviews */}
+        {/* Reviews and Tabs with Suspense boundary */}
         <div className="mt-16 md:mt-24" id="reviews">
-          <ProductDetailsTabs product={product} reviews={reviews} />
+          <Suspense fallback={<div className="h-40 flex items-center justify-center border-2 border-dashed border-zinc-100 uppercase text-[10px] font-black tracking-widest text-zinc-300">Synchronizing reviews...</div>}>
+             <ProductDetailsTabs product={product} reviews={reviews} />
+          </Suspense>
         </div>
       </div>
-
-      {/* Related Products */}
-      <RelatedProducts categoryId={product.categoryId} currentProductId={product.id} />
+ 
+      {/* Related Products with own Suspense boundary */}
+      <Suspense fallback={
+        <section className="py-10 border-t container">
+           <Skeleton className="h-10 w-64 mb-6 rounded-none" />
+           <div className="grid grid-cols-2 sm:grid-cols-5 gap-6">
+              {[1,2,3,4,5].map(i => <Skeleton key={i} className="aspect-[3/4] rounded-none" />)}
+           </div>
+        </section>
+      }>
+         <RelatedProducts categoryId={product.categoryId} currentProductId={product.id} />
+      </Suspense>
     </>
   );
 }

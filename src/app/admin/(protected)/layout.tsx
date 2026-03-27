@@ -14,12 +14,19 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { SidebarToggle } from "@/components/admin/sidebar-footer-toggle";
 import { SidebarNav } from "@/components/admin/sidebar-nav";
+import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = (await cookies()).get("admin_session");
+
+  if (!session) {
+    redirect("/admin/login");
+  }
   return (
     <SidebarProvider>
       <Sidebar collapsible="icon" className="border-r border-zinc-200">
