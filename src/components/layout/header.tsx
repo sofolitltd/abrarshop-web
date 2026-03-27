@@ -81,7 +81,7 @@ export function Header({ categories = [] }: HeaderProps) {
   return (
     <header className={cn(
       "sticky z-50 w-full flex flex-col backdrop-blur-md bg-white/70 border-b border-zinc-200/50 shadow-sm transition-all duration-300",
-      isVisible ? "top-0" : "-top-9"
+      isVisible ? "top-0" : "top-0 lg:-top-9"
     )}>
       
       {/* Top Bar Wrapper */}
