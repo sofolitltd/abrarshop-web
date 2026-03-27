@@ -69,23 +69,23 @@ export function ProductCard({ product, isFeatured = false, priority = false }: P
           </div>
         </div>
 
-        <div className="p-3 space-y-3">
-          <div className="space-y-1">
-            <p className="text-[10px] font-semibold text-zinc-400 uppercase tracking-widest leading-none">
+        <div className="p-3 md:p-4 flex flex-col gap-1 md:gap-1.5 flex-1">
+          <div className="space-y-0.5 md:space-y-1 flex-1">
+            <p className="text-[9px] md:text-[10px] font-semibold text-zinc-400 uppercase tracking-widest leading-none">
               {product.category || '-'}
             </p>
 
-            <h3 className="font-semibold leading-tight text-sm sm:text-base line-clamp-2 group-hover:text-orange-600 transition-colors  h-14 uppercase tracking-normal">
+            <h3 className="font-semibold leading-tight text-xs sm:text-sm md:text-base line-clamp-2 group-hover:text-orange-600 transition-colors uppercase tracking-normal">
               {product.name}
             </h3>
 
 
           </div>
 
-          <div className="flex items-center gap-3 ">
-            <p className="text-base sm:text-lg font-black text-black">৳{product.price.toLocaleString()}</p>
+          <div className="flex items-center gap-2 mt-1 md:mt-2">
+            <p className="text-sm sm:text-base md:text-lg font-black text-black">৳{product.price.toLocaleString()}</p>
             {showStrikethrough && (
-              <p className="text-xs sm:text-sm text-zinc-400 line-through decoration-zinc-300 font-medium">৳{product.originalPrice?.toLocaleString()}</p>
+              <p className="text-[10px] sm:text-xs md:text-sm text-zinc-400 line-through decoration-zinc-300 font-medium">৳{product.originalPrice?.toLocaleString()}</p>
             )}
           </div>
         </div>
