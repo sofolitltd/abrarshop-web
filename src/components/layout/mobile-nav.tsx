@@ -25,7 +25,7 @@ export function MobileNav({ categories }: MobileNavProps) {
     return (
         <Sheet open={open} onOpenChange={setOpen}>
             <SheetTrigger asChild>
-                <Button variant="ghost" size="icon" className="mr-2 text-white bg-zinc-900 hover:text-black rounded-none">
+                <Button variant="ghost" size="icon" className="mr-2 text-black bg-zinc-100/50 hover:bg-zinc-100 hover:text-orange-500 rounded-none">
                     <Menu className="h-6 w-6" />
                     <span className="sr-only">Toggle Menu</span>
                 </Button>

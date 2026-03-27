@@ -129,7 +129,7 @@ export function ProductGallery({ images, productName }: ProductGalleryProps) {
             key={index}
             className={cn(
               "relative h-16 w-16 md:h-20 md:w-20 shrink-0 overflow-hidden border-2 transition-all",
-              activeIndex === index ? "border-orange-500" : "border-transparent opacity-60 hover:opacity-100"
+              activeIndex === index ? "border-orange-500" : "border-zinc-200 opacity-60 hover:opacity-100"
             )}
             onClick={() => setActiveIndex(index)}
           >

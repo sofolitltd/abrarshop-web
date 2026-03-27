@@ -56,6 +56,7 @@ export const products = pgTable('products', {
   isFeatured: boolean('is_featured').notNull().default(false),
   discount: numeric('discount', { precision: 5, scale: 2 }).notNull().default('0'),
   status: varchar('status', { length: 20 }).notNull().default('published'),
+  version: integer('version').notNull().default(0),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });

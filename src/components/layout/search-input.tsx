@@ -72,7 +72,7 @@ export function SearchInput() {
                         onChange={handleInputChange}
                         onFocus={handleFocus}
                         placeholder="Search products..."
-                        className="pl-8 w-full"
+                        className="pl-8 w-full bg-zinc-100/50 border-zinc-200 text-black placeholder:text-zinc-400 focus-visible:ring-orange-500 rounded-none shadow-inner"
                         autoComplete="off"
                     />
                     {isPending && <Loader2 className="absolute right-2.5 top-2.5 h-4 w-4 animate-spin text-muted-foreground" />}

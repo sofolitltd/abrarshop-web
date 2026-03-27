@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, Suspense } from "react";
+import { useState, Suspense, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { CartIcon } from "@/components/cart/cart-icon";
 import { CartSheet } from "@/components/cart/cart-sheet";
@@ -17,8 +17,8 @@ import { TopBar } from "./top-bar";
 import { MainNav } from "./main-nav";
 import { MobileNav } from "./mobile-nav";
 
-const SearchBarFallback = () => <Skeleton className="h-10 w-full" />;
-const DesktopSearchBarFallback = () => <Skeleton className="h-10 w-full min-w-[350px]" />;
+const SearchBarFallback = () => <Skeleton className="h-10 w-full bg-zinc-100" />;
+const DesktopSearchBarFallback = () => <Skeleton className="h-10 w-full min-w-[350px] bg-zinc-100" />;
 
 interface HeaderProps {
   categories?: Category[];
@@ -28,15 +28,44 @@ export function Header({ categories = [] }: HeaderProps) {
   const { isDrawerOpen, setDrawerOpen } = useCart();
   const { user } = useAuth();
   const [isMobileSearchOpen, setMobileSearchOpen] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [lastScrollY, setLastScrollY] = useState(0);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const currentScrollY = window.scrollY;
+      
+      // Always show at top
+      if (currentScrollY < 100) {
+        setIsVisible(true);
+      } else if (currentScrollY > lastScrollY && !isMobileSearchOpen && !isDrawerOpen) {
+        // Scrolling down
+        setIsVisible(false);
+      } else {
+        // Scrolling up
+        setIsVisible(true);
+      }
+      
+      setLastScrollY(currentScrollY);
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [lastScrollY, isMobileSearchOpen, isDrawerOpen]);
 
   return (
-    <header className="sticky top-0 z-50 w-full flex flex-col">
-
-      {/* Top Bar */}
-      <TopBar />
+    <header className="sticky top-0 z-50 w-full flex flex-col backdrop-blur-md bg-white/70 border-b border-zinc-200/50 shadow-sm">
+      
+      {/* Top Bar Wrapper - Hides on scroll down */}
+      <div className={cn(
+        "hidden sm:block overflow-hidden transition-all duration-300 ease-in-out border-b border-zinc-200/50",
+        !isVisible ? "h-0 opacity-0" : "h-9 opacity-100"
+      )}>
+        <TopBar />
+      </div>
 
       {/* Main Header */}
-      <div className="w-full border-b border-zinc-800 bg-black text-white">
+      <div className="w-full text-black">
         <div className="container flex h-16 items-center">
 
           {/* Mobile Header */}
@@ -45,7 +74,7 @@ export function Header({ categories = [] }: HeaderProps) {
             <div className="flex items-center gap-2">
               <MobileNav categories={categories} />
               <Link href="/" className="inline-block">
-                <span className="text-xl font-bold font-headline tracking-tighter text-white">
+                <span className="text-xl font-bold font-headline tracking-tighter text-black">
                   ABRAR<span className="text-orange-500"> SHOP</span>
                 </span>
               </Link>
@@ -53,12 +82,12 @@ export function Header({ categories = [] }: HeaderProps) {
 
             {/* Right side: Search, Cart, Profile */}
             <div className="flex items-center gap-1.5">
-              <Button variant="ghost" size="icon" className="rounded-none bg-zinc-900 text-white hover:text-black" onClick={() => setMobileSearchOpen(p => !p)}>
+              <Button variant="ghost" size="icon" className="rounded-none bg-zinc-100/50 text-black hover:bg-zinc-100 hover:text-orange-500" onClick={() => setMobileSearchOpen(p => !p)}>
                 <Search className={cn("h-5 w-5", isMobileSearchOpen && "text-orange-500")} />
                 <span className="sr-only">Toggle Search</span>
               </Button>
-              <CartIcon onClick={() => setDrawerOpen(true)} className="text-white bg-zinc-900 hover:text-black" />
-              <Button variant="ghost" size="icon" className="rounded-none bg-zinc-900 text-white hover:text-black" asChild>
+              <CartIcon onClick={() => setDrawerOpen(true)} className="text-black bg-zinc-100/50 hover:bg-zinc-100 hover:text-orange-500" />
+              <Button variant="ghost" size="icon" className="rounded-none bg-zinc-100/50 text-black hover:bg-zinc-100 hover:text-orange-500" asChild>
                 <Link href={user ? "/account" : "/login"} aria-label="Login or view account">
                   <User className={cn("h-5 w-5", user && "text-orange-500")} />
                 </Link>
@@ -69,7 +98,7 @@ export function Header({ categories = [] }: HeaderProps) {
           {/* Desktop Header */}
           <div className="hidden min-[1200px]:flex w-full items-center justify-between h-full">
             <Link href="/" className="inline-block hover:opacity-90 transition-opacity mr-12">
-              <span className="text-3xl font-bold font-headline tracking-tighter text-white">
+              <span className="text-3xl font-bold font-headline tracking-tighter text-black">
                 ABRAR<span className="text-orange-500">{" "}SHOP</span>
               </span>
             </Link>
@@ -80,20 +109,24 @@ export function Header({ categories = [] }: HeaderProps) {
               </Suspense>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button variant="ghost" className="rounded-none bg-zinc-900 text-white hover:text-black gap-2" asChild>
+            <div className="flex items-center gap-3">
+              <Button variant="ghost" className="h-9 rounded-none bg-zinc-100/50 text-black hover:bg-zinc-100 hover:text-orange-500 gap-2 px-4 shadow-sm" asChild>
                 <Link href={user ? "/account" : "/login"} aria-label="Login or view account">
-                  <User className={cn("h-8 w-8", user && "text-orange-500")} />
+                  <User className={cn("h-5 w-5", user && "text-orange-500")} />
                   <div className="flex flex-col items-start hidden lg:flex">
-                    <span className="text-[10px] uppercase text-zinc-400 leading-none">Account</span>
+                    <span className="text-[10px] uppercase text-zinc-500 leading-none">Account</span>
                     <span className="text-sm font-bold leading-none">{user ? 'My Profile' : 'Login / Register'}</span>
                   </div>
                 </Link>
               </Button>
 
-              <div onClick={() => setDrawerOpen(true)} className="flex items-center bg-zinc-900 gap-2 cursor-pointer hover:bg-zinc-900  transition-colors">
-                <CartIcon className="text-white" />
-              </div>
+              <Button
+                variant="ghost"
+                onClick={() => setDrawerOpen(true)}
+                className="size-9 rounded-none bg-zinc-100/50 text-black hover:bg-zinc-100 hover:text-orange-500 px-4 shadow-sm flex items-center justify-center transition-colors"
+              >
+                <CartIcon className="text-black bg-transparent hover:bg-transparent" />
+              </Button>
             </div>
           </div>
 
@@ -105,7 +138,7 @@ export function Header({ categories = [] }: HeaderProps) {
 
       {/* Mobile Search */}
       {isMobileSearchOpen && (
-        <div className="min-[1200px]:hidden border-t border-zinc-800 bg-black">
+        <div className="min-[1200px]:hidden border-t border-zinc-100 bg-white/95 backdrop-blur-md">
           <div className="container py-3">
             <Suspense fallback={<SearchBarFallback />}>
               <SearchInput />

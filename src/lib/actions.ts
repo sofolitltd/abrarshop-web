@@ -767,71 +767,117 @@ export async function processCheckout(data: unknown, totalAmount: number, items:
   const { paymentMethod, email, mobile } = validatedFields.data;
 
   try {
-    // Handle bKash Payment
-    if (paymentMethod === 'bkash') {
-      // Only attempt to call bKash if credentials exist
-      // if (process.env.BKASH_APP_KEY && process.env.BKASH_APP_SECRET) {
-      //   const payment = await createBkashPayment(totalAmount, invoice);
-
-      //   if (payment && payment.bkashURL) {
-      //     return { success: true, url: payment.bkashURL };
-      //   } else {
-      //     console.error("bKash payment creation failed:", payment);
-      //     return { success: false, message: "Could not create bKash payment session." };
-      //   }
-      // } else {
-      //   console.warn("bKash credentials missing. Mocking success for development.");
-      //   return { success: true, url: '/checkout/thank-you' };
-      // }
-    }
-
-    // Handle Cash on Delivery or fallback
-    console.log('Order processed for:', email || mobile, 'Total:', totalAmount);
-
-    // Create Order in DB
-    const orderId = createId();
     const orderNumber = `${Date.now().toString().slice(-6)}${Math.floor(Math.random() * 100)}`;
-
     const deliveryFee = validatedFields.data.deliveryMethod === 'gaibandha' ? '50.00' : '100.00';
 
-    await db.insert(orders).values({
-      id: orderId,
-      orderNumber,
-      userId: validatedFields.data.userId || null,
-      firstName: validatedFields.data.firstName,
-      lastName: validatedFields.data.lastName,
-      mobile: validatedFields.data.mobile,
-      email: validatedFields.data.email || null,
-      address: validatedFields.data.address,
-      district: validatedFields.data.district,
-      deliveryMethod: validatedFields.data.deliveryMethod,
-      deliveryFee,
-      totalAmount: String(totalAmount),
-      paymentMethod: validatedFields.data.paymentMethod,
-      paymentStatus: 'pending',
-      orderStatus: 'pending',
+    // Wrap the entire checkout process in a transaction
+    return await db.transaction(async (tx) => {
+      // 1. Verify Stock Availability for ALL items first
+      for (const item of items) {
+        const product = await tx.query.products.findFirst({
+          where: eq(products.id, item.id),
+          columns: { stock: true, name: true }
+        });
+
+        if (!product) {
+          throw new Error(`Product not found.`);
+        }
+
+        if (product.stock < item.quantity) {
+          throw new Error(`Insufficient stock for "${product.name}". Only ${product.stock} left.`);
+        }
+      }
+
+      // 2. Decrement Stock for each item and increment version
+      for (const item of items) {
+        await tx.update(products)
+          .set({ 
+            stock: sql`${products.stock} - ${item.quantity}`,
+            version: sql`${products.version} + 1`,
+            updatedAt: new Date()
+          })
+          .where(eq(products.id, item.id));
+      }
+
+      // 3. Create Order
+      const orderId = createId();
+      await tx.insert(orders).values({
+        id: orderId,
+        orderNumber,
+        userId: validatedFields.data.userId || null,
+        firstName: validatedFields.data.firstName,
+        lastName: validatedFields.data.lastName,
+        mobile: validatedFields.data.mobile,
+        email: validatedFields.data.email || null,
+        address: validatedFields.data.address,
+        district: validatedFields.data.district,
+        deliveryMethod: validatedFields.data.deliveryMethod,
+        deliveryFee,
+        totalAmount: String(totalAmount),
+        paymentMethod: validatedFields.data.paymentMethod,
+        paymentStatus: 'pending',
+        orderStatus: 'pending',
+      });
+
+      // 4. Create Order Items
+      const orderItemsValues = items.map((item) => ({
+        id: createId(),
+        orderId: orderId,
+        productId: item.id,
+        quantity: item.quantity,
+        price: String(item.price),
+      }));
+
+      if (orderItemsValues.length > 0) {
+        await tx.insert(orderItems).values(orderItemsValues);
+      }
+
+      return { success: true, url: `/order-confirmed/${orderNumber}` };
     });
 
-    // Create Order Items
-    const orderItemsValues = items.map((item) => ({
-      id: createId(),
-      orderId: orderId,
-      productId: item.id,
-      quantity: item.quantity,
-      price: String(item.price), // Assuming price is number
-    }));
-
-    if (orderItemsValues.length > 0) {
-      await db.insert(orderItems).values(orderItemsValues);
-    }
-
-    return { success: true, url: `/order-confirmed/${orderNumber}` };
   } catch (error: any) {
     if (error?.message === 'NEXT_REDIRECT') throw error;
-    console.error('Checkout Processing Error:', error);
-    return { success: false, message: error.message || 'Failed to process checkout.' };
+    return { 
+      success: false, 
+      message: error.message || 'Failed to process checkout. Please try again.' 
+    };
   }
 }
+
+/**
+ * Enterprise Guardrail: Pre-checkout Stock Verification
+ * Checks if the user's cart items are still available BEFORE they fill out the checkout form.
+ */
+export async function verifyCartStock(items: { id: string; quantity: number }[]) {
+  try {
+    const results = await Promise.all(
+      items.map(async (item) => {
+        const product = await db.query.products.findFirst({
+          where: eq(products.id, item.id),
+          columns: { id: true, stock: true, name: true }
+        });
+
+        if (!product) return { id: item.id, available: false, reason: 'Product not found.' };
+        if (product.stock < item.quantity) {
+          return { 
+            id: item.id, 
+            available: false, 
+            reason: `Insufficient stock for "${product.name}". Only ${product.stock} left.`,
+            currentStock: product.stock
+          };
+        }
+        return { id: item.id, available: true };
+      })
+    );
+
+    const isAllAvailable = results.every(r => r.available);
+    return { success: isAllAvailable, details: results };
+  } catch (error) {
+    console.error('Cart verification error:', error);
+    return { success: false, message: 'Failed to verify stock.' };
+  }
+}
+
 
 export async function searchProducts(query: string, limit: number) {
   if (!query) {
