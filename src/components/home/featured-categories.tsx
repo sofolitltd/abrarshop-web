@@ -64,11 +64,11 @@ export async function FeaturedCategories() {
                                     {/* Typography underneath */}
                                     <div className="flex flex-col items-center justify-center space-y-1">
                                         <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Explore</p>
-                                        <div className="flex items-center gap-1.5 overflow-hidden">
-                                            <h3 className="text-xs sm:text-sm md:text-base font-black text-black uppercase tracking-widest group-hover:text-orange-600 transition-colors">
+                                        <div className="flex items-center justify-center gap-1.5">
+                                            <h3 className="text-xs sm:text-sm md:text-base font-black text-black uppercase tracking-widest group-hover:text-orange-600 transition-colors text-center">
                                                 {category.name}
                                             </h3>
-                                            <ArrowRight className="w-3.5 h-3.5 text-orange-600 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500" />
+                                            <ArrowRight className="w-3.5 h-3.5 shrink-0 text-orange-600 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500" />
                                         </div>
                                     </div>
                                 </Link>
