@@ -20,6 +20,7 @@ export default async function HomePage() {
 
   return (
     <div className="relative">
+      <h1 className="sr-only">Abrar Shop - Best Online Shopping in Bangladesh</h1>
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[500px] bg-gradient-to-b from-orange-50/50 to-transparent -z-10 blur-3xl opacity-50 pointer-events-none" />
       <FadeUp duration={0.8}>
         <HeroSection

@@ -1,9 +1,25 @@
 import type { Product, Brand, Category, HeroSlider, Review } from '@/lib/types';
 import { db } from '@/lib/db';
-import { products as productsTable, categories as categoriesTable, brands as brandsTable, heroSliders as heroSlidersTable, reviews as reviewsTable } from '@/lib/schema';
+import { products as productsTable, categories as categoriesTable, brands as brandsTable, heroSliders as heroSlidersTable, reviews as reviewsTable, settings as settingsTable } from '@/lib/schema';
 import { eq, desc, asc, isNull, sql, or, ilike, and, ne, count as drizzleCount } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { cache } from 'react';
+
+// Sitemap helpers
+export async function getAllProductSlugs() {
+  return await db.select({ 
+    slug: productsTable.slug, 
+    updatedAt: productsTable.createdAt // Usually createdAt is a good fallback if no updatedAt
+  }).from(productsTable).where(eq(productsTable.status, 'active'));
+}
+
+export async function getAllCategorySlugs() {
+  return await db.select({ slug: categoriesTable.slug }).from(categoriesTable);
+}
+
+export async function getAllBrandSlugs() {
+  return await db.select({ slug: brandsTable.slug }).from(brandsTable);
+}
 
 // Product Functions
 export const getProducts = async (options?: { query?: string, limit?: number, page?: number, isTrending?: boolean, isBestSelling?: boolean, isFeatured?: boolean, sortBy?: string, categoryId?: string, categoryIds?: string[], brandId?: string, brandIds?: string[], excludeProductId?: string, searchBy?: 'all' | 'sku' }): Promise<{ products: Product[], totalCount: number }> => {

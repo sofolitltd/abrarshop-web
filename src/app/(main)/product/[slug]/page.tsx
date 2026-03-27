@@ -42,11 +42,23 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       images: [
         {
           url: product.images[0],
-          width: 500,
-          height: 500,
+          width: 800,
+          height: 800,
           alt: product.name,
         },
       ],
+      type: 'website',
+      siteName: 'Abrar Shop',
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${product.name} Price in Bangladesh`,
+      description: description,
+      images: [product.images[0]],
+      creator: '@abrarshop',
+    },
+    alternates: {
+      canonical: `https://abrarshop.vercel.app/product/${slug}`,
     },
   };
 }
@@ -89,8 +101,40 @@ export default async function ProductDetailPage({
   // Add the product itself
   breadcrumbItems.push({ name: product.name, href: `/product/${product.slug}` });
 
+  // Build JSON-LD Structured Data for Google SEO
+  const jsonLd = {
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    "name": product.name,
+    "image": product.images,
+    "description": product.description || `${product.name} price in Bangladesh`,
+    "sku": product.sku,
+    "mpn": product.id,
+    "brand": {
+      "@type": "Brand",
+      "name": product.brand || "Abrar Shop"
+    },
+    "offers": {
+      "@type": "Offer",
+      "url": `https://abrarshop.com/product/${product.slug}`,
+      "priceCurrency": "BDT",
+      "price": product.price,
+      "priceValidUntil": "2026-12-31",
+      "itemCondition": "https://schema.org/NewCondition",
+      "availability": product.stock > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      "seller": {
+        "@type": "Organization",
+        "name": "Abrar Shop"
+      }
+    }
+  };
+
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <div className="container py-6">
         <div className="mb-6 md:mb-8">
           <Breadcrumb items={breadcrumbItems} />
@@ -104,7 +148,7 @@ export default async function ProductDetailPage({
           <div className="space-y-6 md:-mt-1.5">
             <div>
               <h1 className="text-2xl md:text-3xl font-bold font-headline leading-tight mt-0">{product.name}</h1>
-
+              <h2 className="sr-only">Product Overview</h2>
               <div className="flex flex-wrap items-center gap-4 mt-2">
                 <div className="flex items-center gap-1.5 px-2 py-0.5 border text-[12px] font-medium text-zinc-500 tracking-wider">
                   Product Id:

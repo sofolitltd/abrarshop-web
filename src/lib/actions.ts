@@ -5,7 +5,7 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { db } from '@/lib/db';
-import { products, brands, categories, heroSliders, users, orders, orderItems, reviews, coupons, admins } from '@/lib/schema';
+import { products, brands, categories, heroSliders, users, orders, orderItems, reviews, coupons, admins, settings } from '@/lib/schema';
 import { eq, and, ne, desc, inArray, or, sql, asc, count as drizzleCount } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 import { getProducts, getProductById, getBrandById, getCategoryById, getHeroSliderById } from './data';
@@ -1584,6 +1584,69 @@ export async function seedInitialAdmin() {
       isActive: true
     });
     return { success: true, message: "Initial Admin Seeded" };
+  } catch (error: any) {
+    return { success: false, message: error.message };
+  }
+}
+
+// SETTINGS ACTIONS
+export async function getSettings() {
+  try {
+    return await db.query.settings.findMany();
+  } catch (error) {
+    console.error("Failed to fetch settings:", error);
+    return [];
+  }
+}
+
+export async function updateSettings(data: { key: string, value: string }[]) {
+  try {
+    for (const item of data) {
+      await db.insert(settings)
+        .values({
+          id: createId(),
+          key: item.key,
+          value: item.value,
+          updatedAt: new Date(),
+        })
+        .onConflictDoUpdate({
+          target: settings.key,
+          set: { 
+            value: item.value,
+            updatedAt: new Date()
+          },
+        });
+    }
+    revalidatePath('/', 'layout');
+    return { success: true };
+  } catch (error: any) {
+    return { success: false, message: error.message };
+  }
+}
+
+export async function seedInitialSettings() {
+  const defaults = [
+    { key: 'site_name', value: 'Abrar Shop', label: 'Shop Name', group: 'General' },
+    { key: 'site_tagline', value: 'Best price in Bangladesh', label: 'Tagline', group: 'General' },
+    { key: 'contact_email', value: 'support@abrarshop.com', label: 'Email', group: 'Contact' },
+    { key: 'contact_phone', value: '+880 1XXX-XXXXXX', label: 'Phone', group: 'Contact' },
+    { key: 'contact_whatsapp', value: '+880 1XXX-XXXXXX', label: 'WhatsApp', group: 'Contact' },
+    { key: 'contact_address', value: 'Dhaka, Bangladesh', label: 'Address', group: 'Contact' },
+  ];
+
+  try {
+    for (const s of defaults) {
+      await db.insert(settings)
+        .values({ 
+          id: createId(), 
+          key: s.key, 
+          value: s.value, 
+          label: s.label, 
+          group: s.group 
+        })
+        .onConflictDoNothing();
+    }
+    return { success: true, message: "Settings seeded successfully" };
   } catch (error: any) {
     return { success: false, message: error.message };
   }

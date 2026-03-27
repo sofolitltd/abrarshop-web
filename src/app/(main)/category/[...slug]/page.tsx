@@ -43,12 +43,19 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
                 ? [
                     {
                         url: category.imageUrl,
-                        width: 200,
-                        height: 200,
+                        width: 800,
+                        height: 800,
                         alt: category.name,
                     },
                 ]
                 : [],
+            type: 'website',
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: title,
+            description: `Find the best prices for ${category.name} in Bangladesh at Abrar Shop.`,
+            images: category.imageUrl ? [category.imageUrl] : [],
         },
     };
 }

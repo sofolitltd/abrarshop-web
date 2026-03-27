@@ -36,6 +36,14 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
         openGraph: {
             title: title,
             description: `Shop the best selection of ${brand.name} products at Abrar Shop Bangladesh.`,
+            type: 'website',
+            images: brand.imageUrl ? [{ url: brand.imageUrl, width: 800, height: 800 }] : [],
+        },
+        twitter: {
+            card: 'summary_large_image',
+            title: title,
+            description: `Shop the best selection of ${brand.name} products at Abrar Shop Bangladesh.`,
+            images: brand.imageUrl ? [brand.imageUrl] : [],
         },
     };
 }

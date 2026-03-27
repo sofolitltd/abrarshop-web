@@ -216,3 +216,14 @@ export const admins = pgTable('admins', {
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
 });
+
+export const settings = pgTable('settings', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  key: varchar('key', { length: 256 }).notNull().unique(),
+  value: text('value').notNull(),
+  label: varchar('label', { length: 256 }),
+  group: varchar('group', { length: 100 }).default('General'), // General, SEO, Social, Contact
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});

@@ -1,13 +1,12 @@
-import type { MetadataRoute } from 'next'
+import { MetadataRoute } from 'next';
 
 export default function robots(): MetadataRoute.Robots {
-    return {
-        rules: {
-            userAgent: '*',
-            allow: '/',
-            disallow: ['/admin/', '/checkout/success/', '/cart/'],
-        },
-        sitemap: 'https://abrarshop.vercel.app/sitemap.xml',
-        // sitemap: 'http://localhost:3000/sitemap.xml',
-    }
+  return {
+    rules: {
+      userAgent: '*',
+      allow: '/',
+      disallow: ['/admin/', '/api/', '/_next/', '/static/'],
+    },
+    sitemap: 'https://abrarshop.vercel.app/sitemap.xml',
+  };
 }
