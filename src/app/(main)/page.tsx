@@ -7,6 +7,8 @@ import { FeaturedBrands } from "@/components/home/featured-brands";
 import { getHeroSliders } from "@/lib/data";
 import { FadeUp } from "@/components/animations/fade-up";
 
+export const revalidate = 3600;
+
 export default async function HomePage() {
   const [
     activeSliders,

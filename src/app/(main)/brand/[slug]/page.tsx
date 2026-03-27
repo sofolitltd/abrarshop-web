@@ -1,7 +1,7 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
 import { ShoppingBag } from "lucide-react";
-import { getBrandBySlug, getProducts, getCategoriesByBrandId, getBrands } from "@/lib/data";
+import { getBrandBySlug, getProducts, getCategoriesByBrandId, getBrands, getAllBrandSlugs } from "@/lib/data";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { ProductCard } from "@/components/product/product-card";
@@ -17,6 +17,15 @@ import Link from "next/link";
 type Props = {
     params: Promise<{ slug: string }>;
 };
+
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+    const brands = await getAllBrandSlugs();
+    return brands.map((brand) => ({
+        slug: brand.slug,
+    }));
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { slug } = await params;

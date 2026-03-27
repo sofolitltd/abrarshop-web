@@ -1,5 +1,5 @@
 
-import { getProductBySlug, getCategoryAncestors, getProductReviews } from "@/lib/data";
+import { getProductBySlug, getCategoryAncestors, getProductReviews, getAllProductSlugs } from "@/lib/data";
 import { ProductRatingInfo } from "@/components/product/product-rating-info";
 import { notFound } from "next/navigation";
 import { Suspense } from "react";
@@ -18,6 +18,15 @@ import { CopyButton } from "@/components/ui/copy-button";
 type Props = {
   params: Promise<{ slug: string }>;
 };
+
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+  const products = await getAllProductSlugs();
+  return products.map((product) => ({
+    slug: product.slug,
+  }));
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;

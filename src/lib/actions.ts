@@ -112,6 +112,7 @@ export async function createProduct(data: unknown) {
   }
 
   revalidatePath('/admin/products');
+  revalidatePath('/', 'layout');
   redirect('/admin/products');
 }
 
@@ -197,7 +198,7 @@ export async function updateProduct(id: string, data: unknown) {
   }
 
   revalidatePath('/admin/products');
-  revalidatePath(`/products/${slug}`);
+  revalidatePath('/', 'layout');
   redirect('/admin/products');
 }
 
@@ -221,6 +222,7 @@ export async function deleteProduct(id: string) {
 
     await db.delete(products).where(eq(products.id, id));
     revalidatePath('/admin/products');
+    revalidatePath('/', 'layout');
     return { message: 'Deleted Product.' };
   } catch (error) {
     console.error(error);
@@ -270,6 +272,7 @@ export async function deleteMultipleProducts(ids: string[]) {
     await db.delete(products).where(inArray(products.id, ids));
 
     revalidatePath('/admin/products');
+    revalidatePath('/', 'layout');
     return { success: true, message: `Deleted ${ids.length} products.` };
   } catch (error) {
     console.error('Delete multiple products error:', error);
@@ -306,6 +309,7 @@ export async function createBrand(data: unknown) {
     return { success: false, message: error.message || 'Database Error: Failed to create brand.' };
   }
   revalidatePath('/admin/brand');
+  revalidatePath('/', 'layout');
   redirect('/admin/brand');
 }
 
@@ -337,6 +341,7 @@ export async function updateBrand(id: string, data: unknown) {
   }
   revalidatePath('/admin/brand');
   revalidatePath(`/admin/brand/${id}/edit`);
+  revalidatePath('/', 'layout');
   redirect('/admin/brand');
 }
 
@@ -352,6 +357,7 @@ export async function deleteBrand(id: string) {
 
     await db.delete(brands).where(eq(brands.id, id));
     revalidatePath('/admin/brand');
+    revalidatePath('/', 'layout');
     return { message: 'Deleted brand.' };
   } catch (error: any) {
     if (error && error.code === '23503') {
@@ -397,6 +403,7 @@ export async function createCategory(data: unknown) {
     return { success: false, message: error.message || 'Database Error: Failed to create category.' };
   }
   revalidatePath('/admin/categories');
+  revalidatePath('/', 'layout');
   redirect('/admin/categories');
 }
 
@@ -435,6 +442,7 @@ export async function updateCategory(id: string, data: unknown) {
   }
   revalidatePath('/admin/categories');
   revalidatePath(`/admin/categories/${id}/edit`);
+  revalidatePath('/', 'layout');
   redirect('/admin/categories');
 }
 
@@ -455,6 +463,7 @@ export async function deleteCategory(id: string) {
 
     await db.delete(categories).where(eq(categories.id, id));
     revalidatePath('/admin/categories');
+    revalidatePath('/', 'layout');
     return { message: 'Deleted category.' };
   } catch (error: any) {
     if (error && error.code === '23503') {
@@ -469,6 +478,7 @@ export async function toggleCategoryFeatured(id: string, isFeatured: boolean) {
   try {
     await db.update(categories).set({ isFeatured, updatedAt: new Date() }).where(eq(categories.id, id));
     revalidatePath('/admin/categories');
+    revalidatePath('/', 'layout');
     return { success: true, message: `Category ${isFeatured ? 'marked as featured' : 'removed from featured'}.` };
   } catch (error) {
     console.error(error);
@@ -499,6 +509,7 @@ export async function createBrandJson(data: unknown) {
   try {
     const [newBrand] = await db.insert(brands).values({ id: createId(), name, slug, imageUrl }).returning();
     revalidatePath('/admin/brand');
+    revalidatePath('/', 'layout');
     return { success: true, brand: newBrand };
   } catch (error) {
     console.error(error);
@@ -538,6 +549,7 @@ export async function createCategoryJson(data: unknown) {
     }).returning();
 
     revalidatePath('/admin/categories');
+    revalidatePath('/', 'layout');
 
     let parentName: string | null = null;
     if (newCategory.parentId) {

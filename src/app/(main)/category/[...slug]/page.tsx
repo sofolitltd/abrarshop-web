@@ -1,6 +1,6 @@
 import { Suspense } from "react";
 import { notFound } from "next/navigation";
-import { getCategoryBySlug, getProducts, getCategories, getBrandsByCategoryId } from "@/lib/data";
+import { getCategoryBySlug, getProducts, getCategories, getBrandsByCategoryId, getAllCategorySlugs } from "@/lib/data";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
 import { ProductCard } from "@/components/product/product-card";
@@ -19,6 +19,15 @@ import { Button } from "@/components/ui/button";
 type Props = {
     params: Promise<{ slug: string[] }>;
 };
+
+export const revalidate = 3600;
+
+export async function generateStaticParams() {
+    const categories = await getAllCategorySlugs();
+    return categories.map((category) => ({
+        slug: [category.slug],
+    }));
+}
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
     const { slug } = await params;
