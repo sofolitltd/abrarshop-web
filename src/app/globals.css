@@ -48,9 +48,6 @@
   --radius-4xl: 0;
 }
 
-html {
-  scroll-behavior: smooth;
-}
 
 :root {
   --radius: 0;
