@@ -4,6 +4,7 @@ import { products as productsTable, categories as categoriesTable, brands as bra
 import { eq, desc, asc, isNull, sql, or, ilike, and, ne, count as drizzleCount } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { cache } from 'react';
+import { unstable_cache } from 'next/cache';
 
 // Sitemap helpers
 export async function getAllProductSlugs() {
@@ -301,7 +302,7 @@ export const getProductBySlug = cache(async (
 
 
 // Brand Functions (Categorized)
-export const getBrandsByCategoryId = async (categoryId: string): Promise<Brand[]> => {
+const _getBrandsByCategoryId = async (categoryId: string): Promise<Brand[]> => {
   try {
     // 1. Get the category and all its descendants to match the logic in getProducts
     const allCategories = await db.select().from(categoriesTable);
@@ -337,6 +338,12 @@ export const getBrandsByCategoryId = async (categoryId: string): Promise<Brand[]
     return [];
   }
 };
+
+export const getBrandsByCategoryId = unstable_cache(
+  _getBrandsByCategoryId,
+  ['brands-by-category'],
+  { revalidate: 3600, tags: ['brands', 'categories'] }
+);
 
 export const getBrandsByCategoryIds = async (categoryIds: string[]): Promise<Brand[]> => {
   if (!categoryIds || categoryIds.length === 0) {
@@ -380,17 +387,21 @@ export const getBrandsByCategoryIds = async (categoryIds: string[]): Promise<Bra
     return [];
   }
 };
-export const getBrands = async (): Promise<Brand[]> => {
-  try {
-    const result = await db.select().from(brandsTable).orderBy(brandsTable.name);
-    return result;
-  } catch (error) {
-    console.error('Failed to fetch brands:', error);
-    return [];
-  }
-}
+export const getBrands = unstable_cache(
+  async (): Promise<Brand[]> => {
+    try {
+      const result = await db.select().from(brandsTable).orderBy(brandsTable.name);
+      return result;
+    } catch (error) {
+      console.error('Failed to fetch brands:', error);
+      return [];
+    }
+  },
+  ['all-brands'],
+  { revalidate: 3600, tags: ['brands'] }
+);
 
-export const getBrandById = async (id: string): Promise<Brand | undefined> => {
+export const getBrandById = cache(async (id: string): Promise<Brand | undefined> => {
   if (!id) return undefined;
   try {
     const result = await db.select().from(brandsTable).where(eq(brandsTable.id, id));
@@ -398,18 +409,22 @@ export const getBrandById = async (id: string): Promise<Brand | undefined> => {
   } catch (error) {
     return undefined;
   }
-}
+});
 
-export const getBrandBySlug = async (slug: string): Promise<Brand | undefined> => {
-  if (!slug) return undefined;
-  try {
-    const result = await db.select().from(brandsTable).where(eq(brandsTable.slug, slug));
-    return result[0];
-  } catch (error) {
-    console.error('Failed to fetch brand by slug:', error);
-    return undefined;
-  }
-}
+export const getBrandBySlug = unstable_cache(
+  async (slug: string): Promise<Brand | undefined> => {
+    if (!slug) return undefined;
+    try {
+      const result = await db.select().from(brandsTable).where(eq(brandsTable.slug, slug));
+      return result[0];
+    } catch (error) {
+      console.error('Failed to fetch brand by slug:', error);
+      return undefined;
+    }
+  },
+  ['brand-by-slug'],
+  { revalidate: 3600, tags: ['brands'] }
+);
 
 // Category Functions
 export const getCategories = cache(async (options?: { topLevelOnly?: boolean, isFeatured?: boolean }): Promise<Category[]> => {
@@ -487,18 +502,22 @@ export const getCategoryById = async (id: string): Promise<Category | undefined>
   }
 }
 
-export const getCategoryBySlug = async (slug: string): Promise<Category | undefined> => {
-  if (!slug) return undefined;
-  try {
-    const result = await db.select().from(categoriesTable).where(eq(categoriesTable.slug, slug));
-    return result[0];
-  } catch (error) {
-    console.error('Failed to fetch category by slug:', error);
-    return undefined;
-  }
-}
+export const getCategoryBySlug = unstable_cache(
+  async (slug: string): Promise<Category | undefined> => {
+    if (!slug) return undefined;
+    try {
+      const result = await db.select().from(categoriesTable).where(eq(categoriesTable.slug, slug));
+      return result[0];
+    } catch (error) {
+      console.error('Failed to fetch category by slug:', error);
+      return undefined;
+    }
+  },
+  ['category-by-slug'],
+  { revalidate: 3600, tags: ['categories'] }
+);
 
-export const getCategoriesByBrandId = async (brandId: string): Promise<Category[]> => {
+const _getCategoriesByBrandId = async (brandId: string): Promise<Category[]> => {
   try {
     const parentCategories = alias(categoriesTable, 'parent');
 
@@ -554,6 +573,12 @@ export const getCategoriesByBrandId = async (brandId: string): Promise<Category[
     return [];
   }
 };
+
+export const getCategoriesByBrandId = unstable_cache(
+  _getCategoriesByBrandId,
+  ['categories-by-brand'],
+  { revalidate: 3600, tags: ['brands', 'categories'] }
+);
 
 export const getFilteredBrands = async (options?: { categoryIds?: string[], query?: string, isTrending?: boolean, isBestSelling?: boolean, isFeatured?: boolean }): Promise<Brand[]> => {
   const { categoryIds, query, isTrending, isBestSelling, isFeatured } = options || {};
