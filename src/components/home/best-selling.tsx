@@ -34,14 +34,14 @@ export async function BestSelling() {
                                 Best <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-800 to-zinc-500">Selling</span>
                             </h2>
                         </div>
-                        <div className="flex gap-2 md:gap-3">
+                        <div className="flex gap-2 md:gap-3 hidden md:flex ">
                             <CarouselPrevious className="static translate-y-0 h-10 w-10 md:h-12 md:w-12 rounded-none border-zinc-200 hover:bg-black hover:text-white transition-all" />
                             <CarouselNext className="static translate-y-0 h-10 w-10 md:h-12 md:w-12 rounded-none border-zinc-200 hover:bg-black hover:text-white transition-all" />
                         </div>
                     </div>
-                    <CarouselContent className="-ml-6">
+                    <CarouselContent className="py-2">
                         {bestSellingProducts.map((product) => (
-                            <CarouselItem key={product.id} className="pl-6 basis-[45%] sm:basis-[30%] md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
+                            <CarouselItem key={product.id} className="basis-[48%] sm:basis-[30%] md:basis-1/3 lg:basis-1/4 xl:basis-1/5">
                                 <ProductCard product={product} />
                             </CarouselItem>
                         ))}

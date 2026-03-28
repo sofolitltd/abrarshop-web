@@ -54,7 +54,7 @@ export default async function HomePage() {
                   <div className="h-px w-8 bg-orange-600"></div>
                   <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-600">Top Choices</span>
                 </div>
-                <h2 className="flex flex-col sm:flex-row gap-4 text-3xl sm:text-4xl md:text-5xl font-black font-headline tracking-tight uppercase leading-none">
+                <h2 className="flex  gap-4 text-2xl sm:text-4xl md:text-5xl font-black font-headline tracking-tight uppercase leading-none">
                   Featured <br />
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-800 to-zinc-500">Products</span>
                 </h2>

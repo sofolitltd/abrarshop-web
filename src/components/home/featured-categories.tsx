@@ -23,15 +23,15 @@ export async function FeaturedCategories() {
             <div className="container">
                 <FadeUp>
                     <div className="space-y-4 text-center flex flex-col items-center">
-                            <div className="flex items-center gap-2">
-                                <div className="h-px w-8 bg-orange-600"></div>
-                                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-600">Top Categories</span>
-                            </div>
-                            <h2 className="text-xl sm:text-4xl md:text-5xl font-black font-headline tracking-tight uppercase leading-[0.9] gap-2 flex flex-row">
-                                Popular <br />
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-800 to-zinc-500">Categories</span>
-                            </h2>
+                        <div className="flex items-center gap-2">
+                            <div className="h-px w-8 bg-orange-600"></div>
+                            <span className="text-[10px] font-black uppercase tracking-[0.3em] text-orange-600">Top Categories</span>
                         </div>
+                        <h2 className="text-xl sm:text-4xl md:text-5xl font-black font-headline tracking-tight uppercase leading-[0.9] gap-2 flex flex-row">
+                            Popular <br />
+                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-zinc-800 to-zinc-500">Categories</span>
+                        </h2>
+                    </div>
                 </FadeUp>
 
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 sm:gap-6 md:gap-8 mt-12">
@@ -56,20 +56,18 @@ export async function FeaturedCategories() {
                                                 <ShoppingBag className="w-12 h-12 text-zinc-300" strokeWidth={1} />
                                             )}
                                         </div>
-                                        
+
                                         {/* Subtle overlay accent */}
                                         <div className="absolute inset-0 bg-gradient-to-tr from-orange-500/0 via-transparent to-orange-500/0 group-hover:to-orange-500/5 transition-colors duration-500"></div>
                                     </div>
 
                                     {/* Typography underneath */}
-                                    <div className="flex flex-col items-center justify-center space-y-1">
-                                        <p className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest">Explore</p>
-                                        <div className="flex items-center justify-center gap-1.5">
-                                            <h3 className="text-xs sm:text-sm md:text-base font-black text-black uppercase tracking-widest group-hover:text-orange-600 transition-colors text-center">
-                                                {category.name}
-                                            </h3>
-                                            <ArrowRight className="w-3.5 h-3.5 shrink-0 text-orange-600 opacity-0 -translate-x-4 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-500" />
-                                        </div>
+
+                                    <div className="flex items-center justify-center gap-1.5">
+                                        <h3 className="text-xs sm:text-sm md:text-base font-black text-black uppercase tracking-widest group-hover:text-orange-600 transition-colors text-center">
+                                            {category.name}
+                                        </h3>
+
                                     </div>
                                 </Link>
                             </FadeUp>
