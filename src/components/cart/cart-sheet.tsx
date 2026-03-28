@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Trash2, ShoppingBag, Plus, Minus } from "lucide-react";
 import Link from "next/link";
 import { Separator } from "../ui/separator";
+import { useEffect, useRef } from "react";
 
 type CartSheetProps = {
   open: boolean;
@@ -30,9 +31,39 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
     removeItem,
   } = useCart();
 
+  // Track whether the close was triggered by the back button
+  const closedByBackButton = useRef(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    // Push a dummy history entry so back button can be intercepted
+    history.pushState(null, "", window.location.href);
+
+    const handlePopState = () => {
+      // Back button pressed — close the cart (no need to call history.back())
+      closedByBackButton.current = true;
+      onOpenChange(false);
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+
+      if (closedByBackButton.current) {
+        // Already went back via hardware button — just reset the flag
+        closedByBackButton.current = false;
+      } else {
+        // Cart closed normally (button/overlay click) — clean up the dummy entry
+        history.back();
+      }
+    };
+  }, [open, onOpenChange]);
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex w-full flex-col pr-0 sm:max-w-lg">
+      <SheetContent className="flex w-[90%] flex-col pr-0 sm:max-w-lg">
         <SheetHeader className="px-6 pb-0">
           <SheetTitle>Shopping Cart ({totalItems})</SheetTitle>
         </SheetHeader>
@@ -129,7 +160,7 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
           <div className="flex flex-1 flex-col items-center justify-center gap-4 text-center">
             <ShoppingBag className="h-24 w-24 text-muted-foreground/50" strokeWidth={1} />
             <h2 className="text-xl font-semibold">Your cart is empty</h2>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-sm">
               Looks like you haven't added anything to your cart yet.
             </p>
             <Button onClick={() => onOpenChange(false)} variant="outline">
