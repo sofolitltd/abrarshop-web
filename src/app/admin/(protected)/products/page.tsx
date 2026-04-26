@@ -33,23 +33,26 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
   const totalPages = Math.ceil(totalCount / limit);
 
   return (
-    <div className="flex flex-col gap-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold tracking-tight">Products ({totalCount})</h1>
-        <Button asChild>
+    <div className="space-y-6 min-w-0">
+      <div className="flex items-center justify-between gap-4">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Products ({totalCount})</h1>
+        <Button asChild className="shrink-0">
           <Link href="/admin/products/new">
             <PlusCircle className="mr-2 h-4 w-4" />
-            New Product
+            <span className="hidden sm:inline">New Product</span>
+            <span className="sm:hidden">Add</span>
           </Link>
         </Button>
       </div>
-      <ProductsTable
-        products={products}
-        totalPages={totalPages}
-        currentPage={page}
-        categories={categories}
-        brands={brands}
-      />
+      <div className="min-w-0">
+        <ProductsTable
+          products={products}
+          totalPages={totalPages}
+          currentPage={page}
+          categories={categories}
+          brands={brands}
+        />
+      </div>
     </div>
   );
 }

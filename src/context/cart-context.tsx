@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useState, useMemo, useEffect } from "react";
 import type { CartItem, CartContextType, Product } from "@/lib/types";
+import { toast } from "sonner";
 
 const CartContext = createContext<CartContextType | undefined>(undefined);
 
@@ -19,16 +20,34 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
     localStorage.setItem("abrar_shop_cart", JSON.stringify(items));
   }, [items]);
 
-  const addItem = (product: Product, quantity: number = 1) => {
+  const addItem = (product: Product, quantity: number = 1): boolean => {
+    let success = false;
     setItems((prevItems) => {
       const existingItem = prevItems.find((item) => item.id === product.id);
+      
       if (existingItem) {
+        const newQuantity = existingItem.quantity + quantity;
+        if (newQuantity > product.stock) {
+          toast.error(`Only ${product.stock} items available in stock.`);
+          success = false;
+          return prevItems;
+        }
+        success = true;
         return prevItems.map((item) =>
           item.id === product.id
-            ? { ...item, quantity: item.quantity + quantity }
+            ? { ...item, quantity: newQuantity }
             : item
         );
       }
+
+      if (quantity > product.stock) {
+        toast.error(`Only ${product.stock} items available in stock.`);
+        success = false;
+        return prevItems;
+      }
+
+      toast.success("Added to cart");
+      success = true;
       return [
         ...prevItems,
         {
@@ -37,9 +56,11 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
           price: product.price,
           image: product.images[0],
           quantity,
+          stock: product.stock,
         },
       ];
     });
+    return success;
   };
 
   const removeItem = (productId: string) => {
@@ -51,11 +72,16 @@ export const CartProvider = ({ children }: { children: React.ReactNode }) => {
       removeItem(productId);
       return;
     }
-    setItems((prevItems) =>
-      prevItems.map((item) =>
+    setItems((prevItems) => {
+      const item = prevItems.find(i => i.id === productId);
+      if (item && quantity > item.stock) {
+        toast.error(`Only ${item.stock} items available in stock.`);
+        return prevItems;
+      }
+      return prevItems.map((item) =>
         item.id === productId ? { ...item, quantity } : item
-      )
-    );
+      );
+    });
   };
 
   const clearCart = () => {

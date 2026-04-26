@@ -27,7 +27,7 @@ export default async function OrdersPage() {
       <div className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4">
         {stats.map((stat) => (
           <Card key={stat.label} className="rounded-none border-zinc-200">
-            <CardContent className="p-6 flex items-center justify-between">
+            <CardContent className=" flex items-center justify-between">
               <div>
                 <p className="text-[10px] font-black uppercase tracking-widest text-zinc-400 mb-1">{stat.label}</p>
                 <p className="text-2xl font-black">{stat.value}</p>

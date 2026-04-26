@@ -7,15 +7,12 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Button } from "@/components/ui/button";
-import { Home } from "lucide-react";
-
 import Link from 'next/link';
-import Image from 'next/image';
 import { SidebarToggle } from "@/components/admin/sidebar-footer-toggle";
 import { SidebarNav } from "@/components/admin/sidebar-nav";
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { SITE_CONFIG } from "@/lib/config";
 
 export default async function AdminLayout({
   children,
@@ -33,19 +30,14 @@ export default async function AdminLayout({
         <SidebarHeader className="border-b border-zinc-200 h-14 justify-center">
           <div className="flex items-center px-2 group-data-[collapsible=icon]:justify-center">
             <Link href="/" className="flex items-center gap-2">
-              {/* Logo - Only visible when sidebar is collapsed */}
-              <div className="hidden group-data-[collapsible=icon]:block h-8 w-8 relative flex items-center justify-center shrink-0">
-                <Image
-                  src="/abrarshop-logo.png"
-                  alt="Abrar Shop"
-                  fill
-                  className="object-contain"
-                />
-              </div>
+              {/* Collapsed: show "A" initial */}
+              <span className="hidden group-data-[collapsible=icon]:block font-black text-xl tracking-tighter leading-none">
+                {SITE_CONFIG.name.split(' ')[0][0]}<span className="text-orange-600">{SITE_CONFIG.name.split(' ')[1][0]}</span>
+              </span>
 
-              {/* Text Name - Only visible when NOT collapsed */}
-              <span className="font-black text-sm uppercase tracking-tighter group-data-[collapsible=icon]:hidden">
-                Abrar <span className="text-orange-600">Shop</span>
+              {/* Expanded: full logo matching main site */}
+              <span className="font-black text-xl uppercase tracking-tighter group-data-[collapsible=icon]:hidden">
+                {SITE_CONFIG.name.split(' ')[0]} <span className="text-orange-600">{SITE_CONFIG.name.split(' ')[1]}</span>
               </span>
             </Link>
           </div>

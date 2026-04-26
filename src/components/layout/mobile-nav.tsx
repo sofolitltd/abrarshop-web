@@ -9,6 +9,7 @@ import { Category } from "@/lib/types";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { Separator } from "@/components/ui/separator";
+import { SITE_CONFIG, CONTACT_INFO } from "@/lib/config";
 
 interface MobileNavProps {
     categories: Category[];
@@ -33,7 +34,7 @@ export function MobileNav({ categories }: MobileNavProps) {
             <SheetContent side="left" className="w-[320px] p-0 border-r-zinc-200">
                 <SheetHeader className="p-4 border-b border-zinc-100 text-left">
                     <SheetTitle className="font-headline font-bold uppercase tracking-tighter">
-                        Abrar<span className="text-orange-600"> Shop</span>
+                        {SITE_CONFIG.name.split(' ')[0]}<span className="text-orange-600"> {SITE_CONFIG.name.split(' ')[1]}</span>
                     </SheetTitle>
                 </SheetHeader>
                 <ScrollArea className="h-[calc(100vh-80px)]">
@@ -158,8 +159,8 @@ export function MobileNav({ categories }: MobileNavProps) {
                     <div className="mt-8 px-6 pb-6">
                         <div className="p-4 bg-zinc-50 rounded-lg text-center">
                             <p className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-2">Need Help?</p>
-                            <p className="text-sm font-bold text-black mb-1">017258577772</p>
-                            <p className="text-sm font-bold text-black">support@abrarshop.online</p>
+                            <a href={`tel:${CONTACT_INFO.phone}`} className="block text-sm font-bold text-black mb-1 hover:text-orange-600 transition-colors">{CONTACT_INFO.phone}</a>
+                            <a href={`mailto:${CONTACT_INFO.email}`} className="block text-sm font-bold text-black hover:text-orange-600 transition-colors">{CONTACT_INFO.email}</a>
                         </div>
                     </div>
                 </ScrollArea>

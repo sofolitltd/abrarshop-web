@@ -16,6 +16,7 @@ import { Trash2, ShoppingBag, Plus, Minus } from "lucide-react";
 import Link from "next/link";
 import { Separator } from "../ui/separator";
 import { useEffect, useRef } from "react";
+import { useRouter } from "next/navigation";
 
 type CartSheetProps = {
   open: boolean;
@@ -31,17 +32,17 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
     removeItem,
   } = useCart();
 
-  // Track whether the close was triggered by the back button
+  const router = useRouter();
   const closedByBackButton = useRef(false);
 
   useEffect(() => {
     if (!open) return;
 
-    // Push a dummy history entry so back button can be intercepted
-    history.pushState(null, "", window.location.href);
+    // Push a dummy state to the history stack to catch the back button
+    const originalUrl = window.location.href;
+    window.history.pushState({ drawerOpen: true }, "");
 
     const handlePopState = () => {
-      // Back button pressed — close the cart (no need to call history.back())
       closedByBackButton.current = true;
       onOpenChange(false);
     };
@@ -50,88 +51,92 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
 
     return () => {
       window.removeEventListener("popstate", handlePopState);
-
-      if (closedByBackButton.current) {
-        // Already went back via hardware button — just reset the flag
-        closedByBackButton.current = false;
-      } else {
-        // Cart closed normally (button/overlay click) — clean up the dummy entry
-        history.back();
+      
+      // Remove dummy state if we're closing manually on the same page
+      if (window.location.href === originalUrl && !closedByBackButton.current) {
+        window.history.back();
       }
+      closedByBackButton.current = false;
     };
   }, [open, onOpenChange]);
 
+  const handleNavigate = (path: string) => {
+    onOpenChange(false);
+    // Add a small delay to allow the sheet to start closing
+    setTimeout(() => {
+      router.push(path);
+    }, 100);
+  };
+
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent className="flex w-[90%] flex-col pr-0 sm:max-w-lg">
-        <SheetHeader className="px-6 pb-0">
-          <SheetTitle>Shopping Cart ({totalItems})</SheetTitle>
+      <SheetContent className="flex w-[90%] flex-col sm:max-w-lg p-0">
+        <SheetHeader className="p-0 pl-4 pt-4">
+          <SheetTitle >Shopping Cart ({totalItems})</SheetTitle>
         </SheetHeader>
         <Separator />
         {items.length > 0 ? (
           <>
             <ScrollArea className="flex-1">
-              <div className="flex flex-col gap-6 px-4">
+              <div className="flex flex-col gap-4 p-4">
                 {items.map((item) => (
-                  <div key={item.id} className="flex items-center gap-4 border p-2">
-                    <div className="relative border size-22.5 flex-shrink-0 overflow-hidden rounded-none">
+                  <div key={item.id} className="flex gap-4 border border-zinc-100 bg-white p-3 shadow-sm">
+                    <div className="relative border border-zinc-100 size-20 flex-shrink-0 overflow-hidden bg-zinc-50">
                       <Image
                         src={item.image}
                         alt={item.name}
                         fill
-                        className="object-cover"
+                        className="object-contain p-1"
                         sizes="80px"
                       />
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-semibold text-sm sm:text-base truncate">{item.name}</h3>
-                      <div className="flex items-center justify-between">
-
-                        <p className="text-xs sm:text-sm text-muted-foreground mt-0.5">
-                          Tk {""}{item.price.toLocaleString()}
-                        </p>
-                        <p className="font-bold text-sm sm:text-base whitespace-nowrap">Tk{" "}
-                          {(item.price * item.quantity).toLocaleString()}
+                    <div className="flex-1 min-w-0 flex flex-col justify-between">
+                      <div>
+                        <h3 className="font-bold text-[13px] uppercase tracking-tight line-clamp-1 leading-tight mb-1">
+                          {item.name}
+                        </h3>
+                        <p className="text-[11px] font-medium text-zinc-500">
+                          Tk {item.price.toLocaleString()}
                         </p>
                       </div>
 
-                      <div className="mt-2.5 flex items-center justify-between">
-                        <div className="flex items-center border rounded-none">
+                      <div className="flex items-center justify-between mt-2">
+                        <div className="flex items-center border border-zinc-200">
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 sm:h-8 sm:w-8 rounded-none hover:bg-zinc-100"
+                            className="h-7 w-7 rounded-none hover:bg-zinc-50"
                             onClick={() => updateItemQuantity(item.id, item.quantity - 1)}
-                            aria-label={`Decrease quantity for ${item.name}`}
                           >
                             <Minus className="h-3 w-3" />
                           </Button>
-                          <span className="w-8 sm:w-10 text-center text-xs sm:text-sm font-medium">
+                          <span className="w-8 text-center text-xs font-bold">
                             {item.quantity}
                           </span>
                           <Button
                             variant="ghost"
                             size="icon"
-                            className="h-7 w-7 sm:h-8 sm:w-8 rounded-none hover:bg-zinc-100"
+                            className="h-7 w-7 rounded-none hover:bg-zinc-50"
                             onClick={() => updateItemQuantity(item.id, item.quantity + 1)}
-                            aria-label={`Increase quantity for ${item.name}`}
                           >
                             <Plus className="h-3 w-3" />
                           </Button>
                         </div>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/5"
-                          onClick={() => removeItem(item.id)}
-                          aria-label={`Remove ${item.name} from cart`}
-                        >
-                          <Trash2 className="h-4 w-4" />
-
-                        </Button>
+                        <div className="flex items-center gap-3">
+                          <p className="font-black text-sm text-orange-600">
+                            Tk {(item.price * item.quantity).toLocaleString()}
+                          </p>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 text-zinc-400 hover:text-red-600 hover:bg-red-50"
+                            onClick={() => removeItem(item.id)}
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
-
                   </div>
                 ))}
               </div>
@@ -146,11 +151,20 @@ export function CartSheet({ open, onOpenChange }: CartSheetProps) {
                   Shipping and delivery charge are calculated during checkout.
                 </p>
                 <div className="flex flex-col gap-2 mt-2">
-                  <Button asChild size="lg" className="w-full rounded-none h-12 text-sm sm:text-base" onClick={() => onOpenChange(false)}>
-                    <Link href="/checkout">Proceed to Checkout</Link>
+                  <Button 
+                    size="lg" 
+                    className="w-full rounded-none h-12 text-sm sm:text-base" 
+                    onClick={() => handleNavigate("/checkout")}
+                  >
+                    Proceed to Checkout
                   </Button>
-                  <Button asChild variant="outline" size="lg" className="w-full rounded-none h-12 text-sm sm:text-base" onClick={() => onOpenChange(false)}>
-                    <Link href="/cart">View Shopping Cart</Link>
+                  <Button 
+                    variant="outline" 
+                    size="lg" 
+                    className="w-full rounded-none h-12 text-sm sm:text-base" 
+                    onClick={() => handleNavigate("/cart")}
+                  >
+                    View Shopping Cart
                   </Button>
                 </div>
               </div>

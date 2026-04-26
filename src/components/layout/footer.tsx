@@ -4,6 +4,7 @@ import { FaFacebookF, FaInstagram, FaYoutube, FaWhatsapp } from "react-icons/fa"
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
+import { SITE_CONFIG, SOCIAL_LINKS, CONTACT_INFO } from "@/lib/config";
 
 export function Footer() {
   return (
@@ -14,23 +15,23 @@ export function Footer() {
           <div className="space-y-6">
             <Link href="/" className="inline-block">
               <span className="text-2xl font-bold font-headline tracking-tighter text-white">
-                ABRAR<span className="text-orange-500">{" "}SHOP</span>
+                {SITE_CONFIG.name.split(' ')[0]}<span className="text-orange-500">{" "}{SITE_CONFIG.name.split(' ')[1]}</span>
               </span>
             </Link>
             <p className="text-sm leading-relaxed text-zinc-400 max-w-xs">
-              Your one-stop destination for the latest trends and high-quality products. We bring the best of the market directly to your doorstep.
+              {SITE_CONFIG.tagline}
             </p>
             <div className="flex items-center gap-4">
-              <Link href="#" className="h-10 w-10 flex items-center justify-center rounded-full bg-zinc-900 hover:bg-[#1877F2] transition-all group">
+              <Link href={SOCIAL_LINKS.facebook} target="_blank" className="h-10 w-10 flex items-center justify-center rounded-full bg-zinc-900 hover:bg-[#1877F2] transition-all group">
                 <FaFacebookF className="h-4 w-4 text-zinc-400 group-hover:text-white" />
               </Link>
-              <Link href="#" className="h-10 w-10 flex items-center justify-center rounded-full bg-zinc-900 hover:bg-[#E4405F] transition-all group">
+              <Link href={SOCIAL_LINKS.instagram} target="_blank" className="h-10 w-10 flex items-center justify-center rounded-full bg-zinc-900 hover:bg-[#E4405F] transition-all group">
                 <FaInstagram className="h-5 w-5 text-zinc-400 group-hover:text-white" />
               </Link>
-              <Link href="#" className="h-10 w-10 flex items-center justify-center rounded-full bg-zinc-900 hover:bg-[#FF0000] transition-all group">
+              <Link href={SOCIAL_LINKS.youtube} target="_blank" className="h-10 w-10 flex items-center justify-center rounded-full bg-zinc-900 hover:bg-[#FF0000] transition-all group">
                 <FaYoutube className="h-5 w-5 text-zinc-400 group-hover:text-white" />
               </Link>
-              <Link href="https://wa.me/8801725877772" target="_blank" className="h-10 w-10 flex items-center justify-center rounded-full bg-zinc-900 hover:bg-[#25D366] transition-all group">
+              <Link href={SOCIAL_LINKS.whatsapp} target="_blank" className="h-10 w-10 flex items-center justify-center rounded-full bg-zinc-900 hover:bg-[#25D366] transition-all group">
                 <FaWhatsapp className="h-5 w-5 text-zinc-400 group-hover:text-white" />
               </Link>
             </div>
@@ -54,15 +55,15 @@ export function Footer() {
             <ul className="space-y-4 text-sm">
               <li className="flex items-start gap-3">
                 <MapPin className="h-5 w-5 text-orange-500 shrink-0" />
-                <span className="text-zinc-400">Gaibandha, Bangladesh</span>
+                <span className="text-zinc-400">{CONTACT_INFO.address}</span>
               </li>
               <li className="flex items-center gap-3">
                 <Phone className="h-5 w-5 text-orange-500 shrink-0" />
-                <a href="tel:01725877772" className="text-zinc-400 hover:text-white transition-colors">01725-877772</a>
+                <a href={`tel:${CONTACT_INFO.phone}`} className="text-zinc-400 hover:text-white transition-colors">{CONTACT_INFO.phone}</a>
               </li>
               <li className="flex items-center gap-3">
                 <Mail className="h-5 w-5 text-orange-500 shrink-0" />
-                <a href="mailto:support@abrarshop.com.bd" className="text-zinc-400 hover:text-white transition-colors">support@abrarshop.com.bd</a>
+                <a href={`mailto:${CONTACT_INFO.email}`} className="text-zinc-400 hover:text-white transition-colors">{CONTACT_INFO.email}</a>
               </li>
             </ul>
           </div>
@@ -86,7 +87,7 @@ export function Footer() {
         <Separator className="bg-zinc-800 mb-8" />
 
         <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
-          <p>&copy; {new Date().getFullYear()} ABRAR SHOP. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} {SITE_CONFIG.name.toUpperCase()}. All rights reserved.</p>
           <div className="flex flex-wrap items-center justify-center md:justify-end gap-x-6 gap-y-2">
             <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
             <Link href="/terms" className="hover:text-white transition-colors">Terms & Conditions</Link>

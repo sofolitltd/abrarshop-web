@@ -50,44 +50,93 @@ export function CartPageContent() {
 
                 <div className="space-y-4">
                     {items.map((item) => (
-                        <div key={item.id} className="group relative bg-white border border-zinc-200   transition-all hover:border-zinc-400">
-                            <div className="grid grid-cols-1 md:grid-cols-12 gap-6 items-center">
-                                {/* Product Info */}
-                                <div className="col-span-1 md:col-span-6 flex items-center gap-4">
-                                    <div className="relative h-20    w-20 md:h-24 md:w-24 flex-shrink-0 overflow-hidden bg-zinc-50">
+                        <div key={item.id} className="group relative bg-white border border-zinc-200 transition-all hover:border-zinc-400 p-3 md:p-0">
+                            {/* Mobile Layout (Drawer Style) */}
+                            <div className="flex md:hidden gap-4 items-center">
+                                <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden bg-zinc-50 border border-zinc-100">
+                                    <Image
+                                        src={item.image}
+                                        alt={item.name}
+                                        fill
+                                        className="object-contain p-1"
+                                        sizes="80px"
+                                    />
+                                </div>
+                                <div className="flex-1 min-w-0 flex flex-col gap-2">
+                                    <div>
+                                        <h3 className="font-bold text-sm uppercase tracking-tight line-clamp-1">
+                                            {item.name}
+                                        </h3>
+                                        <p className="text-[11px] font-medium text-zinc-500">
+                                            Tk {item.price.toLocaleString()}
+                                        </p>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                        <div className="flex items-center border border-zinc-200 bg-zinc-50/50">
+                                            <button
+                                                onClick={() => updateItemQuantity(item.id, Math.max(1, item.quantity - 1))}
+                                                className="h-8 w-8 flex items-center justify-center hover:bg-zinc-100 transition-colors"
+                                            >
+                                                <Minus className="h-3 w-3" />
+                                            </button>
+                                            <div className="w-8 text-center font-bold text-sm">
+                                                {item.quantity}
+                                            </div>
+                                            <button
+                                                onClick={() => updateItemQuantity(item.id, item.quantity + 1)}
+                                                className="h-8 w-8 flex items-center justify-center hover:bg-zinc-100 transition-colors"
+                                            >
+                                                <Plus className="h-3 w-3" />
+                                            </button>
+                                        </div>
+                                        <div className="flex items-center gap-3">
+                                            <span className="font-black text-sm text-orange-600">
+                                                Tk {(item.price * item.quantity).toLocaleString()}
+                                            </span>
+                                            <button
+                                                onClick={() => removeItem(item.id)}
+                                                className="text-zinc-400 hover:text-red-500 transition-colors p-1"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Desktop Layout (Original Grid Style) */}
+                            <div className="hidden md:grid grid-cols-12 gap-6 items-center py-4 px-6">
+                                <div className="col-span-6 flex items-center gap-4">
+                                    <div className="relative h-20 w-20 flex-shrink-0 overflow-hidden bg-zinc-50 border border-zinc-100">
                                         <Image
                                             src={item.image}
                                             alt={item.name}
                                             fill
-                                            className="object-cover"
-                                            sizes="(max-width: 768px) 100px, 150px"
+                                            className="object-contain p-2"
+                                            sizes="100px"
                                         />
                                     </div>
-                                    <div className="space-y-2">
-                                        <h3 className="font-bold text-base md:text-lg leading-tight group-hover:text-orange-600 transition-colors uppercase tracking-tight">
+                                    <div className="space-y-1">
+                                        <h3 className="font-bold text-lg uppercase tracking-tight group-hover:text-orange-600 transition-colors">
                                             {item.name}
                                         </h3>
                                         <button
                                             onClick={() => removeItem(item.id)}
-                                            className="flex items-center gap-2 text-zinc-400 hover:text-red-500 text-[10px] uppercase font-bold tracking-widest transition-colors mt-2"
+                                            className="flex items-center gap-2 text-zinc-400 hover:text-red-500 text-[10px] uppercase font-bold tracking-widest transition-colors"
                                         >
                                             <Trash2 className="h-3 w-3" />
                                             Remove Item
                                         </button>
                                     </div>
                                 </div>
-
-                                {/* Price */}
-                                <div className="hidden md:flex flex-col items-center justify-center col-span-2">
-                                    <span className="font-medium ">Tk {" "}{item.price.toLocaleString()}</span>
+                                <div className="col-span-2 text-center font-medium">
+                                    Tk {item.price.toLocaleString()}
                                 </div>
-
-                                {/* Quantity */}
-                                <div className="col-span-1 md:col-span-2 flex items-center justify-center">
+                                <div className="col-span-2 flex justify-center">
                                     <div className="flex items-center border border-zinc-200">
                                         <button
                                             onClick={() => updateItemQuantity(item.id, Math.max(1, item.quantity - 1))}
-                                            className="h-10 w-10 flex items-center justify-center hover:bg-zinc-50 transition-colors"
+                                            className="h-10 w-10 flex items-center justify-center hover:bg-zinc-50"
                                         >
                                             <Minus className="h-3 w-3" />
                                         </button>
@@ -96,17 +145,14 @@ export function CartPageContent() {
                                         </div>
                                         <button
                                             onClick={() => updateItemQuantity(item.id, item.quantity + 1)}
-                                            className="h-10 w-10 flex items-center justify-center hover:bg-zinc-50 transition-colors"
+                                            className="h-10 w-10 flex items-center justify-center hover:bg-zinc-50"
                                         >
                                             <Plus className="h-3 w-3" />
                                         </button>
                                     </div>
                                 </div>
-
-                                {/* Subtotal */}
-                                <div className="col-span-1 md:col-span-2 flex md:flex-col items-center justify-between md:justify-center md:text-right">
-                                    <span className="text-zinc-400 text-[10px] md:hidden font-bold uppercase tracking-widest">Subtotal</span>
-                                    <span className="font-black text-xl text-orange-600">Tk {" "}{(item.price * item.quantity).toLocaleString()}</span>
+                                <div className="col-span-2 text-right font-black text-xl text-orange-600">
+                                    Tk {(item.price * item.quantity).toLocaleString()}
                                 </div>
                             </div>
                         </div>

@@ -8,7 +8,8 @@ import { CartIcon } from "@/components/cart/cart-icon";
 import { CartSheet } from "@/components/cart/cart-sheet";
 import { useCart } from "@/context/cart-context";
 import { SearchInput } from "./search-input";
-import { User, Search } from "lucide-react";
+import { Search, User, Menu, X, ShoppingBag } from "lucide-react";
+import { SITE_CONFIG } from "@/lib/config";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/auth-context";
@@ -100,7 +101,7 @@ export function Header({ categories = [] }: HeaderProps) {
               <MobileNav categories={categories} />
               <Link href="/" className="inline-block">
                 <span className="text-xl font-bold font-headline tracking-tighter text-black">
-                  ABRAR<span className="text-orange-500"> SHOP</span>
+                  {SITE_CONFIG.name.split(' ')[0]}<span className="text-orange-500"> {SITE_CONFIG.name.split(' ')[1]}</span>
                 </span>
               </Link>
             </div>
@@ -124,7 +125,7 @@ export function Header({ categories = [] }: HeaderProps) {
           <div className="hidden min-[1200px]:flex w-full items-center justify-between h-full">
             <Link href="/" className="inline-block hover:opacity-90 transition-opacity mr-12">
               <span className="text-3xl font-bold font-headline tracking-tighter text-black">
-                ABRAR<span className="text-orange-500">{" "}SHOP</span>
+                {SITE_CONFIG.name.split(' ')[0]}<span className="text-orange-500">{" "}{SITE_CONFIG.name.split(' ')[1]}</span>
               </span>
             </Link>
 
@@ -145,13 +146,10 @@ export function Header({ categories = [] }: HeaderProps) {
                 </Link>
               </Button>
 
-              <Button
-                variant="ghost"
-                onClick={() => setDrawerOpen(true)}
-                className="size-9 rounded-none bg-zinc-100/50 text-black hover:bg-zinc-100 hover:text-orange-500 px-4 shadow-sm flex items-center justify-center transition-colors"
-              >
-                <CartIcon className="text-black bg-transparent hover:bg-transparent" />
-              </Button>
+              <CartIcon 
+                onClick={() => setDrawerOpen(true)} 
+                className="text-black bg-zinc-100/50 hover:bg-zinc-100 hover:text-orange-500 shadow-sm transition-colors h-9 px-4" 
+              />
             </div>
           </div>
 

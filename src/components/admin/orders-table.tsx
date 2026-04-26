@@ -95,7 +95,7 @@ export function AdminOrdersTable({ initialOrders }: { initialOrders: any[] }) {
         if (target.closest('button') || target.closest('a') || target.closest('[data-radix-collection-item]')) {
             return;
         }
-        router.push(`/account/orders/${orderNumber}`);
+        router.push(`/admin/orders/${orderNumber}`);
     };
 
     const getStatusBadge = (status: string) => {
@@ -241,7 +241,7 @@ export function AdminOrdersTable({ initialOrders }: { initialOrders: any[] }) {
                                                 <DropdownMenuContent align="end" className="w-48 rounded-none border-zinc-200">
                                                     <DropdownMenuLabel className="text-[10px] font-black uppercase tracking-widest text-zinc-400">Manage Order</DropdownMenuLabel>
                                                     <DropdownMenuItem asChild>
-                                                        <Link href={`/account/orders/${order.orderNumber}`} className="cursor-pointer">
+                                                        <Link href={`/admin/orders/${order.orderNumber}`} className="cursor-pointer">
                                                             <Eye className="mr-2 h-4 w-4" /> View Details
                                                         </Link>
                                                     </DropdownMenuItem>

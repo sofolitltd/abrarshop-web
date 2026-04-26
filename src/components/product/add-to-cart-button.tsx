@@ -11,13 +11,17 @@ export function AddToCartButton({ product, quantity, variant }: { product: Produ
   const router = useRouter();
 
   const handleAddToCart = () => {
-    addItem(product, quantity);
-    setDrawerOpen(true);
+    const success = addItem(product, quantity);
+    if (success) {
+      setDrawerOpen(true);
+    }
   };
 
   const handleBuyNow = () => {
-    addItem(product, quantity);
-    router.push('/checkout');
+    const success = addItem(product, quantity);
+    if (success) {
+      router.push('/checkout');
+    }
   }
 
   if (variant === 'buyNow') {

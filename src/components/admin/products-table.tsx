@@ -227,9 +227,9 @@ export function ProductsTable({ products, totalPages, currentPage, categories, b
   };
 
   return (
-    <div className="space-y-4">
-      {/* Search and Filters Container */}
-      <div className="flex flex-col gap-4">
+    <div className="space-y-4 w-full">
+      {/* Search and Filters - full width, no horizontal scroll */}
+      <div className="flex flex-col gap-3">
         <div className="flex flex-wrap items-center gap-2">
           <div className="relative max-w-sm flex-1 min-w-[200px]">
             <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
@@ -243,7 +243,7 @@ export function ProductsTable({ products, totalPages, currentPage, categories, b
           </div>
 
           <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[160px]">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
@@ -260,7 +260,7 @@ export function ProductsTable({ products, totalPages, currentPage, categories, b
           </Select>
 
           <Select value={selectedBrand} onValueChange={setSelectedBrand}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[140px]">
               <SelectValue placeholder="Brand" />
             </SelectTrigger>
             <SelectContent>
@@ -274,7 +274,7 @@ export function ProductsTable({ products, totalPages, currentPage, categories, b
           </Select>
 
           <Select value={selectedSort} onValueChange={setSelectedSort}>
-            <SelectTrigger className="w-[180px]">
+            <SelectTrigger className="w-[150px]">
               <SelectValue placeholder="Sort By" />
             </SelectTrigger>
             <SelectContent>
@@ -319,11 +319,12 @@ export function ProductsTable({ products, totalPages, currentPage, categories, b
               </Button>
             </div>
           </div>
-        )
-        }
+        )}
+      </div>
+      {/* === TABLE: only this section scrolls horizontally === */}
+      <div className="w-full overflow-x-auto rounded-md border">
+        <Table>
 
-        <div className="rounded-md border">
-          <Table>
             <TableHeader>
               <TableRow>
                 <TableHead className="w-[1%] border p-0">
@@ -374,27 +375,36 @@ export function ProductsTable({ products, totalPages, currentPage, categories, b
                   <TableCell className="border whitespace-nowrap text-center">{product.sku || '-'}</TableCell>
                   <TableCell className="border">
                     <div className="flex justify-center">
-                      <div className="h-10 w-10 relative overflow-hidden rounded-md">
-                        {product.images && product.images[0] ? (
-                          <Image
-                            src={product.images[0]}
-                            alt={product.name}
-                            fill
-                            className="object-cover"
-                            sizes="40px"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-muted flex flex-col items-center justify-center text-[8px] uppercase font-bold leading-none text-muted-foreground">
-                            <span>No</span>
-                            <span>img</span>
-                          </div>
-                        )}
-                      </div>
+                      <Link href={`/product/${product.slug}`} target="_blank" className="block">
+                        <div className="h-10 w-10 relative overflow-hidden rounded-md hover:opacity-80 transition-opacity">
+                          {product.images && product.images[0] ? (
+                            <Image
+                              src={product.images[0]}
+                              alt={product.name}
+                              fill
+                              className="object-cover"
+                              sizes="40px"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-muted flex flex-col items-center justify-center text-[8px] uppercase font-bold leading-none text-muted-foreground">
+                              <span>No</span>
+                              <span>img</span>
+                            </div>
+                          )}
+                        </div>
+                      </Link>
                     </div>
                   </TableCell>
-                  <TableCell className="font-medium border min-w-[150px]">
-                    <div className="flex flex-col">
-                      <span>{product.name}</span>
+                  <TableCell className="font-medium border">
+                    <div className="flex flex-col max-w-[200px]">
+                      <Link
+                        href={`/product/${product.slug}`}
+                        target="_blank"
+                        className="truncate hover:text-orange-600 hover:underline transition-colors font-semibold"
+                        title={product.name}
+                      >
+                        {product.name}
+                      </Link>
                       <div className="flex flex-wrap gap-1 mt-1">
                         {product.isFeatured && <Badge variant="outline" className="text-[10px] h-4 px-1">Featured</Badge>}
                         {product.isTrending && <Badge variant="secondary" className="text-[10px] h-4 px-1">Trending</Badge>}
@@ -452,9 +462,8 @@ export function ProductsTable({ products, totalPages, currentPage, categories, b
           </Table>
         </div>
 
-        {/* Pagination */}
-        {
-          totalPages > 1 && (
+      {/* Pagination */}
+      {totalPages > 1 && (
             <Pagination>
               <PaginationContent>
                 <PaginationItem>
@@ -530,43 +539,42 @@ export function ProductsTable({ products, totalPages, currentPage, categories, b
                 </PaginationItem>
               </PaginationContent>
             </Pagination>
-          )
-        }
+      )}
 
-        <AlertDialog open={!!deleteProductId} onOpenChange={(open) => !open && setDeleteProductId(null)}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete the product.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleDelete} disabled={isPending} className="bg-destructive hover:bg-destructive/90">
-                {isPending ? "Deleting..." : "Delete"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
+      <AlertDialog open={!!deleteProductId} onOpenChange={(open) => !open && setDeleteProductId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the product.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} disabled={isPending} className="bg-destructive hover:bg-destructive/90">
+              {isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
-        <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
-          <AlertDialogContent>
-            <AlertDialogHeader>
-              <AlertDialogTitle>Delete {selectedProductIds.length} products?</AlertDialogTitle>
-              <AlertDialogDescription>
-                This action cannot be undone. This will permanently delete {selectedProductIds.length} selected product{selectedProductIds.length > 1 ? 's' : ''}.
-              </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-              <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
-              <AlertDialogAction onClick={handleBulkDelete} disabled={isPending} className="bg-destructive hover:bg-destructive/90">
-                {isPending ? "Deleting..." : "Delete All"}
-              </AlertDialogAction>
-            </AlertDialogFooter>
-          </AlertDialogContent>
-        </AlertDialog>
-      </div>
+      <AlertDialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete {selectedProductIds.length} products?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete {selectedProductIds.length} selected product{selectedProductIds.length > 1 ? 's' : ''}.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleBulkDelete} disabled={isPending} className="bg-destructive hover:bg-destructive/90">
+              {isPending ? "Deleting..." : "Delete All"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+      
     </div>
   );
 }

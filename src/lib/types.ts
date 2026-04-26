@@ -68,11 +68,12 @@ export type CartItem = {
   price: number;
   image: string;
   quantity: number;
+  stock: number;
 };
 
 export type CartContextType = {
   items: CartItem[];
-  addItem: (product: Product, quantity?: number) => void;
+  addItem: (product: Product, quantity?: number) => boolean;
   removeItem: (productId: string) => void;
   updateItemQuantity: (productId: string, quantity: number) => void;
   clearCart: () => void;

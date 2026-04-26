@@ -224,11 +224,7 @@ async function ProductGrid({
 
 export default async function CategoryPage({ params, searchParams }: { params: Promise<{ slug: string[] }>, searchParams?: Promise<{ page?: string, sort?: string, brands?: string }> }) {
     const { slug } = await params;
-    const sParams = await searchParams;
-    const currentPage = Number(sParams?.page) || 1;
-    const sortBy = sParams?.sort || 'newest';
-    const brandsFilter = sParams?.brands || '';
-
+    
     const fullSlug = slug.join('/');
     const categorySlug = slug[slug.length - 1];
     const category = await getCategoryBySlug(categorySlug);
@@ -344,46 +340,72 @@ export default async function CategoryPage({ params, searchParams }: { params: P
 
 
                 {/*  */}
-                <div className="grid grid-cols-1 min-[1200px]:grid-cols-4 gap-12">
-
-                    {/* --- PRODUCT MAIN GRID --- */}
-                    <main className="col-span-1 min-[1200px]:col-span-3">
-                        <Suspense key={category.id + currentPage + sortBy + brandsFilter} fallback={<ProductListSkeleton />}>
-                            <ProductGrid
-                                categoryId={category.id}
-                                currentPage={currentPage}
-                                sortBy={sortBy}
-                                slug={fullSlug}
-                                brands={brandsFilter}
-                                brandsData={brandsData}
-                            />
-                        </Suspense>
-                    </main>
-
-                    {/* --- SIDEBAR FILTERS --- */}
-                    <aside className="hidden min-[1200px]:block min-[1200px]:col-span-1 bg-card border border-zinc-200">
-                        <div className="sticky top-24 space-y-8 p-4">
-                            <div>
-                                <div className="flex items-center justify-between mb-6 pb-2 border-b-2 border-black">
-                                    <h2 className="text-lg font-black uppercase tracking-tight font-headline">Filters</h2>
-                                    {brandsFilter ? (
-                                        <Button variant="link" asChild className="p-0 h-auto font-bold text-[10px] uppercase tracking-widest hover:text-orange-600">
-                                            <Link href={`/category/${fullSlug}`}>
-                                                Reset All
-                                            </Link>
-                                        </Button>
-                                    ) : null}
-                                </div>
-                                <Suspense fallback={<Skeleton className=" w-full" />}>
-                                    <BrandFilters brands={brandsData} />
-                                </Suspense>
-                            </div>
-
-
-                        </div>
-                    </aside>
-                </div>
+                {/*  */}
+                <Suspense fallback={<div className="py-24 text-center"><Skeleton className="h-[400px] w-full" /></div>}>
+                    <CategoryView 
+                        category={category} 
+                        fullSlug={fullSlug} 
+                        brandsData={brandsData} 
+                        searchParams={searchParams} 
+                    />
+                </Suspense>
             </div>
         </div>
     )
+}
+
+async function CategoryView({ 
+    category, 
+    fullSlug, 
+    brandsData, 
+    searchParams 
+}: { 
+    category: Category, 
+    fullSlug: string, 
+    brandsData: Brand[], 
+    searchParams?: Promise<{ page?: string, sort?: string, brands?: string }> 
+}) {
+    const sParams = await searchParams;
+    const currentPage = Number(sParams?.page) || 1;
+    const sortBy = sParams?.sort || 'newest';
+    const brandsFilter = sParams?.brands || '';
+
+    return (
+        <div className="grid grid-cols-1 min-[1200px]:grid-cols-4 gap-12">
+            {/* --- PRODUCT MAIN GRID --- */}
+            <main className="col-span-1 min-[1200px]:col-span-3">
+                <Suspense key={category.id + currentPage + sortBy + brandsFilter} fallback={<ProductListSkeleton />}>
+                    <ProductGrid
+                        categoryId={category.id}
+                        currentPage={currentPage}
+                        sortBy={sortBy}
+                        slug={fullSlug}
+                        brands={brandsFilter}
+                        brandsData={brandsData}
+                    />
+                </Suspense>
+            </main>
+
+            {/* --- SIDEBAR FILTERS --- */}
+            <aside className="hidden min-[1200px]:block min-[1200px]:col-span-1 bg-card border border-zinc-200">
+                <div className="sticky top-24 space-y-8 p-4">
+                    <div>
+                        <div className="flex items-center justify-between mb-6 pb-2 border-b-2 border-black">
+                            <h2 className="text-lg font-black uppercase tracking-tight font-headline">Filters</h2>
+                            {brandsFilter ? (
+                                <Button variant="link" asChild className="p-0 h-auto font-bold text-[10px] uppercase tracking-widest hover:text-orange-600">
+                                    <Link href={`/category/${fullSlug}`}>
+                                        Reset All
+                                    </Link>
+                                </Button>
+                            ) : null}
+                        </div>
+                        <Suspense fallback={<Skeleton className=" w-full" />}>
+                            <BrandFilters brands={brandsData} />
+                        </Suspense>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    );
 }

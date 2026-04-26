@@ -10,6 +10,7 @@ import { eq, and, ne, desc, inArray, or, sql, asc, count as drizzleCount } from 
 import { createId } from '@paralleldrive/cuid2';
 import { getProducts, getProductById, getBrandById, getCategoryById, getHeroSliderById } from './data';
 import { generateSlug } from '@/lib/utils';
+import { sendTelegramNotification, sendContactMessageNotification } from './telegram';
 import { v2 as cloudinary } from 'cloudinary';
 import bcrypt from 'bcryptjs';
 
@@ -793,6 +794,7 @@ export async function processCheckout(
     // Wrap the entire checkout process in a transaction
     return await db.transaction(async (tx) => {
       // 1. Verify Stock Availability for ALL items first
+      const itemsWithNames: { id: string, name: string }[] = [];
       for (const item of items) {
         const product = await tx.query.products.findFirst({
           where: eq(products.id, item.id),
@@ -802,6 +804,8 @@ export async function processCheckout(
         if (!product) {
           throw new Error(`Product not found.`);
         }
+
+        itemsWithNames.push({ id: item.id, name: product.name });
 
         if (product.stock < item.quantity) {
           throw new Error(`Insufficient stock for "${product.name}". Only ${product.stock} left.`);
@@ -860,6 +864,23 @@ export async function processCheckout(
       if (orderItemsValues.length > 0) {
         await tx.insert(orderItems).values(orderItemsValues);
       }
+
+      // 5. Send Telegram Notification (Background)
+      // We don't await this to avoid delaying the user's redirect
+      const productDetails = items.map(item => {
+        const p = itemsWithNames.find(i => i.id === item.id);
+        return `${p?.name || 'Product'} (x${item.quantity})`;
+      });
+
+      sendTelegramNotification({
+        orderNumber,
+        customerName: `${validatedFields.data.firstName} ${validatedFields.data.lastName}`,
+        phone: validatedFields.data.mobile,
+        items: productDetails,
+        totalAmount: String(totalAmount),
+        address: `${validatedFields.data.address}, ${validatedFields.data.district}`,
+        orderId: orderId,
+      }).catch(err => console.error('Telegram notification error:', err));
 
       return { success: true, url: `/order-confirmed/${orderNumber}` };
     });
@@ -1661,5 +1682,32 @@ export async function seedInitialSettings() {
     return { success: true, message: "Settings seeded successfully" };
   } catch (error: any) {
     return { success: false, message: error.message };
+  }
+}
+
+const contactFormSchema = z.object({
+  name: z.string().min(2, "Name must be at least 2 characters."),
+  email: z.string().email("Invalid email address."),
+  subject: z.string().min(3, "Subject must be at least 3 characters."),
+  message: z.string().min(10, "Message must be at least 10 characters."),
+});
+
+export async function submitContactForm(data: unknown) {
+  const validatedFields = contactFormSchema.safeParse(data);
+
+  if (!validatedFields.success) {
+    return {
+      success: false,
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Invalid fields. Please check your input.',
+    };
+  }
+
+  try {
+    await sendContactMessageNotification(validatedFields.data);
+    return { success: true, message: "Message sent successfully! We'll get back to you soon." };
+  } catch (error) {
+    console.error('Contact Form Submission Error:', error);
+    return { success: false, message: "Failed to send message. Please try again later." };
   }
 }

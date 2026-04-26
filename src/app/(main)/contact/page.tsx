@@ -1,13 +1,12 @@
+import { ContactForm } from "@/components/layout/contact-form";
 import { Breadcrumb } from "@/components/layout/breadcrumb";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Mail, Phone, MapPin, Clock, Send, MessageCircle } from "lucide-react";
+import { Mail, Phone, MapPin, Clock, MessageCircle } from "lucide-react";
 import type { Metadata } from "next";
+import { SITE_CONFIG, CONTACT_INFO, SOCIAL_LINKS } from "@/lib/config";
 
 export const metadata: Metadata = {
-    title: "Contact Us - Abrar Shop",
-    description: "Get in touch with Abrar Shop for any queries, support, or feedback.",
+    title: `Contact Us - ${SITE_CONFIG.name}`,
+    description: `Get in touch with ${SITE_CONFIG.name} for any queries, support, or feedback.`,
 };
 
 export default function ContactPage() {
@@ -41,8 +40,8 @@ export default function ContactPage() {
                                 <p className="text-sm text-zinc-600">Available 10 AM - 10 PM</p>
                             </div>
                         </div>
-                        <a href="tel:01725877772" className="block text-xl font-bold hover:text-orange-500 transition-colors">
-                            01725-877772
+                        <a href={`tel:${CONTACT_INFO.phone}`} className="block text-xl font-bold hover:text-orange-500 transition-colors">
+                            {CONTACT_INFO.phone}
                         </a>
                     </div>
 
@@ -56,8 +55,8 @@ export default function ContactPage() {
                                 <p className="text-sm text-zinc-600">We reply within 24 hours</p>
                             </div>
                         </div>
-                        <a href="mailto:support@abrarshop.com.bd" className="block text-lg font-semibold hover:text-blue-600 transition-colors break-words">
-                            support@abrarshop.com.bd
+                        <a href={`mailto:${CONTACT_INFO.email}`} className="block text-lg font-semibold hover:text-blue-600 transition-colors break-words">
+                            {CONTACT_INFO.email}
                         </a>
                     </div>
 
@@ -71,7 +70,7 @@ export default function ContactPage() {
                                 <p className="text-sm text-zinc-600">Instant messaging support</p>
                             </div>
                         </div>
-                        <a href="https://wa.me/8801725877772" target="_blank" className="block text-lg font-semibold hover:text-green-600 transition-colors">
+                        <a href={SOCIAL_LINKS.whatsapp} target="_blank" className="block text-lg font-semibold hover:text-green-600 transition-colors">
                             Message on WhatsApp
                         </a>
                     </div>
@@ -82,40 +81,14 @@ export default function ContactPage() {
                             Our Location
                         </h3>
                         <p className="text-zinc-600 text-sm leading-relaxed">
-                            Gaibandha, Bangladesh<br />
+                            {CONTACT_INFO.address}<br />
                             (Online storefront operating nationwide)
                         </p>
                     </div>
                 </div>
 
                 {/* Contact Form */}
-                <div className="lg:col-span-2 bg-white border border-zinc-200 p-8 md:p-10 shadow-sm">
-                    <h2 className="text-2xl font-bold mb-6">Send us a Message</h2>
-                    <form className="space-y-6">
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold uppercase tracking-widest text-zinc-500">Full Name</label>
-                                <Input placeholder="John Doe" className="rounded-none border-zinc-200 focus-visible:ring-orange-500" />
-                            </div>
-                            <div className="space-y-2">
-                                <label className="text-sm font-bold uppercase tracking-widest text-zinc-500">Email Address</label>
-                                <Input type="email" placeholder="john@example.com" className="rounded-none border-zinc-200 focus-visible:ring-orange-500" />
-                            </div>
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-bold uppercase tracking-widest text-zinc-500">Subject</label>
-                            <Input placeholder="How can we help you?" className="rounded-none border-zinc-200 focus-visible:ring-orange-500" />
-                        </div>
-                        <div className="space-y-2">
-                            <label className="text-sm font-bold uppercase tracking-widest text-zinc-500">Message</label>
-                            <Textarea placeholder="Type your message here..." className="rounded-none border-zinc-200 focus-visible:ring-orange-500 min-h-[150px]" />
-                        </div>
-                        <Button className="w-full md:w-auto px-12 py-6 bg-black hover:bg-zinc-900 text-white rounded-none font-bold uppercase tracking-widest group">
-                            Send Message
-                            <Send className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                        </Button>
-                    </form>
-                </div>
+                <ContactForm />
             </div>
 
             {/* Business Hours */}

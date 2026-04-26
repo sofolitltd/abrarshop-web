@@ -191,10 +191,6 @@ async function ProductGrid({ brandId, currentPage, sortBy, slug, categoriesData,
 
 export default async function BrandPage({ params, searchParams }: { params: Promise<{ slug: string }>, searchParams?: Promise<{ page?: string, sort?: string, categories?: string }> }) {
     const { slug } = await params;
-    const sParams = await searchParams;
-    const currentPage = Number(sParams?.page) || 1;
-    const sortBy = sParams?.sort || 'newest';
-    const categoriesFilter = sParams?.categories || '';
 
     const brand = await getBrandBySlug(slug);
 
@@ -250,44 +246,75 @@ export default async function BrandPage({ params, searchParams }: { params: Prom
             </div>
 
             <div className="container py-12">
-                <div className="grid grid-cols-1 min-[1200px]:grid-cols-4 gap-12">
-                    {/* --- PRODUCT MAIN GRID --- */}
-                    <main className="col-span-1 min-[1200px]:col-span-3">
-                        <Suspense key={brand.id + currentPage + sortBy + categoriesFilter} fallback={<ProductListSkeleton />}>
-                            <ProductGrid
-                                brandId={brand.id}
-                                currentPage={currentPage}
-                                sortBy={sortBy}
-                                slug={slug}
-                                categoriesData={relatedCategories}
-                                brandsData={allBrands}
-                                selectedCategories={categoriesFilter}
-                            />
-                        </Suspense>
-                    </main>
-
-                    {/* --- SIDEBAR FILTERS --- */}
-                    <aside className="hidden min-[1200px]:block min-[1200px]:col-span-1 bg-card border border-zinc-200">
-                        <div className="sticky top-24 space-y-8 p-4">
-                            <div>
-                                <div className="flex items-center justify-between mb-6 pb-2 border-b-2 border-black">
-                                    <h2 className="text-lg font-black uppercase tracking-tight font-headline">Filters</h2>
-                                    {categoriesFilter ? (
-                                        <Button variant="link" asChild className="p-0 h-auto font-bold text-[10px] uppercase tracking-widest hover:text-orange-600">
-                                            <Link href={`/brand/${brand.slug}`}>
-                                                Reset All
-                                            </Link>
-                                        </Button>
-                                    ) : null}
-                                </div>
-                                <Suspense fallback={<Skeleton className=" w-full" />}>
-                                    <ProductFilters categories={relatedCategories} brands={[]} hideBrands={true} />
-                                </Suspense>
-                            </div>
-                        </div>
-                    </aside>
-                </div>
+                <Suspense fallback={<div className="py-24 text-center"><Skeleton className="h-[400px] w-full" /></div>}>
+                    <BrandView 
+                        brand={brand} 
+                        slug={slug} 
+                        relatedCategories={relatedCategories} 
+                        allBrands={allBrands} 
+                        searchParams={searchParams} 
+                    />
+                </Suspense>
             </div>
         </div>
     )
+}
+
+async function BrandView({ 
+    brand, 
+    slug, 
+    relatedCategories, 
+    allBrands, 
+    searchParams 
+}: { 
+    brand: any, 
+    slug: string, 
+    relatedCategories: any[], 
+    allBrands: any[], 
+    searchParams?: Promise<{ page?: string, sort?: string, categories?: string }> 
+}) {
+    const sParams = await searchParams;
+    const currentPage = Number(sParams?.page) || 1;
+    const sortBy = sParams?.sort || 'newest';
+    const categoriesFilter = sParams?.categories || '';
+
+    return (
+        <div className="grid grid-cols-1 min-[1200px]:grid-cols-4 gap-12">
+            {/* --- PRODUCT MAIN GRID --- */}
+            <main className="col-span-1 min-[1200px]:col-span-3">
+                <Suspense key={brand.id + currentPage + sortBy + categoriesFilter} fallback={<ProductListSkeleton />}>
+                    <ProductGrid
+                        brandId={brand.id}
+                        currentPage={currentPage}
+                        sortBy={sortBy}
+                        slug={slug}
+                        categoriesData={relatedCategories}
+                        brandsData={allBrands}
+                        selectedCategories={categoriesFilter}
+                    />
+                </Suspense>
+            </main>
+
+            {/* --- SIDEBAR FILTERS --- */}
+            <aside className="hidden min-[1200px]:block min-[1200px]:col-span-1 bg-card border border-zinc-200">
+                <div className="sticky top-24 space-y-8 p-4">
+                    <div>
+                        <div className="flex items-center justify-between mb-6 pb-2 border-b-2 border-black">
+                            <h2 className="text-lg font-black uppercase tracking-tight font-headline">Filters</h2>
+                            {categoriesFilter ? (
+                                <Button variant="link" asChild className="p-0 h-auto font-bold text-[10px] uppercase tracking-widest hover:text-orange-600">
+                                    <Link href={`/brand/${brand.slug}`}>
+                                        Reset All
+                                    </Link>
+                                </Button>
+                            ) : null}
+                        </div>
+                        <Suspense fallback={<Skeleton className=" w-full" />}>
+                            <ProductFilters categories={relatedCategories} brands={[]} hideBrands={true} />
+                        </Suspense>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    );
 }
