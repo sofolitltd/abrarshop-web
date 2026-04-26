@@ -798,11 +798,11 @@ export async function processCheckout(
       for (const item of items) {
         const product = await tx.query.products.findFirst({
           where: eq(products.id, item.id),
-          columns: { stock: true, name: true }
+          columns: { stock: true, name: true, status: true }
         });
 
-        if (!product) {
-          throw new Error(`Product not found.`);
+        if (!product || product.status !== 'published') {
+          throw new Error(`Product "${product?.name || 'Unknown'}" is not available for purchase.`);
         }
 
         itemsWithNames.push({ id: item.id, name: product.name });
@@ -1092,29 +1092,74 @@ export async function getAllOrders() {
 
 export async function updateOrderStatus(orderId: string, status: string) {
   try {
-    const updateData: any = {
-      orderStatus: status,
-      updatedAt: new Date(),
-    };
+    await db.transaction(async (tx) => {
+      const order = await tx.query.orders.findFirst({
+        where: eq(orders.id, orderId),
+        with: {
+          items: true,
+        }
+      });
 
-    // Set specific timestamps based on status
-    if (status === 'processing') updateData.processingAt = new Date();
-    if (status === 'shipped') updateData.shippedAt = new Date();
-    if (status === 'delivered') {
-      updateData.deliveredAt = new Date();
-      updateData.paymentStatus = 'paid';
-      updateData.paidAt = new Date();
-    }
-    if (status === 'cancelled') updateData.cancelledAt = new Date();
+      if (!order) throw new Error("Order not found");
 
-    await db.update(orders).set(updateData).where(eq(orders.id, orderId));
+      // Handle stock reversion if order is cancelled
+      if (status === 'cancelled' && order.orderStatus !== 'cancelled') {
+        for (const item of order.items) {
+          await tx
+            .update(products)
+            .set({
+              stock: sql`${products.stock} + ${item.quantity}`,
+            })
+            .where(eq(products.id, item.productId));
+        }
+      }
+
+      // Handle stock deduction if a cancelled order is moved back to active status
+      if (order.orderStatus === 'cancelled' && status !== 'cancelled') {
+        for (const item of order.items) {
+          // Check stock first
+          const product = await tx.query.products.findFirst({
+            where: eq(products.id, item.productId),
+            columns: { stock: true, name: true }
+          });
+
+          if (!product || product.stock < item.quantity) {
+            throw new Error(`Insufficient stock for "${product?.name || 'product'}" to restore order.`);
+          }
+
+          await tx
+            .update(products)
+            .set({
+              stock: sql`${products.stock} - ${item.quantity}`,
+            })
+            .where(eq(products.id, item.productId));
+        }
+      }
+
+      const updateData: any = {
+        orderStatus: status,
+        updatedAt: new Date(),
+      };
+
+      // Set specific timestamps based on status
+      if (status === 'processing') updateData.processingAt = new Date();
+      if (status === 'shipped') updateData.shippedAt = new Date();
+      if (status === 'delivered') {
+        updateData.deliveredAt = new Date();
+        updateData.paymentStatus = 'paid';
+        updateData.paidAt = new Date();
+      }
+      if (status === 'cancelled') updateData.cancelledAt = new Date();
+
+      await tx.update(orders).set(updateData).where(eq(orders.id, orderId));
+    });
 
     revalidatePath('/admin/orders');
     revalidatePath('/account/orders');
     return { success: true, message: `Order status updated to ${status}.` };
-  } catch (error) {
+  } catch (error: any) {
     console.error('Update Order Status Error:', error);
-    return { success: false, message: 'Failed to update order status.' };
+    return { success: false, message: error.message || 'Failed to update order status.' };
   }
 }
 

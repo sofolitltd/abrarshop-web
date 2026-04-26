@@ -100,7 +100,7 @@ export function Header({ categories = [] }: HeaderProps) {
             <div className="flex items-center gap-2">
               <MobileNav categories={categories} />
               <Link href="/" className="inline-block">
-                <span className="text-xl font-bold font-headline tracking-tighter text-black">
+                <span className="text-xl font-bold font-headline tracking-tighter text-black uppercase">
                   {SITE_CONFIG.name.split(' ')[0]}<span className="text-orange-500"> {SITE_CONFIG.name.split(' ')[1]}</span>
                 </span>
               </Link>
@@ -124,7 +124,7 @@ export function Header({ categories = [] }: HeaderProps) {
           {/* Desktop Header */}
           <div className="hidden min-[1200px]:flex w-full items-center justify-between h-full">
             <Link href="/" className="inline-block hover:opacity-90 transition-opacity mr-12">
-              <span className="text-3xl font-bold font-headline tracking-tighter text-black">
+              <span className="text-3xl font-bold font-headline tracking-tighter text-black uppercase">
                 {SITE_CONFIG.name.split(' ')[0]}<span className="text-orange-500">{" "}{SITE_CONFIG.name.split(' ')[1]}</span>
               </span>
             </Link>

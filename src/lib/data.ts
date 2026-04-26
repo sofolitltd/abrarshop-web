@@ -11,7 +11,7 @@ export async function getAllProductSlugs() {
   return await db.select({ 
     slug: productsTable.slug, 
     updatedAt: productsTable.createdAt // Usually createdAt is a good fallback if no updatedAt
-  }).from(productsTable).where(eq(productsTable.status, 'active'));
+  }).from(productsTable).where(eq(productsTable.status, 'published'));
 }
 
 export async function getAllCategorySlugs() {
@@ -23,8 +23,8 @@ export async function getAllBrandSlugs() {
 }
 
 // Product Functions
-export const getProducts = async (options?: { query?: string, limit?: number, page?: number, isTrending?: boolean, isBestSelling?: boolean, isFeatured?: boolean, sortBy?: string, categoryId?: string, categoryIds?: string[], brandId?: string, brandIds?: string[], excludeProductId?: string, searchBy?: 'all' | 'sku' }): Promise<{ products: Product[], totalCount: number }> => {
-  const { query, limit, page, isTrending, isBestSelling, isFeatured, sortBy, categoryId, categoryIds, brandId, brandIds, excludeProductId, searchBy = 'all' } = options || {};
+export const getProducts = async (options?: { query?: string, limit?: number, page?: number, isTrending?: boolean, isBestSelling?: boolean, isFeatured?: boolean, sortBy?: string, categoryId?: string, categoryIds?: string[], brandId?: string, brandIds?: string[], excludeProductId?: string, searchBy?: 'all' | 'sku', status?: string | null }): Promise<{ products: Product[], totalCount: number }> => {
+  const { query, limit, page, isTrending, isBestSelling, isFeatured, sortBy, categoryId, categoryIds, brandId, brandIds, excludeProductId, searchBy = 'all', status = 'published' } = options || {};
   try {
     const conditions = [];
     if (query && query.trim().length > 0) {
@@ -111,6 +111,9 @@ export const getProducts = async (options?: { query?: string, limit?: number, pa
     }
     if (excludeProductId) {
       conditions.push(ne(productsTable.id, excludeProductId));
+    }
+    if (status) {
+      conditions.push(eq(productsTable.status, status));
     }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
@@ -280,7 +283,7 @@ export const getProductBySlug = cache(async (
       .from(productsTable)
       .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
       .leftJoin(brandsTable, eq(productsTable.brandId, brandsTable.id))
-      .where(eq(productsTable.slug, slug));
+      .where(and(eq(productsTable.slug, slug), eq(productsTable.status, 'published')));
 
     if (result.length === 0) {
       return undefined;

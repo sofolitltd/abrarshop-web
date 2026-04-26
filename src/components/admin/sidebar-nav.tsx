@@ -88,8 +88,14 @@ const bottomNavItems = [
 
 export function SidebarNav() {
   const pathname = usePathname();
-  const { state, isMobile } = useSidebar();
+  const { state, isMobile, setOpenMobile } = useSidebar();
   const isCollapsed = state === "collapsed" && !isMobile;
+
+  const handleLinkClick = () => {
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   const renderNavItems = (items: any[]) => {
     return items.map((item) => {
@@ -118,6 +124,7 @@ export function SidebarNav() {
                     <DropdownMenuItem key={subItem.href} asChild>
                       <Link
                         href={subItem.href}
+                        onClick={handleLinkClick}
                         className={cn(
                           "cursor-pointer text-xs font-bold uppercase tracking-tight",
                           pathname === subItem.href ? "bg-zinc-100 text-black" : "text-zinc-600"
@@ -156,7 +163,7 @@ export function SidebarNav() {
                         asChild
                         isActive={pathname === subItem.href}
                       >
-                        <Link href={subItem.href}>
+                        <Link href={subItem.href} onClick={handleLinkClick}>
                           <span>{subItem.label}</span>
                         </Link>
                       </SidebarMenuSubButton>
@@ -177,7 +184,7 @@ export function SidebarNav() {
             tooltip={item.label}
             className="group-data-[collapsible=icon]:justify-center"
           >
-            <Link href={item.href}>
+            <Link href={item.href} onClick={handleLinkClick}>
               <item.icon className="h-4 w-4" />
               <span className="group-data-[collapsible=icon]:hidden">{item.label}</span>
             </Link>

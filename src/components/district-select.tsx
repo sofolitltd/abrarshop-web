@@ -81,8 +81,8 @@ export const DistrictSelect = React.forwardRef<HTMLButtonElement, DistrictSelect
                 <div
                   key={district}
                   className={cn(
-                    "relative flex cursor-pointer select-none items-center px-4 py-3 text-[10px] font-black uppercase outline-none hover:bg-zinc-100 tracking-widest",
-                    value === district ? "bg-zinc-50 text-black" : "text-zinc-500"
+                    "relative flex cursor-pointer select-none items-center px-4 py-2.5 text-sm font-medium outline-none hover:bg-zinc-100",
+                    value === district ? "bg-zinc-50 text-black" : "text-zinc-600"
                   )}
                   onClick={() => {
                     onChange(district);

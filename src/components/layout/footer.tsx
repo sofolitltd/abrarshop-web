@@ -14,7 +14,7 @@ export function Footer() {
           {/* Brand section */}
           <div className="space-y-6">
             <Link href="/" className="inline-block">
-              <span className="text-2xl font-bold font-headline tracking-tighter text-white">
+              <span className="text-2xl font-bold font-headline tracking-tighter text-white uppercase">
                 {SITE_CONFIG.name.split(' ')[0]}<span className="text-orange-500">{" "}{SITE_CONFIG.name.split(' ')[1]}</span>
               </span>
             </Link>

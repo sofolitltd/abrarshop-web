@@ -25,6 +25,7 @@ export default async function ProductsPage({ searchParams }: { searchParams: Pro
       sortBy,
       categoryId,
       brandId,
+      status: null,
     }),
     getCategories(),
     getBrands(),
