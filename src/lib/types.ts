@@ -23,6 +23,7 @@ export type Category = {
 export type Product = {
   id: string;
   sku?: number | null;
+  barcode?: string | null;
   name: string;
   slug: string;
   description: string;
@@ -42,6 +43,7 @@ export type Product = {
   isBestSelling: boolean;
   isFeatured: boolean;
   status?: 'draft' | 'published';
+  visibleOnline?: boolean;
   discount: number;
   createdAt?: Date;
   updatedAt?: Date;
@@ -129,4 +131,92 @@ export type Order = {
   createdAt: Date;
   updatedAt: Date;
   items?: Item[];
+};
+
+export type Party = {
+  id: string;
+  name: string;
+  phone?: string | null;
+  address?: string | null;
+  type: 'payable' | 'receivable';
+  currentBalance: string;
+  notes?: string | null;
+  createdAt?: Date;
+  updatedAt?: Date;
+};
+
+export type PartyTransaction = {
+  id: string;
+  partyId: string;
+  type: 'due' | 'payment';
+  amount: string;
+  note?: string | null;
+  relatedOrderId?: string | null;
+  date: Date;
+  createdAt?: Date;
+};
+
+export type PurchaseItem = {
+  id: string;
+  purchaseId: string;
+  productId: string;
+  productName?: string;
+  quantity: number;
+  buyPrice: string;
+  subtotal: string;
+};
+
+export type Purchase = {
+  id: string;
+  supplierId: string | null;
+  supplierName?: string | null;
+  invoiceNo?: string | null;
+  totalAmount: string;
+  paidAmount: string;
+  dueAmount: string;
+  paymentStatus: 'paid' | 'partial' | 'due';
+  note?: string | null;
+  date: Date;
+  createdAt?: Date;
+  items?: PurchaseItem[];
+};
+
+export type Expense = {
+  id: string;
+  title: string;
+  category: string;
+  amount: string;
+  note?: string | null;
+  date: Date;
+  createdAt?: Date;
+};
+
+export type OtherIncome = {
+  id: string;
+  title: string;
+  category: string;
+  amount: string;
+  note?: string | null;
+  date: Date;
+  createdAt?: Date;
+};
+
+export type CashTransaction = {
+  id: string;
+  direction: 'in' | 'out';
+  amount: string;
+  category:
+    | 'sale'
+    | 'purchase_payment'
+    | 'expense'
+    | 'payable_payment'
+    | 'receivable_collection'
+    | 'other_income'
+    | 'adjustment';
+  relatedPartyId?: string | null;
+  relatedPurchaseId?: string | null;
+  relatedOrderId?: string | null;
+  note?: string | null;
+  date: Date;
+  createdAt?: Date;
 };

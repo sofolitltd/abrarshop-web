@@ -5,11 +5,12 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import { db } from '@/lib/db';
-import { products, brands, categories, heroSliders, users, orders, orderItems, reviews, coupons, admins, settings } from '@/lib/schema';
+import { products, brands, categories, heroSliders, users, orders, orderItems, reviews, coupons, admins, settings, parties, partyTransactions } from '@/lib/schema';
 import { eq, and, ne, desc, inArray, or, sql, asc, count as drizzleCount } from 'drizzle-orm';
 import { createId } from '@paralleldrive/cuid2';
 import { getProducts, getProductById, getBrandById, getCategoryById, getHeroSliderById } from './data';
 import { generateSlug } from '@/lib/utils';
+import { generateBarcodeValue } from '@/lib/barcode';
 import { sendTelegramNotification, sendContactMessageNotification } from './telegram';
 import { v2 as cloudinary } from 'cloudinary';
 import bcrypt from 'bcryptjs';
@@ -33,6 +34,7 @@ const productFormSchema = z.object({
   name: z.string().min(3, "Product name must be at least 3 characters long."),
   slug: z.string().min(3, "Slug must be at least 3 characters long.").regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Invalid slug format: only lowercase letters, numbers, and hyphens are allowed.'),
   sku: z.coerce.number().int("SKU must be a whole number.").min(1, "SKU is required."),
+  barcode: z.string().trim().min(1, "Barcode is required.").max(32),
   description: z.string().optional(),
   price: z.coerce.number().min(0, "Price cannot be negative."),
   originalPrice: z.preprocess(
@@ -53,6 +55,7 @@ const productFormSchema = z.object({
   isFeatured: z.boolean().default(false),
   discount: z.coerce.number().min(0).default(0),
   status: z.enum(["draft", "published"]).default("published"),
+  visibleOnline: z.boolean().default(true),
 });
 
 export async function createProduct(data: unknown) {
@@ -66,7 +69,7 @@ export async function createProduct(data: unknown) {
     };
   }
 
-  const { slug, sku } = validatedFields.data;
+  const { slug, sku, barcode } = validatedFields.data;
 
   const existingProduct = await db.query.products.findFirst({ where: eq(products.slug, slug) });
   if (existingProduct) {
@@ -76,6 +79,11 @@ export async function createProduct(data: unknown) {
   const existingProductSku = await db.query.products.findFirst({ where: eq(products.sku, sku) });
   if (existingProductSku) {
     return { success: false, message: `A product with this SKU (${sku}) already exists.` };
+  }
+
+  const existingProductBarcode = await db.query.products.findFirst({ where: eq(products.barcode, barcode) });
+  if (existingProductBarcode) {
+    return { success: false, message: `A product with this barcode (${barcode}) already exists.` };
   }
 
   const images = validatedFields.data.images || [];
@@ -117,7 +125,16 @@ export async function createProduct(data: unknown) {
   redirect('/admin/products');
 }
 
-export async function updateProduct(id: string, data: unknown) {
+// Only allow redirecting back to an internal /admin/products URL (with its
+// filters/page intact) — never to an arbitrary external/absolute URL.
+function safeProductsReturnUrl(returnTo: string | null): string {
+  if (returnTo && returnTo.startsWith('/admin/products') && !returnTo.startsWith('//')) {
+    return returnTo;
+  }
+  return '/admin/products';
+}
+
+export async function updateProduct(id: string, returnTo: string | null, data: unknown) {
   const validatedFields = productFormSchema.safeParse(data);
 
   if (!validatedFields.success) {
@@ -128,7 +145,7 @@ export async function updateProduct(id: string, data: unknown) {
     };
   }
 
-  const { slug, sku } = validatedFields.data;
+  const { slug, sku, barcode } = validatedFields.data;
   const existingProduct = await db.query.products.findFirst({
     where: and(eq(products.slug, slug), ne(products.id, id)),
   });
@@ -141,6 +158,13 @@ export async function updateProduct(id: string, data: unknown) {
   });
   if (existingProductSku) {
     return { success: false, message: `A product with this SKU (${sku}) already exists.` };
+  }
+
+  const existingProductBarcode = await db.query.products.findFirst({
+    where: and(eq(products.barcode, barcode), ne(products.id, id)),
+  });
+  if (existingProductBarcode) {
+    return { success: false, message: `A product with this barcode (${barcode}) already exists.` };
   }
 
   const images = validatedFields.data.images || [];
@@ -200,11 +224,138 @@ export async function updateProduct(id: string, data: unknown) {
 
   revalidatePath('/admin/products');
   revalidatePath('/', 'layout');
-  redirect('/admin/products');
+  redirect(safeProductsReturnUrl(returnTo));
+}
+
+const quickEditProductSchema = z.object({
+  price: z.coerce.number().min(0, "Price cannot be negative."),
+  originalPrice: z.preprocess(
+    (val) => (val === "" ? null : val),
+    z.coerce.number().min(0, "Original price cannot be negative.").nullable().optional()
+  ),
+  buyPrice: z.preprocess(
+    (val) => (val === "" ? null : val),
+    z.coerce.number().min(0, "Buy price cannot be negative.").nullable().optional()
+  ),
+  stock: z.coerce.number().int("Stock must be a whole number.").min(0, "Stock cannot be negative."),
+  discount: z.coerce.number().min(0).default(0),
+  status: z.enum(["draft", "published"]).default("published"),
+  visibleOnline: z.boolean().default(true),
+  isFeatured: z.boolean().default(false),
+  isTrending: z.boolean().default(false),
+  isBestSelling: z.boolean().default(false),
+  images: z.array(z.string()).optional(),
+});
+
+export async function quickUpdateProduct(id: string, data: unknown) {
+  const validatedFields = quickEditProductSchema.safeParse(data);
+
+  if (!validatedFields.success) {
+    return {
+      success: false,
+      errors: validatedFields.error.flatten().fieldErrors,
+      message: 'Invalid fields. Failed to update product.',
+    };
+  }
+
+  try {
+    const updateData: Record<string, unknown> = {
+      price: String(validatedFields.data.price),
+      originalPrice: validatedFields.data.originalPrice != null ? String(validatedFields.data.originalPrice) : null,
+      buyPrice: validatedFields.data.buyPrice != null ? String(validatedFields.data.buyPrice) : null,
+      stock: validatedFields.data.stock,
+      discount: String(validatedFields.data.discount),
+      status: validatedFields.data.status,
+      visibleOnline: validatedFields.data.visibleOnline,
+      isFeatured: validatedFields.data.isFeatured,
+      isTrending: validatedFields.data.isTrending,
+      isBestSelling: validatedFields.data.isBestSelling,
+      updatedAt: new Date(),
+    };
+
+    if (validatedFields.data.images) {
+      const newImages = validatedFields.data.images;
+
+      // Clean up any Cloudinary images that were removed in this edit
+      const oldProduct = await db.query.products.findFirst({ where: eq(products.id, id) });
+      if (oldProduct && oldProduct.images) {
+        const removedImages = oldProduct.images.filter(
+          (oldImg: string) => !newImages.includes(oldImg) && oldImg.includes('cloudinary')
+        );
+        if (removedImages.length > 0) {
+          const publicIds = removedImages
+            .map(extractPublicId)
+            .filter((pid): pid is string => pid !== null);
+          if (publicIds.length > 0) {
+            await cloudinary.api.delete_resources(publicIds);
+          }
+        }
+      }
+
+      updateData.images = newImages;
+    }
+
+    await db.update(products).set(updateData).where(eq(products.id, id));
+  } catch (error) {
+    console.error('Quick Update Product Error:', error);
+    return { success: false, message: 'Database Error: Failed to update product.' };
+  }
+
+  revalidatePath('/admin/products');
+  revalidatePath('/', 'layout');
+  return { success: true, message: 'Product updated.' };
+}
+
+export async function getProductStatistics() {
+  try {
+    const [row] = await db
+      .select({
+        totalProducts: sql<number>`count(*)`,
+        totalStock: sql<number>`coalesce(sum(${products.stock}), 0)`,
+        totalBuyValue: sql<string>`coalesce(sum(${products.stock} * coalesce(${products.buyPrice}, 0)), 0)`,
+        totalSellValue: sql<string>`coalesce(sum(${products.stock} * ${products.price}), 0)`,
+        totalRegularValue: sql<string>`coalesce(sum(${products.stock} * coalesce(${products.originalPrice}, ${products.price})), 0)`,
+        outOfStockCount: sql<number>`coalesce(sum(case when ${products.stock} = 0 then 1 else 0 end), 0)`,
+        lowStockCount: sql<number>`coalesce(sum(case when ${products.stock} > 0 and ${products.stock} <= 5 then 1 else 0 end), 0)`,
+        draftCount: sql<number>`coalesce(sum(case when ${products.status} = 'draft' then 1 else 0 end), 0)`,
+        publishedCount: sql<number>`coalesce(sum(case when ${products.status} = 'published' then 1 else 0 end), 0)`,
+      })
+      .from(products);
+
+    const totalBuyValue = parseFloat(row.totalBuyValue as unknown as string) || 0;
+    const totalSellValue = parseFloat(row.totalSellValue as unknown as string) || 0;
+    const totalRegularValue = parseFloat(row.totalRegularValue as unknown as string) || 0;
+
+    return {
+      success: true,
+      data: {
+        totalProducts: Number(row.totalProducts) || 0,
+        totalStock: Number(row.totalStock) || 0,
+        totalBuyValue,
+        totalSellValue,
+        totalRegularValue,
+        potentialProfit: totalSellValue - totalBuyValue,
+        outOfStockCount: Number(row.outOfStockCount) || 0,
+        lowStockCount: Number(row.lowStockCount) || 0,
+        draftCount: Number(row.draftCount) || 0,
+        publishedCount: Number(row.publishedCount) || 0,
+      },
+    };
+  } catch (error) {
+    console.error('Get Product Statistics Error:', error);
+    return { success: false, message: 'Failed to load product statistics.' };
+  }
 }
 
 export async function deleteProduct(id: string) {
   try {
+    const existingOrderItem = await db.query.orderItems.findFirst({
+      where: eq(orderItems.productId, id),
+    });
+    if (existingOrderItem) {
+      return { message: 'Failed to delete product. It already has order history, so it cannot be permanently removed.' };
+    }
+
     const productToDelete = await getProductById(id);
 
     // Delete images from Cloudinary
@@ -225,8 +376,11 @@ export async function deleteProduct(id: string) {
     revalidatePath('/admin/products');
     revalidatePath('/', 'layout');
     return { message: 'Deleted Product.' };
-  } catch (error) {
+  } catch (error: any) {
     console.error(error);
+    if (error && error.code === '23503') {
+      return { message: 'Failed to delete product. It already has order history, so it cannot be permanently removed.' };
+    }
     return {
       message: 'Database Error: Failed to Delete Product.',
     };
@@ -236,12 +390,28 @@ export async function deleteProduct(id: string) {
 // Brand Actions
 export async function deleteMultipleProducts(ids: string[]) {
   try {
-    // 1. Fetch products to get image URLs
+    // 1. Find which of these products already have order history (can't be hard-deleted
+    // without breaking past orders' foreign key reference).
+    const referencedRows = await db.selectDistinct({ productId: orderItems.productId })
+      .from(orderItems)
+      .where(inArray(orderItems.productId, ids));
+    const blockedIds = new Set(referencedRows.map(r => r.productId));
+
+    const deletableIds = ids.filter(id => !blockedIds.has(id));
+
+    if (deletableIds.length === 0) {
+      return {
+        success: false,
+        message: `None of the ${ids.length} selected products could be deleted because they already have order history.`,
+      };
+    }
+
+    // 2. Fetch deletable products to get image URLs
     const productsToDelete = await db.query.products.findMany({
-      where: inArray(products.id, ids),
+      where: inArray(products.id, deletableIds),
     });
 
-    // 2. Collect all public IDs to delete from Cloudinary
+    // 3. Collect all public IDs to delete from Cloudinary
     const publicIdsToDelete: string[] = [];
     productsToDelete.forEach((product: any) => {
       if (product.images && product.images.length > 0) {
@@ -256,7 +426,7 @@ export async function deleteMultipleProducts(ids: string[]) {
       }
     });
 
-    // 3. Delete images from Cloudinary
+    // 4. Delete images from Cloudinary
     if (publicIdsToDelete.length > 0) {
       const chunkSize = 100;
       for (let i = 0; i < publicIdsToDelete.length; i += chunkSize) {
@@ -269,12 +439,19 @@ export async function deleteMultipleProducts(ids: string[]) {
       }
     }
 
-    // 4. Delete products from DB
-    await db.delete(products).where(inArray(products.id, ids));
+    // 5. Delete the deletable products from DB
+    await db.delete(products).where(inArray(products.id, deletableIds));
 
     revalidatePath('/admin/products');
     revalidatePath('/', 'layout');
-    return { success: true, message: `Deleted ${ids.length} products.` };
+
+    if (blockedIds.size > 0) {
+      return {
+        success: true,
+        message: `Deleted ${deletableIds.length} product(s). Skipped ${blockedIds.size} product(s) that already have order history.`,
+      };
+    }
+    return { success: true, message: `Deleted ${deletableIds.length} products.` };
   } catch (error) {
     console.error('Delete multiple products error:', error);
     return {
@@ -604,6 +781,37 @@ export async function checkProductSku(val: string | number, id?: string) {
     console.error(error);
     return { isUnique: false, message: 'Error checking SKU.' };
   }
+}
+
+export async function checkProductBarcode(barcode: string, id?: string) {
+  const trimmed = barcode.trim();
+  if (!trimmed) return { isUnique: false, message: 'Barcode cannot be empty.' };
+
+  try {
+    const query = db.query.products.findFirst({
+      where: id
+        ? and(eq(products.barcode, trimmed), ne(products.id, id))
+        : eq(products.barcode, trimmed),
+    });
+    const existing = await query;
+    if (existing) {
+      return { isUnique: false, message: 'This barcode is already in use.' };
+    }
+    return { isUnique: true, message: 'Barcode is available.' };
+  } catch (error) {
+    console.error(error);
+    return { isUnique: false, message: 'Error checking barcode.' };
+  }
+}
+
+// Generates a new EAN-13 barcode value guaranteed not to collide with an existing product.
+export async function generateBarcode() {
+  for (let attempt = 0; attempt < 10; attempt++) {
+    const candidate = generateBarcodeValue();
+    const existing = await db.query.products.findFirst({ where: eq(products.barcode, candidate) });
+    if (!existing) return candidate;
+  }
+  throw new Error('Failed to generate a unique barcode after multiple attempts.');
 }
 
 export async function getLatestSku() {
@@ -1163,6 +1371,55 @@ export async function updateOrderStatus(orderId: string, status: string) {
   }
 }
 
+export async function deleteOrder(orderId: string) {
+  try {
+    await db.transaction(async (tx) => {
+      const order = await tx.query.orders.findFirst({
+        where: eq(orders.id, orderId),
+        with: { items: true },
+      });
+
+      if (!order) throw new Error('Order not found');
+
+      // Restore stock for any items whose stock hasn't already been reverted by cancellation.
+      if (order.orderStatus !== 'cancelled') {
+        for (const item of order.items) {
+          await tx
+            .update(products)
+            .set({ stock: sql`${products.stock} + ${item.quantity}` })
+            .where(eq(products.id, item.productId));
+        }
+      }
+
+      // Reverse any Accounts party (দেনা-পাওনা) balances linked to this order before it
+      // cascades away — the linked party_transactions/cash_transactions rows themselves
+      // are removed automatically by the DB (ON DELETE CASCADE on related_order_id).
+      const linkedPartyTx = await tx.query.partyTransactions.findMany({
+        where: eq(partyTransactions.relatedOrderId, orderId),
+      });
+      for (const ptx of linkedPartyTx) {
+        const delta = ptx.type === 'due' ? -Number(ptx.amount) : Number(ptx.amount);
+        await tx
+          .update(parties)
+          .set({ currentBalance: sql`${parties.currentBalance} + ${delta}`, updatedAt: new Date() })
+          .where(eq(parties.id, ptx.partyId));
+      }
+
+      await tx.delete(orders).where(eq(orders.id, orderId));
+    });
+
+    revalidatePath('/admin/orders');
+    revalidatePath('/account/orders');
+    revalidatePath('/admin/accounts');
+    revalidatePath('/admin/accounts/due');
+    revalidatePath('/admin/accounts/cash');
+    return { success: true, message: 'Order deleted successfully.' };
+  } catch (error: any) {
+    console.error('Delete Order Error:', error);
+    return { success: false, message: error.message || 'Failed to delete order.' };
+  }
+}
+
 export async function updatePaymentStatus(orderId: string, status: string) {
   try {
     const updateData: any = {
@@ -1331,7 +1588,7 @@ export async function createOrderManual(
     couponId?: string;
     discountAmount?: number;
   }
-): Promise<{ success: true; orderNumber: string; totalAmount: number } | { success: false; message: string }> {
+): Promise<{ success: true; orderId: string; orderNumber: string; totalAmount: number } | { success: false; message: string }> {
   try {
     const { 
       customerName, 
@@ -1419,7 +1676,7 @@ export async function createOrderManual(
       revalidatePath('/admin/orders');
       revalidatePath('/admin/dashboard');
       
-      return { success: true, orderNumber, totalAmount: finalTotal };
+      return { success: true, orderId, orderNumber, totalAmount: finalTotal };
     });
   } catch (error: any) {
     console.error('Order Creation Error:', error);

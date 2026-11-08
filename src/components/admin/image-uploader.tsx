@@ -1,9 +1,11 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
-import { Upload, X, GripVertical } from "lucide-react";
+import { Upload, X, GripVertical, Crop } from "lucide-react";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
+import { compressImageFile } from "@/lib/compress-image";
+import { ImageCropDialog } from "./image-crop-dialog";
 
 type ImageUploaderProps = {
   value: (string | File)[];
@@ -16,6 +18,8 @@ type ImageUploaderProps = {
 export function ImageUploader({ value, onChange, disabled = false, aspectRatio = "square", maxImages = 10 }: ImageUploaderProps) {
   const [localImages, setLocalImages] = useState<(string | File)[]>(value || []);
   const [previews, setPreviews] = useState<Map<File, string>>(new Map());
+  const [isCompressing, setIsCompressing] = useState(false);
+  const [cropIndex, setCropIndex] = useState<number | null>(null);
 
   const dragItem = useRef<number | null>(null);
   const dragOverItem = useRef<number | null>(null);
@@ -49,10 +53,20 @@ export function ImageUploader({ value, onChange, disabled = false, aspectRatio =
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [localImages]);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
-    if (!files) return;
-    onChange([...localImages, ...Array.from(files)]);
+    if (!files || files.length === 0) return;
+    const inputEl = e.target;
+
+    setIsCompressing(true);
+    try {
+      const compressedFiles = await Promise.all(Array.from(files).map(compressImageFile));
+      onChange([...localImages, ...compressedFiles]);
+    } finally {
+      setIsCompressing(false);
+      // Allow re-selecting the same file again later
+      inputEl.value = "";
+    }
   };
 
   const handleRemoveImage = (index: number) => {
@@ -87,16 +101,43 @@ export function ImageUploader({ value, onChange, disabled = false, aspectRatio =
     dragOverItem.current = null;
   };
 
-  const handleReplace = (index: number, file: File) => {
-    const newImages = [...localImages];
-    newImages[index] = file;
-    onChange(newImages);
+  const handleReplace = async (index: number, file: File) => {
+    setIsCompressing(true);
+    try {
+      const compressedFile = await compressImageFile(file);
+      const newImages = [...localImages];
+      newImages[index] = compressedFile;
+      onChange(newImages);
+    } finally {
+      setIsCompressing(false);
+    }
   };
 
   const getSrc = (image: string | File) => {
     if (typeof image === 'string') return image;
     return previews.get(image) || '';
   }
+
+  const handleCropApply = async (file: File) => {
+    if (cropIndex === null) return;
+    setIsCompressing(true);
+    try {
+      const compressedFile = await compressImageFile(file);
+      const newImages = [...localImages];
+      newImages[cropIndex] = compressedFile;
+      onChange(newImages);
+    } finally {
+      setIsCompressing(false);
+      setCropIndex(null);
+    }
+  };
+
+  const cropTarget = cropIndex !== null ? localImages[cropIndex] : null;
+  const cropImageSrc = cropTarget ? getSrc(cropTarget) : null;
+  const cropFileName = cropTarget
+    ? (typeof cropTarget === 'string' ? cropTarget.split('/').pop() || 'image' : cropTarget.name)
+    : '';
+  const cropMimeType = cropTarget && typeof cropTarget !== 'string' ? cropTarget.type : undefined;
 
   return (
     <div className={aspectRatio === "video" ? "grid grid-cols-1 gap-4" : "grid grid-cols-3 gap-4"}>
@@ -163,6 +204,17 @@ export function ImageUploader({ value, onChange, disabled = false, aspectRatio =
               </div>
               <Button
                 type="button"
+                variant="secondary"
+                size="sm"
+                className="h-8 text-xs w-24 pointer-events-auto"
+                onClick={() => setCropIndex(index)}
+                disabled={disabled}
+              >
+                <Crop className="h-3.5 w-3.5 mr-1" />
+                Crop
+              </Button>
+              <Button
+                type="button"
                 variant="destructive"
                 size="sm"
                 className="h-8 text-xs w-24"
@@ -179,6 +231,14 @@ export function ImageUploader({ value, onChange, disabled = false, aspectRatio =
           </div>
         )
       })}
+
+      <ImageCropDialog
+        imageSrc={cropImageSrc}
+        fileName={cropFileName}
+        mimeType={cropMimeType}
+        onClose={() => setCropIndex(null)}
+        onApply={handleCropApply}
+      />
     </div>
   );
 }

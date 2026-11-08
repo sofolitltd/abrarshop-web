@@ -16,7 +16,10 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
-import { MoreHorizontal, Pencil, Trash2, ArrowUpDown, Search } from "lucide-react";
+import { MoreHorizontal, Pencil, Trash2, ArrowUpDown, Search, Zap, Table2, LayoutList, ScanBarcode, Printer } from "lucide-react";
+import { BarcodeScannerDialog } from "./barcode-scanner-dialog";
+import { BarcodePrintDialog } from "./barcode-print-dialog";
+import { BulkBarcodePrintDialog } from "./bulk-barcode-print-dialog";
 import Image from "next/image";
 import type { Product, Category, Brand } from "@/lib/types";
 import { Badge } from "@/components/ui/badge";
@@ -43,6 +46,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
 import { deleteProduct, deleteMultipleProducts } from "@/lib/actions"; // Import bulk delete
+import { QuickEditProductDialog } from "./quick-edit-product-dialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
   Pagination,
@@ -67,6 +71,10 @@ export function ProductsTable({ products, totalPages, currentPage, categories, b
   const [deleteProductId, setDeleteProductId] = React.useState<string | null>(null);
   const [selectedProductIds, setSelectedProductIds] = React.useState<string[]>([]);
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = React.useState(false);
+  const [quickEditProduct, setQuickEditProduct] = React.useState<Product | null>(null);
+  const [viewMode, setViewMode] = React.useState<"table" | "list">("table");
+  const [isScannerOpen, setScannerOpen] = React.useState(false);
+  const [isBulkPrintOpen, setBulkPrintOpen] = React.useState(false);
   const { toast } = useToast();
   const [isPending, startTransition] = React.useTransition();
   const router = useRouter();
@@ -119,6 +127,12 @@ export function ProductsTable({ products, totalPages, currentPage, categories, b
     params.set("page", pageNumber.toString());
     return `${pathname}?${params.toString()}`;
   };
+
+  // Carries the current filters/page through to the Edit page, so Save/Cancel
+  // can bring the admin back to the exact same filtered view instead of the
+  // unfiltered product list.
+  const currentListUrl = searchParams.toString() ? `${pathname}?${searchParams.toString()}` : pathname;
+  const editHref = (productId: string) => `/admin/products/${productId}/edit?returnTo=${encodeURIComponent(currentListUrl)}`;
 
   // Debounced search and filters
   React.useEffect(() => {
@@ -226,6 +240,23 @@ export function ProductsTable({ products, totalPages, currentPage, categories, b
     );
   };
 
+  // Persist preferred view mode (table vs list) across visits
+  React.useEffect(() => {
+    try {
+      const stored = window.localStorage.getItem("admin-products-view-mode");
+      if (stored === "table" || stored === "list") {
+        setViewMode(stored);
+      }
+    } catch { }
+  }, []);
+
+  const handleViewModeChange = (mode: "table" | "list") => {
+    setViewMode(mode);
+    try {
+      window.localStorage.setItem("admin-products-view-mode", mode);
+    } catch { }
+  };
+
   return (
     <div className="space-y-4 w-full">
       {/* Search and Filters - full width, no horizontal scroll */}
@@ -242,36 +273,74 @@ export function ProductsTable({ products, totalPages, currentPage, categories, b
             />
           </div>
 
-          <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-            <SelectTrigger className="w-[160px]">
-              <SelectValue placeholder="Category" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Categories</SelectItem>
-              {sortedCategories.map((cat) => (
-                <SelectItem key={cat.id} value={cat.id}>
-                  <span
-                    className={cat.level === 0 ? "font-bold" : ""}
-                    dangerouslySetInnerHTML={{ __html: '&nbsp;'.repeat(cat.level * 4) + cat.name }}
-                  />
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            onClick={() => setScannerOpen(true)}
+            title="Scan a barcode to find a product"
+          >
+            <ScanBarcode className="h-4 w-4" />
+          </Button>
 
-          <Select value={selectedBrand} onValueChange={setSelectedBrand}>
-            <SelectTrigger className="w-[140px]">
-              <SelectValue placeholder="Brand" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All Brands</SelectItem>
-              {brands.map((brand) => (
-                <SelectItem key={brand.id} value={brand.id}>
-                  {brand.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
+          <div className="flex items-center gap-1">
+            <Select value={selectedCategory} onValueChange={setSelectedCategory}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Category" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Categories</SelectItem>
+                {sortedCategories.map((cat) => (
+                  <SelectItem key={cat.id} value={cat.id}>
+                    <span
+                      className={cat.level === 0 ? "font-bold" : ""}
+                      dangerouslySetInnerHTML={{ __html: '&nbsp;'.repeat(cat.level * 4) + cat.name }}
+                    />
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedCategory !== "all" && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Clear category filter"
+                onClick={() => setSelectedCategory("all")}
+                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-1">
+            <Select value={selectedBrand} onValueChange={setSelectedBrand}>
+              <SelectTrigger className="w-[140px]">
+                <SelectValue placeholder="Brand" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Brands</SelectItem>
+                {brands.map((brand) => (
+                  <SelectItem key={brand.id} value={brand.id}>
+                    {brand.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {selectedBrand !== "all" && (
+              <Button
+                type="button"
+                variant="ghost"
+                size="icon"
+                aria-label="Clear brand filter"
+                onClick={() => setSelectedBrand("all")}
+                className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
 
           <Select value={selectedSort} onValueChange={setSelectedSort}>
             <SelectTrigger className="w-[150px]">
@@ -292,6 +361,29 @@ export function ProductsTable({ products, totalPages, currentPage, categories, b
               Clear
             </Button>
           )}
+
+          <div className="flex items-center gap-1 rounded-md border p-1 ml-auto">
+            <Button
+              type="button"
+              variant={viewMode === "table" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-7 px-2"
+              onClick={() => handleViewModeChange("table")}
+            >
+              <Table2 className="h-4 w-4 mr-1" />
+              Table
+            </Button>
+            <Button
+              type="button"
+              variant={viewMode === "list" ? "secondary" : "ghost"}
+              size="sm"
+              className="h-7 px-2"
+              onClick={() => handleViewModeChange("list")}
+            >
+              <LayoutList className="h-4 w-4 mr-1" />
+              List
+            </Button>
+          </div>
         </div>
 
         {/* Bulk Actions */}
@@ -308,6 +400,15 @@ export function ProductsTable({ products, totalPages, currentPage, categories, b
                 Unselect
               </Button>
               <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setBulkPrintOpen(true)}
+                className="h-8 flex items-center gap-2"
+              >
+                <Printer className="h-4 w-4" />
+                Print Barcodes
+              </Button>
+              <Button
                 variant="destructive"
                 size="sm"
                 onClick={() => setShowBulkDeleteDialog(true)}
@@ -321,7 +422,8 @@ export function ProductsTable({ products, totalPages, currentPage, categories, b
           </div>
         )}
       </div>
-      {/* === TABLE: only this section scrolls horizontally === */}
+      {/* === TABLE VIEW: only this section scrolls horizontally === */}
+      {viewMode === "table" && (
       <div className="w-full overflow-x-auto rounded-md border">
         <Table>
 
@@ -340,6 +442,7 @@ export function ProductsTable({ products, totalPages, currentPage, categories, b
                   </div>
                 </TableHead>
                 <TableHead className="w-[1%] border whitespace-nowrap text-center">SKU</TableHead>
+                <TableHead className="w-[1%] border whitespace-nowrap text-center">Barcode</TableHead>
                 <TableHead className="w-[1%] border">Image</TableHead>
                 <TableHead className="border">Name</TableHead>
                 <TableHead className="w-[1%] border whitespace-nowrap">Category</TableHead>
@@ -356,7 +459,7 @@ export function ProductsTable({ products, totalPages, currentPage, categories, b
             <TableBody>
               {products.length === 0 && (
                 <TableRow>
-                  <TableCell colSpan={12} className="h-24 text-center">
+                  <TableCell colSpan={13} className="h-24 text-center">
                     No products found.
                   </TableCell>
                 </TableRow>
@@ -373,6 +476,7 @@ export function ProductsTable({ products, totalPages, currentPage, categories, b
                     </div>
                   </TableCell>
                   <TableCell className="border whitespace-nowrap text-center">{product.sku || '-'}</TableCell>
+                  <TableCell className="border whitespace-nowrap text-center font-mono text-xs">{product.barcode || '-'}</TableCell>
                   <TableCell className="border">
                     <div className="flex justify-center">
                       <Link href={`/product/${product.slug}`} target="_blank" className="block">
@@ -435,6 +539,9 @@ export function ProductsTable({ products, totalPages, currentPage, categories, b
                     <Badge variant={product.status === 'published' ? 'default' : 'secondary'}>
                       {product.status === 'published' ? 'Published' : 'Draft'}
                     </Badge>
+                    {product.visibleOnline === false && (
+                      <Badge variant="outline" className="ml-1 text-amber-600 border-amber-300">Offline Only</Badge>
+                    )}
                   </TableCell>
                   <TableCell className="border">
                     <DropdownMenu>
@@ -445,11 +552,25 @@ export function ProductsTable({ products, totalPages, currentPage, categories, b
                         </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setQuickEditProduct(product)} className="flex items-center gap-2">
+                          <Zap className="h-4 w-4" /> Quick Edit
+                        </DropdownMenuItem>
                         <DropdownMenuItem asChild>
-                          <Link href={`/admin/products/${product.id}/edit`} className="flex items-center gap-2">
+                          <Link href={editHref(product.id)} className="flex items-center gap-2">
                             <Pencil className="h-4 w-4" /> Edit
                           </Link>
                         </DropdownMenuItem>
+                        {product.barcode && (
+                          <BarcodePrintDialog
+                            value={product.barcode}
+                            productName={product.name}
+                            trigger={
+                              <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-2">
+                                <Printer className="h-4 w-4" /> Print Barcode
+                              </DropdownMenuItem>
+                            }
+                          />
+                        )}
                         <DropdownMenuItem onClick={() => setDeleteProductId(product.id)} className="flex items-center gap-2 text-destructive focus:text-destructive">
                           <Trash2 className="h-4 w-4" /> Delete
                         </DropdownMenuItem>
@@ -461,6 +582,135 @@ export function ProductsTable({ products, totalPages, currentPage, categories, b
             </TableBody>
           </Table>
         </div>
+      )}
+
+      {/* === LIST VIEW: mobile-friendly stacked cards === */}
+      {viewMode === "list" && (
+        <div className="flex flex-col gap-3">
+          {products.length === 0 && (
+            <div className="h-24 flex items-center justify-center text-muted-foreground border rounded-md">
+              No products found.
+            </div>
+          )}
+          {products.map((product) => (
+            <div
+              key={product.id}
+              data-state={selectedProductIds.includes(product.id) && "selected"}
+              className="flex items-start gap-3 rounded-md border p-3 data-[state=selected]:bg-muted/50"
+            >
+              <Checkbox
+                className="mt-1"
+                checked={selectedProductIds.includes(product.id)}
+                onCheckedChange={() => handleSelectProduct(product.id)}
+                aria-label={`Select ${product.name}`}
+              />
+
+              <Link href={`/product/${product.slug}`} target="_blank" className="shrink-0">
+                <div className="h-14 w-14 relative overflow-hidden rounded-md hover:opacity-80 transition-opacity bg-muted">
+                  {product.images && product.images[0] ? (
+                    <Image
+                      src={product.images[0]}
+                      alt={product.name}
+                      fill
+                      className="object-cover"
+                      sizes="56px"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center text-[8px] uppercase font-bold text-muted-foreground">
+                      No img
+                    </div>
+                  )}
+                </div>
+              </Link>
+
+              <div className="flex-1 min-w-0">
+                <div className="flex items-start justify-between gap-2">
+                  <Link
+                    href={`/product/${product.slug}`}
+                    target="_blank"
+                    className="font-semibold hover:text-orange-600 hover:underline transition-colors line-clamp-2"
+                  >
+                    {product.name}
+                  </Link>
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="h-8 w-8 p-0 shrink-0">
+                        <span className="sr-only">Open menu</span>
+                        <MoreHorizontal className="h-4 w-4" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end">
+                      <DropdownMenuItem onClick={() => setQuickEditProduct(product)} className="flex items-center gap-2">
+                        <Zap className="h-4 w-4" /> Quick Edit
+                      </DropdownMenuItem>
+                      <DropdownMenuItem asChild>
+                        <Link href={editHref(product.id)} className="flex items-center gap-2">
+                          <Pencil className="h-4 w-4" /> Edit
+                        </Link>
+                      </DropdownMenuItem>
+                      {product.barcode && (
+                        <BarcodePrintDialog
+                          value={product.barcode}
+                          productName={product.name}
+                          trigger={
+                            <DropdownMenuItem onSelect={(e) => e.preventDefault()} className="flex items-center gap-2">
+                              <Printer className="h-4 w-4" /> Print Barcode
+                            </DropdownMenuItem>
+                          }
+                        />
+                      )}
+                      <DropdownMenuItem onClick={() => setDeleteProductId(product.id)} className="flex items-center gap-2 text-destructive focus:text-destructive">
+                        <Trash2 className="h-4 w-4" /> Delete
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5 mt-1 text-xs text-muted-foreground">
+                  {product.sku && <span>SKU: {product.sku}</span>}
+                  {product.barcode && <span className="font-mono">BC: {product.barcode}</span>}
+                  {product.category && <span>· {product.category}</span>}
+                  {product.brand && <span>· {product.brand}</span>}
+                </div>
+
+                <div className="flex flex-wrap items-center gap-1.5 mt-1.5">
+                  {product.isFeatured && <Badge variant="outline" className="text-[10px] h-4 px-1">Featured</Badge>}
+                  {product.isTrending && <Badge variant="secondary" className="text-[10px] h-4 px-1">Trending</Badge>}
+                  {product.isBestSelling && <Badge className="bg-green-100 text-green-800 hover:bg-green-100 border-none text-[10px] h-4 px-1">Best Seller</Badge>}
+                  <Badge variant={product.status === 'published' ? 'default' : 'secondary'} className="text-[10px] h-4 px-1">
+                    {product.status === 'published' ? 'Published' : 'Draft'}
+                  </Badge>
+                  {product.visibleOnline === false && (
+                    <Badge variant="outline" className="text-[10px] h-4 px-1 text-amber-600 border-amber-300">Offline Only</Badge>
+                  )}
+                </div>
+
+                <div className="flex items-center justify-between gap-2 mt-2">
+                  <div className="flex items-baseline gap-2">
+                    <span className="font-semibold">{product.price.toFixed(0)}৳</span>
+                    {product.originalPrice ? (
+                      <span className="text-xs text-muted-foreground line-through">{product.originalPrice.toFixed(0)}৳</span>
+                    ) : null}
+                    {product.discount ? (
+                      <span className="text-xs text-muted-foreground">({product.discount}%)</span>
+                    ) : null}
+                    <span className="text-xs text-muted-foreground">· Stock: {product.stock}</span>
+                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="h-7 px-2 shrink-0"
+                    onClick={() => setQuickEditProduct(product)}
+                  >
+                    <Zap className="h-3.5 w-3.5 mr-1" />
+                    Quick Edit
+                  </Button>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Pagination */}
       {totalPages > 1 && (
@@ -574,7 +824,31 @@ export function ProductsTable({ products, totalPages, currentPage, categories, b
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      
+
+      <QuickEditProductDialog
+        product={quickEditProduct}
+        onOpenChange={(open) => !open && setQuickEditProduct(null)}
+      />
+
+      <BarcodeScannerDialog
+        open={isScannerOpen}
+        onOpenChange={setScannerOpen}
+        onScan={(value) => {
+          setSearchQuery(value);
+          toast({ title: "Barcode scanned", description: `Searching for ${value}...` });
+        }}
+        description="Scan a product's barcode to find it in the list below."
+      />
+
+      <BulkBarcodePrintDialog
+        key={isBulkPrintOpen ? "open" : "closed"}
+        open={isBulkPrintOpen}
+        onOpenChange={setBulkPrintOpen}
+        products={products
+          .filter((p): p is Product & { barcode: string } => selectedProductIds.includes(p.id) && !!p.barcode)
+          .map((p) => ({ id: p.id, name: p.name, barcode: p.barcode }))}
+      />
+
     </div>
   );
 }

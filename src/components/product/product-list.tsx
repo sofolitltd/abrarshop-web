@@ -2,7 +2,7 @@ import { getProducts } from "@/lib/data";
 import { ProductCard } from "./product-card";
 
 export async function ProductList({ query, limit, isFeatured }: { query?: string, limit?: number, isFeatured?: boolean }) {
-  const { products } = await getProducts({ query, limit, isFeatured });
+  const { products } = await getProducts({ query, limit, isFeatured, visibleOnline: true });
 
   if (!products || products.length === 0) {
     return (

@@ -12,7 +12,7 @@ export async function RelatedProducts({ categoryId, currentProductId }: RelatedP
     if (!categoryId) return null;
 
     // Fetch 5 related products from the same category, excluding the current one
-    const { products: relatedProducts } = await getProducts({ categoryId, limit: 5, excludeProductId: currentProductId });
+    const { products: relatedProducts } = await getProducts({ categoryId, limit: 5, excludeProductId: currentProductId, visibleOnline: true });
 
     if (relatedProducts.length === 0) {
         return null;

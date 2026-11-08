@@ -3,8 +3,17 @@ import { getProductById, getBrands, getCategories } from "@/lib/data";
 import { notFound } from "next/navigation";
 import { updateProduct } from "@/lib/actions";
 
-export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditProductPage({
+    params,
+    searchParams,
+}: {
+    params: Promise<{ id: string }>;
+    searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
     const resolvedParams = await params;
+    const resolvedSearchParams = await searchParams;
+    const returnTo = typeof resolvedSearchParams.returnTo === 'string' ? resolvedSearchParams.returnTo : null;
+
     const [product, brands, categories] = await Promise.all([
         getProductById(resolvedParams.id),
         getBrands(),
@@ -15,7 +24,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
         notFound();
     }
 
-    const updateProductWithId = updateProduct.bind(null, product.id);
+    const updateProductWithId = updateProduct.bind(null, product.id, returnTo);
 
     return (
         <div className="flex flex-col gap-6">
@@ -25,6 +34,7 @@ export default async function EditProductPage({ params }: { params: Promise<{ id
                 onSubmit={updateProductWithId}
                 brands={brands}
                 categories={categories}
+                cancelHref={returnTo || "/admin/products"}
             />
         </div>
     );

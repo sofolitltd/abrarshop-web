@@ -18,14 +18,14 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
-import { X, Plus } from "lucide-react";
+import { X, Plus, ScanBarcode, RefreshCw } from "lucide-react";
 import { Badge } from "../ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
 import Link from "next/link";
 import { useState, useEffect, useMemo } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
-import { createCategoryJson, createBrandJson, uploadImage, getLatestSku, checkProductSku, checkProductSlug } from "@/lib/actions";
+import { createCategoryJson, createBrandJson, uploadImage, getLatestSku, checkProductSku, checkProductSlug, generateBarcode, checkProductBarcode } from "@/lib/actions";
 import { SlugFormField } from "./slug-form-field";
 import { Switch } from "@/components/ui/switch";
 import { ImageUploader } from "./image-uploader";
@@ -33,11 +33,14 @@ import { Progress } from "@/components/ui/progress";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { CategoryForm } from "./category-form";
 import { BrandForm } from "./brand-form";
+import { BarcodeDisplay } from "./barcode-display";
+import { BarcodeScannerDialog } from "./barcode-scanner-dialog";
 
 interface ProductFormValues {
     name: string;
     slug: string;
     sku: number | null;
+    barcode: string;
     description: string;
     price: number;
     originalPrice: number | null;
@@ -52,11 +55,13 @@ interface ProductFormValues {
     isBestSelling: boolean;
     isFeatured: boolean;
     status: "draft" | "published";
+    visibleOnline: boolean;
 }
 const productFormSchema = z.object({
     name: z.string().min(3, "Product name must be at least 3 characters long."),
     slug: z.string().min(3, "Slug must be at least 3 characters long."),
     sku: z.preprocess((val) => (val === "" || val === null ? null : Number(val)), z.number().int("SKU must be a whole number.").min(1, "SKU is required.")),
+    barcode: z.string().trim().min(1, "Barcode is required."),
     // Description is no longer required
     description: z.string().optional(),
     price: z.preprocess((val) => Number(val), z.number().min(0)),
@@ -75,6 +80,7 @@ const productFormSchema = z.object({
     isBestSelling: z.boolean().default(false),
     isFeatured: z.boolean().default(false),
     status: z.enum(["draft", "published"]).default("published"),
+    visibleOnline: z.boolean().default(true),
 }).superRefine((data, ctx) => {
     // Validating that Regular Price > Sale Price (assuming Sale Price is 'price')
     if (data.originalPrice != null && data.originalPrice < data.price) {
@@ -101,15 +107,17 @@ type ProductFormProps = {
     brands: Brand[];
     categories: Category[];
     onSubmit: (data: Omit<ProductFormValues, 'images'> & { images: string[] }) => Promise<any>;
+    cancelHref?: string;
 };
 
-export function ProductForm({ product, brands: initialBrands, categories: initialCategories, onSubmit }: ProductFormProps) {
+export function ProductForm({ product, brands: initialBrands, categories: initialCategories, onSubmit, cancelHref = "/admin/products" }: ProductFormProps) {
     const form = useForm<ProductFormValues>({
         resolver: zodResolver(productFormSchema) as any,
         defaultValues: {
             name: product?.name || "",
             slug: product?.slug ?? "",
             sku: product?.sku ?? null,
+            barcode: product?.barcode || "",
             description: product?.description || "",
             price: product?.price || 0,
             originalPrice: product?.originalPrice ?? null,
@@ -124,6 +132,7 @@ export function ProductForm({ product, brands: initialBrands, categories: initia
             isBestSelling: product?.isBestSelling || false,
             isFeatured: product?.isFeatured || false,
             status: (product as any)?.status || "published",
+            visibleOnline: product?.visibleOnline !== false,
         },
     });
 
@@ -139,6 +148,44 @@ export function ProductForm({ product, brands: initialBrands, categories: initia
             });
         }
     }, [product?.sku, form]);
+
+    // Auto-generate a barcode for new products
+    useEffect(() => {
+        if (!product?.barcode) {
+            generateBarcode().then((code) => {
+                form.setValue("barcode", code);
+            }).catch(() => { });
+        }
+    }, [product?.barcode, form]);
+
+    const [isScannerOpen, setScannerOpen] = useState(false);
+    const [isRegeneratingBarcode, setRegeneratingBarcode] = useState(false);
+    const watchedBarcode = useWatch({ control: form.control, name: "barcode" });
+
+    async function handleRegenerateBarcode() {
+        setRegeneratingBarcode(true);
+        try {
+            const code = await generateBarcode();
+            form.setValue("barcode", code);
+            form.clearErrors("barcode");
+        } finally {
+            setRegeneratingBarcode(false);
+        }
+    }
+
+    async function handleScannedBarcode(value: string) {
+        form.setValue("barcode", value);
+        if (value !== product?.barcode) {
+            const check = await checkProductBarcode(value, product?.id);
+            if (!check.isUnique) {
+                form.setError("barcode", { type: "manual", message: check.message });
+                toast({ variant: "destructive", title: "Barcode already in use", description: check.message });
+                return;
+            }
+        }
+        form.clearErrors("barcode");
+        toast({ title: "Barcode scanned", description: value });
+    }
 
     const [uploadProgress, setUploadProgress] = useState<number | null>(null);
     const [currentUploadIndex, setCurrentUploadIndex] = useState<number>(0);
@@ -205,6 +252,19 @@ export function ProductForm({ product, brands: initialBrands, categories: initia
             }
         }
 
+        if (data.barcode && (isNewProduct || data.barcode !== product?.barcode)) {
+            const barcodeCheck = await checkProductBarcode(data.barcode, product?.id);
+            if (!barcodeCheck.isUnique) {
+                form.setError("barcode", { type: "manual", message: barcodeCheck.message });
+                toast({
+                    variant: "destructive",
+                    title: "Invalid Barcode",
+                    description: barcodeCheck.message,
+                });
+                return;
+            }
+        }
+
         if (data.slug && (isNewProduct || data.slug !== product?.slug)) {
             const slugCheck = await checkProductSlug(data.slug, product?.id);
             if (!slugCheck.isUnique) {
@@ -265,6 +325,7 @@ export function ProductForm({ product, brands: initialBrands, categories: initia
                 name: data.name,
                 slug: data.slug,
                 sku: Number(data.sku),
+                barcode: data.barcode,
                 description: data.description || "",
                 price: Number(data.price),
                 originalPrice: data.originalPrice ? Number(data.originalPrice) : null,
@@ -279,6 +340,7 @@ export function ProductForm({ product, brands: initialBrands, categories: initia
                 isBestSelling: !!data.isBestSelling,
                 isFeatured: !!data.isFeatured,
                 status: data.status,
+                visibleOnline: !!data.visibleOnline,
             };
 
             const result = await onSubmit(finalProductData as any);
@@ -292,6 +354,9 @@ export function ProductForm({ product, brands: initialBrands, categories: initia
                     }
                     if (result.errors.sku) {
                         form.setError("sku", { type: "server", message: result.errors.sku[0] });
+                    }
+                    if (result.errors.barcode) {
+                        form.setError("barcode", { type: "server", message: result.errors.barcode[0] });
                     }
                     if (result.errors.slug) {
                         form.setError("slug", { type: "server", message: result.errors.slug[0] });
@@ -377,6 +442,11 @@ export function ProductForm({ product, brands: initialBrands, categories: initia
                     <Progress value={uploadProgress} className="w-full" />
                 </DialogContent>
             </Dialog>
+            <BarcodeScannerDialog
+                open={isScannerOpen}
+                onOpenChange={setScannerOpen}
+                onScan={handleScannedBarcode}
+            />
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(handleAction)} className="space-y-8">
                     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -438,6 +508,18 @@ export function ProductForm({ product, brands: initialBrands, categories: initia
                                     <div className="grid grid-cols-2 gap-4">
                                         <FormField
                                             control={form.control}
+                                            name="buyPrice"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Buy Price</FormLabel>
+                                                    <FormControl><Input type="number" step="any" min="0" placeholder="***" {...field} value={field.value ?? ""} disabled={isSubmitting} /></FormControl>
+                                                    <FormDescription>Internal use only.</FormDescription>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+                                        <FormField
+                                            control={form.control}
                                             name="price"
                                             render={({ field }) => (
                                                 <FormItem>
@@ -454,18 +536,6 @@ export function ProductForm({ product, brands: initialBrands, categories: initia
                                                 <FormItem>
                                                     <FormLabel>Regular Price</FormLabel>
                                                     <FormControl><Input type="number" step="any" min="0" placeholder="***" {...field} value={field.value ?? ""} disabled={isSubmitting} /></FormControl>
-                                                    <FormMessage />
-                                                </FormItem>
-                                            )}
-                                        />
-                                        <FormField
-                                            control={form.control}
-                                            name="buyPrice"
-                                            render={({ field }) => (
-                                                <FormItem>
-                                                    <FormLabel>Buy Price</FormLabel>
-                                                    <FormControl><Input type="number" step="any" min="0" placeholder="***" {...field} value={field.value ?? ""} disabled={isSubmitting} /></FormControl>
-                                                    <FormDescription>Internal use only.</FormDescription>
                                                     <FormMessage />
                                                 </FormItem>
                                             )}
@@ -534,6 +604,57 @@ export function ProductForm({ product, brands: initialBrands, categories: initia
                                             )}
                                         />
                                     </div>
+                                    <FormField
+                                        control={form.control}
+                                        name="barcode"
+                                        render={({ field }) => (
+                                            <FormItem className="mt-4">
+                                                <FormLabel>Barcode <span className="text-red-500">*</span></FormLabel>
+                                                <div className="flex gap-2">
+                                                    <FormControl>
+                                                        <Input
+                                                            placeholder="Auto-generated"
+                                                            {...field}
+                                                            disabled={isSubmitting}
+                                                            onBlur={async (e) => {
+                                                                field.onBlur();
+                                                                const val = e.target.value.trim();
+                                                                if (val && val !== product?.barcode) {
+                                                                    const check = await checkProductBarcode(val, product?.id);
+                                                                    if (!check.isUnique) {
+                                                                        form.setError("barcode", { type: "manual", message: check.message });
+                                                                    }
+                                                                }
+                                                            }}
+                                                        />
+                                                    </FormControl>
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="icon"
+                                                        disabled={isSubmitting}
+                                                        onClick={() => setScannerOpen(true)}
+                                                        title="Scan barcode"
+                                                    >
+                                                        <ScanBarcode className="h-4 w-4" />
+                                                    </Button>
+                                                    <Button
+                                                        type="button"
+                                                        variant="outline"
+                                                        size="icon"
+                                                        disabled={isSubmitting || isRegeneratingBarcode}
+                                                        onClick={handleRegenerateBarcode}
+                                                        title="Generate a new barcode"
+                                                    >
+                                                        <RefreshCw className={`h-4 w-4 ${isRegeneratingBarcode ? "animate-spin" : ""}`} />
+                                                    </Button>
+                                                </div>
+                                                <FormDescription>Auto-generated on create. Scan an existing barcode or regenerate one.</FormDescription>
+                                                <FormMessage />
+                                                {watchedBarcode && <BarcodeDisplay value={watchedBarcode} className="mt-3 max-w-[260px]" />}
+                                            </FormItem>
+                                        )}
+                                    />
                                 </CardContent>
                             </Card>
                             <Card>
@@ -830,6 +951,28 @@ export function ProductForm({ product, brands: initialBrands, categories: initia
                                             </FormItem>
                                         )}
                                     />
+                                    <FormField
+                                        control={form.control}
+                                        name="visibleOnline"
+                                        render={({ field }) => (
+                                            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 mt-4">
+                                                <div className="space-y-0.5">
+                                                    <FormLabel>Visible Online</FormLabel>
+                                                    <FormDescription>
+                                                        Turn off to keep this product sellable in POS/stock/purchases
+                                                        but hidden from the public website (e.g. recharge cards).
+                                                    </FormDescription>
+                                                </div>
+                                                <FormControl>
+                                                    <Switch
+                                                        checked={field.value}
+                                                        onCheckedChange={field.onChange}
+                                                        disabled={isSubmitting}
+                                                    />
+                                                </FormControl>
+                                            </FormItem>
+                                        )}
+                                    />
                                 </CardContent>
                             </Card>
                         </div>
@@ -837,7 +980,7 @@ export function ProductForm({ product, brands: initialBrands, categories: initia
 
                     <div className="flex justify-end gap-2">
                         <Button variant="outline" asChild type="button">
-                            <Link href="/admin/products">Cancel</Link>
+                            <Link href={cancelHref}>Cancel</Link>
                         </Button>
                         <Button type="submit" disabled={isSubmitting}>
                             {isSubmitting ? "Saving..." : "Save Product"}

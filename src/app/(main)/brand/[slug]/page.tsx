@@ -140,7 +140,8 @@ async function ProductGrid({ brandId, currentPage, sortBy, slug, categoriesData,
         limit,
         page: currentPage,
         sortBy,
-        categoryIds: categoryIds && categoryIds.length > 0 ? categoryIds : undefined
+        categoryIds: categoryIds && categoryIds.length > 0 ? categoryIds : undefined,
+        visibleOnline: true
     });
     const totalPages = Math.ceil(totalCount / limit);
 

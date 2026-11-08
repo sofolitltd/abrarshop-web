@@ -9,7 +9,7 @@ import {
 import { ProductCard } from "../product/product-card";
 
 export async function BestSelling() {
-    const { products: bestSellingProducts } = await getProducts({ isBestSelling: true, limit: 10 });
+    const { products: bestSellingProducts } = await getProducts({ isBestSelling: true, limit: 10, visibleOnline: true });
 
     if (bestSellingProducts.length === 0) {
         return null;

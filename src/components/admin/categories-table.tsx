@@ -195,22 +195,28 @@ export function CategoriesTable({ categories }: CategoriesTableProps) {
                 className={((category as any).level === 0 && !searchQuery && sortBy === "name") ? "bg-muted/30 hover:bg-muted/50" : ""}
               >
                 <TableCell>
-                  {category.imageUrl ? (
-                    <Image
-                      src={category.imageUrl}
-                      alt={category.name}
-                      width={40}
-                      height={40}
-                      className="rounded-md object-cover"
-                    />
-                  ) : (
-                    <div className="w-10 h-10 bg-muted rounded-md flex items-center justify-center text-muted-foreground text-xs">
-                      No img
-                    </div>
-                  )}
+                  <Link href={`/admin/products?categoryId=${category.id}`}>
+                    {category.imageUrl ? (
+                      <Image
+                        src={category.imageUrl}
+                        alt={category.name}
+                        width={40}
+                        height={40}
+                        className="rounded-md object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 bg-muted rounded-md flex items-center justify-center text-muted-foreground text-xs">
+                        No img
+                      </div>
+                    )}
+                  </Link>
                 </TableCell>
                 <TableCell className="font-medium">
-                  <div className="flex items-center gap-2" style={{ paddingLeft: `${((category as any).level || 0) * 24}px` }}>
+                  <Link
+                    href={`/admin/products?categoryId=${category.id}`}
+                    className="flex items-center gap-2 hover:underline"
+                    style={{ paddingLeft: `${((category as any).level || 0) * 24}px` }}
+                  >
                     {((category as any).level || 0) > 0 && (
                       <span className="text-muted-foreground/30"><CornerDownRight className="h-4 w-4" /></span>
                     )}
@@ -220,7 +226,7 @@ export function CategoriesTable({ categories }: CategoriesTableProps) {
                     {category.isFeatured && (
                       <Badge variant="outline" className="text-[10px] h-4 px-1 bg-amber-50 text-amber-600 border-amber-200">Featured</Badge>
                     )}
-                  </div>
+                  </Link>
                 </TableCell>
                 <TableCell className="text-muted-foreground font-mono text-xs">{category.slug}</TableCell>
                 <TableCell>

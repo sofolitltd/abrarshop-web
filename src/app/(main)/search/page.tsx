@@ -100,7 +100,8 @@ async function ProductGrid({ query, currentPage, sortBy, categories, brands, cat
         page: currentPage,
         sortBy,
         categoryIds: categoryIds && categoryIds.length > 0 ? categoryIds : undefined,
-        brandIds: brandIds && brandIds.length > 0 ? brandIds : undefined
+        brandIds: brandIds && brandIds.length > 0 ? brandIds : undefined,
+        visibleOnline: true
     });
     const totalPages = Math.ceil(totalCount / limit);
 

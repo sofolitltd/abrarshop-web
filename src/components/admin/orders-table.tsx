@@ -15,7 +15,8 @@ import {
     ExternalLink,
     ChevronDown,
     Printer,
-    Plus
+    Plus,
+    Trash2
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -37,7 +38,17 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Badge } from "@/components/ui/badge";
-import { updateOrderStatus, updatePaymentStatus } from "@/lib/actions";
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { updateOrderStatus, updatePaymentStatus, deleteOrder } from "@/lib/actions";
 import { toast } from "sonner";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -47,6 +58,8 @@ export function AdminOrdersTable({ initialOrders }: { initialOrders: any[] }) {
     const [orders, setOrders] = useState(initialOrders);
     const [searchTerm, setSearchTerm] = useState("");
     const [isUpdating, setIsUpdating] = useState<string | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
+    const [orderToDelete, setOrderToDelete] = useState<{ id: string; orderNumber: string } | null>(null);
     const router = useRouter();
 
     const filteredOrders = orders.filter(order =>
@@ -86,6 +99,25 @@ export function AdminOrdersTable({ initialOrders }: { initialOrders: any[] }) {
             toast.error("Failed to update payment status");
         } finally {
             setIsUpdating(null);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!orderToDelete) return;
+        setIsDeleting(true);
+        try {
+            const result = await deleteOrder(orderToDelete.id);
+            if (result.success) {
+                setOrders(prev => prev.filter(o => o.id !== orderToDelete.id));
+                toast.success(result.message);
+            } else {
+                toast.error(result.message);
+            }
+        } catch (error) {
+            toast.error("Failed to delete order");
+        } finally {
+            setIsDeleting(false);
+            setOrderToDelete(null);
         }
     };
 
@@ -276,6 +308,13 @@ export function AdminOrdersTable({ initialOrders }: { initialOrders: any[] }) {
                                                     <DropdownMenuItem onClick={() => handleStatusUpdate(order.id, 'cancelled')} className="text-red-600">
                                                         <XCircle className="mr-2 h-4 w-4" /> Cancel Order
                                                     </DropdownMenuItem>
+                                                    <DropdownMenuSeparator />
+                                                    <DropdownMenuItem
+                                                        onClick={() => setOrderToDelete({ id: order.id, orderNumber: order.orderNumber })}
+                                                        className="text-red-600"
+                                                    >
+                                                        <Trash2 className="mr-2 h-4 w-4" /> Delete Order
+                                                    </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </div>
@@ -286,6 +325,24 @@ export function AdminOrdersTable({ initialOrders }: { initialOrders: any[] }) {
                     </TableBody>
                 </Table>
             </div>
+
+            <AlertDialog open={!!orderToDelete} onOpenChange={(open) => !open && setOrderToDelete(null)}>
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Delete this order?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            This will permanently delete order #{orderToDelete?.orderNumber} and all of its items.
+                            {" "}This action cannot be undone.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
+                        <AlertDialogAction onClick={handleDelete} disabled={isDeleting} className="bg-destructive hover:bg-destructive/90">
+                            {isDeleting ? "Deleting..." : "Delete"}
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }

@@ -40,6 +40,7 @@ export const products = pgTable('products', {
     .primaryKey()
     .$defaultFn(() => createId()),
   sku: integer('sku'),
+  barcode: varchar('barcode', { length: 32 }).unique(),
   name: varchar('name', { length: 256 }).notNull(),
   slug: varchar('slug', { length: 256 }).notNull().unique(),
   description: text('description'),
@@ -56,6 +57,7 @@ export const products = pgTable('products', {
   isFeatured: boolean('is_featured').notNull().default(false),
   discount: numeric('discount', { precision: 5, scale: 2 }).notNull().default('0'),
   status: varchar('status', { length: 20 }).notNull().default('published'),
+  visibleOnline: boolean('visible_online').notNull().default(true),
   version: integer('version').notNull().default(0),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
@@ -215,6 +217,133 @@ export const admins = pgTable('admins', {
   isActive: boolean('is_active').default(true).notNull(),
   createdAt: timestamp('created_at').notNull().defaultNow(),
   updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const parties = pgTable('parties', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  name: varchar('name', { length: 256 }).notNull(),
+  phone: varchar('phone', { length: 20 }),
+  address: text('address'),
+  type: varchar('type', { length: 20 }).notNull(), // 'payable' | 'receivable'
+  currentBalance: numeric('current_balance', { precision: 10, scale: 2 }).notNull().default('0'),
+  notes: text('notes'),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+  updatedAt: timestamp('updated_at').notNull().defaultNow(),
+});
+
+export const partyTransactions = pgTable('party_transactions', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  partyId: text('party_id').notNull().references(() => parties.id, { onDelete: 'cascade' }),
+  type: varchar('type', { length: 20 }).notNull(), // 'due' | 'payment'
+  amount: numeric('amount', { precision: 10, scale: 2 }).notNull(),
+  note: text('note'),
+  // When set, this transaction is auto-removed if the originating order is deleted
+  // (see deleteOrder in actions.ts, which reverses the party balance first).
+  relatedOrderId: text('related_order_id').references(() => orders.id, { onDelete: 'cascade' }),
+  date: timestamp('date').notNull().defaultNow(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const purchases = pgTable('purchases', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  supplierId: text('supplier_id').references(() => parties.id, { onDelete: 'set null' }),
+  invoiceNo: varchar('invoice_no', { length: 100 }),
+  totalAmount: numeric('total_amount', { precision: 10, scale: 2 }).notNull(),
+  paidAmount: numeric('paid_amount', { precision: 10, scale: 2 }).notNull().default('0'),
+  dueAmount: numeric('due_amount', { precision: 10, scale: 2 }).notNull().default('0'),
+  paymentStatus: varchar('payment_status', { length: 20 }).notNull().default('due'), // 'paid' | 'partial' | 'due'
+  note: text('note'),
+  date: timestamp('date').notNull().defaultNow(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const purchaseItems = pgTable('purchase_items', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  purchaseId: text('purchase_id').notNull().references(() => purchases.id, { onDelete: 'cascade' }),
+  productId: text('product_id').notNull().references(() => products.id),
+  quantity: integer('quantity').notNull(),
+  buyPrice: numeric('buy_price', { precision: 10, scale: 2 }).notNull(),
+  subtotal: numeric('subtotal', { precision: 10, scale: 2 }).notNull(),
+});
+
+export const purchasesRelations = relations(purchases, ({ many, one }) => ({
+  items: many(purchaseItems),
+  supplier: one(parties, {
+    fields: [purchases.supplierId],
+    references: [parties.id],
+  }),
+}));
+
+export const purchaseItemsRelations = relations(purchaseItems, ({ one }) => ({
+  purchase: one(purchases, {
+    fields: [purchaseItems.purchaseId],
+    references: [purchases.id],
+  }),
+  product: one(products, {
+    fields: [purchaseItems.productId],
+    references: [products.id],
+  }),
+}));
+
+export const partiesRelations = relations(parties, ({ many }) => ({
+  transactions: many(partyTransactions),
+  purchases: many(purchases),
+}));
+
+export const partyTransactionsRelations = relations(partyTransactions, ({ one }) => ({
+  party: one(parties, {
+    fields: [partyTransactions.partyId],
+    references: [parties.id],
+  }),
+}));
+
+export const expenses = pgTable('expenses', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  title: varchar('title', { length: 256 }).notNull(),
+  category: varchar('category', { length: 100 }).notNull().default('other'),
+  amount: numeric('amount', { precision: 10, scale: 2 }).notNull(),
+  note: text('note'),
+  date: timestamp('date').notNull().defaultNow(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const otherIncomes = pgTable('other_incomes', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  title: varchar('title', { length: 256 }).notNull(),
+  category: varchar('category', { length: 100 }).notNull().default('other'),
+  amount: numeric('amount', { precision: 10, scale: 2 }).notNull(),
+  note: text('note'),
+  date: timestamp('date').notNull().defaultNow(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
+});
+
+export const cashTransactions = pgTable('cash_transactions', {
+  id: text('id')
+    .primaryKey()
+    .$defaultFn(() => createId()),
+  direction: varchar('direction', { length: 10 }).notNull(), // 'in' | 'out'
+  amount: numeric('amount', { precision: 10, scale: 2 }).notNull(),
+  category: varchar('category', { length: 30 }).notNull(), // 'sale' | 'purchase_payment' | 'expense' | 'payable_payment' | 'receivable_collection' | 'other_income' | 'adjustment'
+  relatedPartyId: text('related_party_id').references(() => parties.id, { onDelete: 'set null' }),
+  relatedPurchaseId: text('related_purchase_id').references(() => purchases.id, { onDelete: 'set null' }),
+  // When set, this cash entry is auto-removed if the originating order is deleted
+  // (cash balance is summed live, so no extra reversal logic is needed for this one).
+  relatedOrderId: text('related_order_id').references(() => orders.id, { onDelete: 'cascade' }),
+  note: text('note'),
+  date: timestamp('date').notNull().defaultNow(),
+  createdAt: timestamp('created_at').notNull().defaultNow(),
 });
 
 export const settings = pgTable('settings', {

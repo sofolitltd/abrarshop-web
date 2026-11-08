@@ -44,11 +44,27 @@ import {
   LogOut,
   ShieldCheck,
   ClipboardList,
+  Wallet,
+  TrendingUp,
+  ShoppingBag,
+  HandCoins,
+  Banknote,
+  LayoutGrid,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const mainNavItems = [
   { href: "/admin/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  {
+    label: "Products",
+    icon: Package,
+    items: [
+      { href: "/admin/products", label: "All Products", icon: List },
+      { href: "/admin/products/new", label: "Add New Product", icon: PlusCircle },
+      { href: "/admin/categories", label: "Categories", icon: Folder },
+      { href: "/admin/brand", label: "Brands", icon: Tag },
+    ],
+  },
   {
     label: "Orders",
     icon: ShoppingCart,
@@ -58,13 +74,16 @@ const mainNavItems = [
     ],
   },
   {
-    label: "Products",
-    icon: Package,
+    label: "হিসাব",
+    icon: Wallet,
     items: [
-      { href: "/admin/products", label: "All Products", icon: List },
-      { href: "/admin/products/new", label: "Add New Product", icon: PlusCircle },
-      { href: "/admin/categories", label: "Categories", icon: Folder },
-      { href: "/admin/brand", label: "Brands", icon: Tag },
+      { href: "/admin/accounts", label: "Overview", icon: LayoutGrid },
+      { href: "/admin/accounts/income", label: "আয়", icon: TrendingUp },
+      { href: "/admin/accounts/sales", label: "বিক্রয়", icon: ShoppingBag },
+      { href: "/admin/accounts/purchase", label: "ক্রয়", icon: ShoppingCart },
+      { href: "/admin/accounts/due", label: "দেনা-পাওনা", icon: HandCoins },
+      { href: "/admin/accounts/due?tab=receivable", label: "কাস্টমার", icon: Users },
+      { href: "/admin/accounts/cash", label: "ক্যাশ", icon: Banknote },
     ],
   },
   { href: "/admin/hero-sliders", label: "Hero Sliders", icon: GalleryHorizontal },

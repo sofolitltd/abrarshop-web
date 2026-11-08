@@ -1,17 +1,25 @@
 import type { Product, Brand, Category, HeroSlider, Review } from '@/lib/types';
 import { db } from '@/lib/db';
-import { products as productsTable, categories as categoriesTable, brands as brandsTable, heroSliders as heroSlidersTable, reviews as reviewsTable, settings as settingsTable } from '@/lib/schema';
+import { products as productsTable, categories as categoriesTable, brands as brandsTable, heroSliders as heroSlidersTable, reviews as reviewsTable, settings as settingsTable, orders as ordersTable } from '@/lib/schema';
 import { eq, desc, asc, isNull, sql, or, ilike, and, ne, count as drizzleCount } from 'drizzle-orm';
 import { alias } from 'drizzle-orm/pg-core';
 import { cache } from 'react';
 import { unstable_cache } from 'next/cache';
 
+// sku is a 32-bit Postgres integer column; a 13-digit scanned barcode parses fine as a JS
+// number but overflows that column and throws at the DB layer, so guard against it here.
+const POSTGRES_INT_MAX = 2147483647;
+const POSTGRES_INT_MIN = -2147483648;
+function isValidSkuValue(value: number): boolean {
+  return value >= POSTGRES_INT_MIN && value <= POSTGRES_INT_MAX;
+}
+
 // Sitemap helpers
 export async function getAllProductSlugs() {
-  return await db.select({ 
-    slug: productsTable.slug, 
+  return await db.select({
+    slug: productsTable.slug,
     updatedAt: productsTable.createdAt // Usually createdAt is a good fallback if no updatedAt
-  }).from(productsTable).where(eq(productsTable.status, 'published'));
+  }).from(productsTable).where(and(eq(productsTable.status, 'published'), eq(productsTable.visibleOnline, true)));
 }
 
 export async function getAllCategorySlugs() {
@@ -22,20 +30,49 @@ export async function getAllBrandSlugs() {
   return await db.select({ slug: brandsTable.slug }).from(brandsTable);
 }
 
+export async function getRecentLocalCustomers(limit = 20): Promise<{ name: string; mobile: string | null }[]> {
+  try {
+    const rows = await db
+      .select({
+        name: ordersTable.firstName,
+        mobile: ordersTable.mobile,
+        lastUsed: sql<Date>`max(${ordersTable.createdAt})`,
+      })
+      .from(ordersTable)
+      .where(
+        and(
+          eq(ordersTable.orderSource, 'local'),
+          ne(ordersTable.firstName, ''),
+          ne(ordersTable.firstName, 'Walk-in')
+        )
+      )
+      .groupBy(ordersTable.firstName, ordersTable.mobile)
+      .orderBy(desc(sql`max(${ordersTable.createdAt})`))
+      .limit(limit);
+
+    return rows.map((r) => ({ name: r.name, mobile: r.mobile === 'N/A' ? null : r.mobile }));
+  } catch (error) {
+    console.error('Failed to fetch recent local customers:', error);
+    return [];
+  }
+}
+
 // Product Functions
-export const getProducts = async (options?: { query?: string, limit?: number, page?: number, isTrending?: boolean, isBestSelling?: boolean, isFeatured?: boolean, sortBy?: string, categoryId?: string, categoryIds?: string[], brandId?: string, brandIds?: string[], excludeProductId?: string, searchBy?: 'all' | 'sku', status?: string | null }): Promise<{ products: Product[], totalCount: number }> => {
-  const { query, limit, page, isTrending, isBestSelling, isFeatured, sortBy, categoryId, categoryIds, brandId, brandIds, excludeProductId, searchBy = 'all', status = 'published' } = options || {};
+export const getProducts = async (options?: { query?: string, limit?: number, page?: number, isTrending?: boolean, isBestSelling?: boolean, isFeatured?: boolean, sortBy?: string, categoryId?: string, categoryIds?: string[], brandId?: string, brandIds?: string[], excludeProductId?: string, searchBy?: 'all' | 'sku' | 'barcode', status?: string | null, visibleOnline?: boolean }): Promise<{ products: Product[], totalCount: number }> => {
+  const { query, limit, page, isTrending, isBestSelling, isFeatured, sortBy, categoryId, categoryIds, brandId, brandIds, excludeProductId, searchBy = 'all', status = 'published', visibleOnline } = options || {};
   try {
     const conditions = [];
     if (query && query.trim().length > 0) {
       if (searchBy === 'sku') {
         const queryAsNumber = parseInt(query);
-        if (!isNaN(queryAsNumber)) {
+        if (!isNaN(queryAsNumber) && isValidSkuValue(queryAsNumber)) {
           conditions.push(eq(productsTable.sku, queryAsNumber));
         } else {
           // If not a number, try exact match on ID
           conditions.push(eq(productsTable.id, query.trim()));
         }
+      } else if (searchBy === 'barcode') {
+        conditions.push(eq(productsTable.barcode, query.trim()));
       } else {
         const searchPattern = `%${query.replace(/%/g, '\\%').replace(/_/g, '\\_')}%`;
         const orConditions = [
@@ -43,14 +80,17 @@ export const getProducts = async (options?: { query?: string, limit?: number, pa
           ilike(productsTable.description, searchPattern),
           ilike(sql`array_to_string(${productsTable.keywords}, ' ')`, searchPattern),
           ilike(productsTable.id, searchPattern),
-          eq(productsTable.id, query.trim()) // Exact ID Match
+          eq(productsTable.id, query.trim()), // Exact ID Match
+          eq(productsTable.barcode, query.trim()) // Exact barcode match (e.g. from a scan)
         ];
 
         // If query is exactly a number, check SKU or SKU partial
         const queryAsNumber = parseInt(query);
         if (!isNaN(queryAsNumber)) {
-          orConditions.push(eq(productsTable.sku, queryAsNumber));
           orConditions.push(ilike(sql`${productsTable.sku}::text`, searchPattern)); // Also allow partial SKU match
+          if (isValidSkuValue(queryAsNumber)) {
+            orConditions.push(eq(productsTable.sku, queryAsNumber)); // sku is a 32-bit integer column; a scanned barcode is too large for it
+          }
         }
 
         conditions.push(or(...orConditions));
@@ -115,6 +155,9 @@ export const getProducts = async (options?: { query?: string, limit?: number, pa
     if (status) {
       conditions.push(eq(productsTable.status, status));
     }
+    if (visibleOnline !== undefined) {
+      conditions.push(eq(productsTable.visibleOnline, visibleOnline));
+    }
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
@@ -126,6 +169,7 @@ export const getProducts = async (options?: { query?: string, limit?: number, pa
       .select({
         id: productsTable.id,
         sku: productsTable.sku,
+        barcode: productsTable.barcode,
         name: productsTable.name,
         slug: productsTable.slug,
         description: productsTable.description,
@@ -141,6 +185,7 @@ export const getProducts = async (options?: { query?: string, limit?: number, pa
         isBestSelling: productsTable.isBestSelling,
         isFeatured: productsTable.isFeatured,
         status: productsTable.status,
+        visibleOnline: productsTable.visibleOnline,
         discount: productsTable.discount,
         createdAt: productsTable.createdAt,
         category: categoriesTable.name,
@@ -207,6 +252,7 @@ export const getProductById = cache(async (
       .select({
         id: productsTable.id,
         sku: productsTable.sku,
+        barcode: productsTable.barcode,
         name: productsTable.name,
         slug: productsTable.slug,
         description: productsTable.description,
@@ -222,6 +268,7 @@ export const getProductById = cache(async (
         isBestSelling: productsTable.isBestSelling,
         isFeatured: productsTable.isFeatured,
         status: productsTable.status,
+        visibleOnline: productsTable.visibleOnline,
         discount: productsTable.discount,
         createdAt: productsTable.createdAt,
         category: categoriesTable.name,
@@ -259,6 +306,7 @@ export const getProductBySlug = cache(async (
       .select({
         id: productsTable.id,
         sku: productsTable.sku,
+        barcode: productsTable.barcode,
         name: productsTable.name,
         slug: productsTable.slug,
         description: productsTable.description,
@@ -274,6 +322,7 @@ export const getProductBySlug = cache(async (
         isBestSelling: productsTable.isBestSelling,
         isFeatured: productsTable.isFeatured,
         status: productsTable.status,
+        visibleOnline: productsTable.visibleOnline,
         discount: productsTable.discount,
         createdAt: productsTable.createdAt,
         category: categoriesTable.name,
@@ -283,7 +332,7 @@ export const getProductBySlug = cache(async (
       .from(productsTable)
       .leftJoin(categoriesTable, eq(productsTable.categoryId, categoriesTable.id))
       .leftJoin(brandsTable, eq(productsTable.brandId, brandsTable.id))
-      .where(and(eq(productsTable.slug, slug), eq(productsTable.status, 'published')));
+      .where(and(eq(productsTable.slug, slug), eq(productsTable.status, 'published'), eq(productsTable.visibleOnline, true)));
 
     if (result.length === 0) {
       return undefined;
