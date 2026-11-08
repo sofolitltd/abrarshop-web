@@ -68,7 +68,7 @@ export default async function AccountsPage() {
         </div>
       </div>
 
-      <Link href="/admin/accounts/quick-sale">
+      <Link href="/admin/quick-sale">
         <Card className="rounded-none border-zinc-900 bg-black text-white hover:bg-zinc-900 transition-colors">
           <CardContent className="flex items-center justify-between py-5">
             <div className="flex items-center gap-3">

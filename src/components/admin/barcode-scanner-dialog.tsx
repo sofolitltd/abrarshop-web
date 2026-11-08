@@ -82,6 +82,55 @@ export function BarcodeScannerDialog({ open, onOpenChange, onScan, title = "Scan
                 ) : (
                     <div id={regionId} className="w-full [&_video]:rounded-md" />
                 )}
+                {/*
+                  html5-qrcode injects its own camera-select dropdown and start/stop/permission
+                  buttons directly into the DOM (not through React), using fixed global element
+                  IDs. These overrides restyle that default, unstyled browser-chrome look into a
+                  small, muted toolbar underneath the scan region instead of the dominant element.
+                */}
+                <style jsx global>{`
+                #${regionId} {
+                    border: 1px solid #e4e4e7 !important;
+                    border-radius: 0 !important;
+                    overflow: hidden;
+                }
+                #${regionId} .html5-qrcode-element {
+                    font-family: inherit !important;
+                }
+                #${regionId} > div:last-child {
+                    padding: 8px 10px !important;
+                    background: #fafafa;
+                    border-top: 1px solid #e4e4e7;
+                }
+                #html5-qrcode-select-camera {
+                    border: 1px solid #e4e4e7 !important;
+                    border-radius: 0 !important;
+                    background: #fff !important;
+                    font-size: 11px !important;
+                    padding: 5px 6px !important;
+                    color: #52525b !important;
+                    max-width: 100%;
+                }
+                #html5-qrcode-button-camera-start,
+                #html5-qrcode-button-camera-stop,
+                #html5-qrcode-button-camera-permission,
+                #html5-qrcode-button-file-selection {
+                    border: none !important;
+                    border-radius: 0 !important;
+                    background: #18181b !important;
+                    color: #fff !important;
+                    font-size: 11px !important;
+                    font-weight: 700 !important;
+                    letter-spacing: 0.03em;
+                    padding: 6px 12px !important;
+                    margin: 4px 4px 0 0 !important;
+                }
+                #html5-qrcode-anchor-scan-type-change {
+                    font-size: 10px !important;
+                    color: #a1a1aa !important;
+                    text-decoration: underline;
+                }
+                `}</style>
             </DialogContent>
         </Dialog>
     );
